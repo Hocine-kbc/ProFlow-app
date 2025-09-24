@@ -32,6 +32,7 @@ export interface Invoice {
   subtotal: number;
   urssaf_deduction: number;
   net_amount: number;
+  payment_method?: string;
   status: 'draft' | 'sent' | 'paid';
   created_at: string;
   updated_at: string;

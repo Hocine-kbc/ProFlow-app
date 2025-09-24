@@ -209,7 +209,7 @@ export default function Dashboard() {
                       #{invoice.invoice_number}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {invoice.client?.name || 'Client inconnu'}
+                      {invoice.client?.name || clients.find(c => c.id === invoice.client_id)?.name || 'Client inconnu'}
                     </p>
                   </div>
                 </div>

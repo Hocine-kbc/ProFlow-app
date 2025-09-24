@@ -24,6 +24,7 @@ type AppAction =
   | { type: 'SET_INVOICES'; payload: Invoice[] }
   | { type: 'ADD_INVOICE'; payload: Invoice }
   | { type: 'UPDATE_INVOICE'; payload: Invoice }
+  | { type: 'DELETE_INVOICE'; payload: string }
   | { type: 'SET_STATS'; payload: BusinessStats };
 
 const initialState: AppState = {
@@ -90,6 +91,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         invoices: state.invoices.map(invoice =>
           invoice.id === action.payload.id ? action.payload : invoice
         ),
+      };
+    case 'DELETE_INVOICE':
+      return {
+        ...state,
+        invoices: state.invoices.filter(invoice => invoice.id !== action.payload),
       };
     case 'SET_STATS':
       return { ...state, stats: action.payload };

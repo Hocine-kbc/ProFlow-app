@@ -36,7 +36,10 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex items-center justify-between p-6 border-b">
-          <h1 className="text-xl font-bold text-blue-600">CleanBiz Pro</h1>
+          <div className="flex items-center space-x-3">
+            <img src="/logo.png" alt="ProFlow Logo" className="w-8 h-8" />
+            <h1 className="text-xl font-bold text-blue-600">ProFlow</h1>
+          </div>
           <button
             onClick={() => setSidebarOpen(false)}
             className="text-gray-500 hover:text-gray-700 lg:hidden"
@@ -90,7 +93,10 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
               <Menu size={24} />
             </button>
             
-            <div className="flex items-center space-x-4" />
+            <div className="flex items-center space-x-3">
+              <img src="/logo.png" alt="ProFlow Logo" className="w-6 h-6" />
+              <span className="text-lg font-semibold text-gray-800">ProFlow</span>
+            </div>
           </div>
         </header>
 

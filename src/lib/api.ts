@@ -78,35 +78,202 @@ export async function deleteService(id: string): Promise<void> {
 
 // Invoices
 export async function fetchInvoices(): Promise<Invoice[]> {
-  const { data, error } = await supabase
-    .from('invoices')
-    .select('*, client:clients(*)')
-    .order('date', { ascending: false });
-  if (error) throw error;
-  return (data || []) as Invoice[];
+  try {
+    // Simple query without relationships first
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching invoices:', error);
+      // If table doesn't exist, return empty array
+      if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
+        console.log('Invoices table does not exist, returning empty array');
+        return [];
+      }
+      throw error;
+    }
+    
+    // Transform the data to match the Invoice interface
+    const invoices = (data || []).map((invoice: any) => {
+      // Get payment_method from localStorage if not in database
+      let paymentMethod = invoice.payment_method;
+      if (!paymentMethod) {
+        try {
+          const paymentMethods = JSON.parse(localStorage.getItem('invoice-payment-methods') || '{}');
+          paymentMethod = paymentMethods[invoice.id] || null;
+        } catch (e) {
+          console.warn('Could not retrieve payment method from localStorage:', e);
+        }
+      }
+      
+      return {
+        ...invoice,
+        // Ensure services array is properly handled
+        services: invoice.services || [],
+        // Client will be fetched separately if needed
+        client: null,
+        // Add payment_method from localStorage if not in database
+        payment_method: paymentMethod,
+      };
+    });
+    
+    console.log('Fetched invoices:', invoices);
+    return invoices as Invoice[];
+  } catch (error) {
+    console.error('Failed to fetch invoices:', error);
+    // Return empty array if there's any error
+    return [];
+  }
 }
 
 export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'created_at' | 'updated_at'>): Promise<Invoice> {
   const now = new Date().toISOString();
-  const toInsert = { ...payload, created_at: now, updated_at: now } as any;
+  // Extract services from payload and create a clean invoice object
+  const { services, ...invoiceData } = payload;
+  
+  // Map camelCase to snake_case for database
+  const toInsert: any = {
+    created_at: now,
+    updated_at: now
+  };
+  
+  // Map fields from camelCase to snake_case
+  if (invoiceData.client_id !== undefined) toInsert.client_id = invoiceData.client_id;
+  if (invoiceData.invoice_number !== undefined) toInsert.invoice_number = invoiceData.invoice_number;
+  if (invoiceData.date !== undefined) toInsert.date = invoiceData.date;
+  if (invoiceData.due_date !== undefined) toInsert.due_date = invoiceData.due_date;
+  // Note: payment_method column might not exist in database yet
+  // if (invoiceData.payment_method !== undefined) toInsert.payment_method = invoiceData.payment_method;
+  if (invoiceData.subtotal !== undefined) toInsert.subtotal = invoiceData.subtotal;
+  if (invoiceData.urssaf_deduction !== undefined) toInsert.urssaf_deduction = invoiceData.urssaf_deduction;
+  if (invoiceData.net_amount !== undefined) toInsert.net_amount = invoiceData.net_amount;
+  if (invoiceData.status !== undefined) toInsert.status = invoiceData.status;
+  
+  console.log('Creating invoice with data:', toInsert);
+  
   const { data, error } = await supabase
     .from('invoices')
     .insert(toInsert)
     .select('*')
     .single();
-  if (error) throw error;
-  return data as Invoice;
+    
+  if (error) {
+    console.error('Error creating invoice:', error);
+    // If payment_method column doesn't exist, try without it
+    if (error.code === 'PGRST204' && error.message.includes('payment_method')) {
+      console.log('Payment method column not found, retrying without it...');
+      // Remove payment_method from the data and try again
+      const { payment_method: _payment_method } = invoiceData;
+      const retryData = {
+        ...toInsert,
+        // Don't include payment_method
+      };
+      
+      const { data: retryDataResult, error: retryError } = await supabase
+        .from('invoices')
+        .insert(retryData)
+        .select('*')
+        .single();
+        
+      if (retryError) {
+        console.error('Error creating invoice (retry):', retryError);
+        throw retryError;
+      }
+      
+      return { ...retryDataResult, services: services || [] } as Invoice;
+    }
+    throw error;
+  }
+  
+  // Store payment_method in localStorage if column doesn't exist in database
+  if (invoiceData.payment_method) {
+    try {
+      const existingData = JSON.parse(localStorage.getItem('invoice-payment-methods') || '{}');
+      existingData[data.id] = invoiceData.payment_method;
+      localStorage.setItem('invoice-payment-methods', JSON.stringify(existingData));
+    } catch (e) {
+      console.warn('Could not store payment method in localStorage:', e);
+    }
+  }
+  
+  // Return the invoice with services array
+  return { ...data, services: services || [] } as Invoice;
 }
 
 export async function updateInvoice(id: string, payload: Partial<Invoice>): Promise<Invoice> {
+  // Extract services from payload if present
+  const { services, ...updateData } = payload;
+  
+  // Map camelCase to snake_case for database
+  const dbUpdateData: any = {
+    updated_at: new Date().toISOString()
+  };
+  
+  // Map fields from camelCase to snake_case
+  if (updateData.client_id !== undefined) dbUpdateData.client_id = updateData.client_id;
+  if (updateData.invoice_number !== undefined) dbUpdateData.invoice_number = updateData.invoice_number;
+  if (updateData.date !== undefined) dbUpdateData.date = updateData.date;
+  if (updateData.due_date !== undefined) dbUpdateData.due_date = updateData.due_date;
+  // Note: payment_method column might not exist in database yet
+  // if (updateData.payment_method !== undefined) dbUpdateData.payment_method = updateData.payment_method;
+  if (updateData.subtotal !== undefined) dbUpdateData.subtotal = updateData.subtotal;
+  if (updateData.urssaf_deduction !== undefined) dbUpdateData.urssaf_deduction = updateData.urssaf_deduction;
+  if (updateData.net_amount !== undefined) dbUpdateData.net_amount = updateData.net_amount;
+  if (updateData.status !== undefined) dbUpdateData.status = updateData.status;
+  
+  console.log('Updating invoice with data:', dbUpdateData);
+  
   const { data, error } = await supabase
     .from('invoices')
-    .update({ ...payload, updated_at: new Date().toISOString() })
+    .update(dbUpdateData)
     .eq('id', id)
     .select('*')
     .single();
-  if (error) throw error;
-  return data as Invoice;
+    
+  if (error) {
+    console.error('Error updating invoice:', error);
+    // If payment_method column doesn't exist, try without it
+    if (error.code === 'PGRST204' && error.message.includes('payment_method')) {
+      console.log('Payment method column not found, retrying without it...');
+      // Remove payment_method from the data and try again
+      const { payment_method: _payment_method } = updateData;
+      const retryData = {
+        ...dbUpdateData,
+        // Don't include payment_method
+      };
+      
+      const { data: retryDataResult, error: retryError } = await supabase
+        .from('invoices')
+        .update(retryData)
+        .eq('id', id)
+        .select('*')
+        .single();
+        
+      if (retryError) {
+        console.error('Error updating invoice (retry):', retryError);
+        throw retryError;
+      }
+      
+      return { ...retryDataResult, services: services || [] } as Invoice;
+    }
+    throw error;
+  }
+  
+  // Store payment_method in localStorage if column doesn't exist in database
+  if (updateData.payment_method) {
+    try {
+      const existingData = JSON.parse(localStorage.getItem('invoice-payment-methods') || '{}');
+      existingData[id] = updateData.payment_method;
+      localStorage.setItem('invoice-payment-methods', JSON.stringify(existingData));
+    } catch (e) {
+      console.warn('Could not store payment method in localStorage:', e);
+    }
+  }
+  
+  // Return the invoice with services array if provided
+  return { ...data, services: services || [] } as Invoice;
 }
 
 export async function deleteInvoice(id: string): Promise<void> {

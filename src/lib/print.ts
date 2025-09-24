@@ -4,7 +4,7 @@ function euro(amount: number): string {
   return `${amount.toFixed(2)}€`;
 }
 
-export function openInvoicePrintWindow(invoice: Invoice) {
+export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], services?: any[]) {
   // Read saved business settings (from SettingsPage)
   let settings: any = null;
   try {
@@ -12,7 +12,63 @@ export function openInvoicePrintWindow(invoice: Invoice) {
     settings = raw ? JSON.parse(raw) : null;
   } catch {}
 
-  const servicesRows = (invoice.services || ([] as Service[]))
+  // Use passed clients/services or fallback to localStorage
+  const clientsData = clients || (() => {
+    try {
+      const raw = localStorage.getItem('clients');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  })();
+
+  const servicesData = services || (() => {
+    try {
+      const raw = localStorage.getItem('services');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  })();
+
+  // Get client data with fallback
+  const client = invoice.client || clientsData.find((c: any) => c.id === invoice.client_id);
+
+  // Get services for this invoice - try from invoice.services first, then from passed services
+  let invoiceServices = invoice.services || [];
+  
+  // If no services in invoice, try to find them from passed services
+  if (invoiceServices.length === 0 && servicesData.length > 0) {
+    console.log('No services found in invoice, trying to find from passed services...');
+    
+    // Find services that are marked as 'invoiced' and belong to the same client
+    const clientServices = servicesData.filter((s: any) => 
+      s.client_id === invoice.client_id && s.status === 'invoiced'
+    );
+    
+    if (clientServices.length > 0) {
+      console.log('Found invoiced services for this client:', clientServices);
+      invoiceServices = clientServices;
+    } else {
+      // If no invoiced services found, try to find completed services for this client
+      // This is a fallback for cases where services might not be marked as 'invoiced'
+      const completedServices = servicesData.filter((s: any) => 
+        s.client_id === invoice.client_id && s.status === 'completed'
+      );
+      
+      if (completedServices.length > 0) {
+        console.log('Found completed services for this client (fallback):', completedServices);
+        invoiceServices = completedServices;
+      }
+    }
+  }
+
+  // Debug: Log invoice data
+  console.log('Print invoice data:', {
+    invoice: invoice,
+    client: client,
+    services: invoiceServices,
+    servicesCount: invoiceServices?.length || 0,
+    allServicesCount: servicesData.length
+  });
+
+  const servicesRows = (invoiceServices || ([] as Service[]))
     .map(
       (s) => `
         <tr>
@@ -71,8 +127,8 @@ export function openInvoicePrintWindow(invoice: Invoice) {
         <div style="display:flex; align-items:center; gap:12px">
           ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="logo" style="height:56px; width:auto; object-fit:contain;" />` : ''}
           <div>
-            <div class="chip">${settings?.invoicePrefix || 'FAC'}</div>
-            <h1 class="brand" style="margin-top:6px">${settings?.companyName || 'Mon Entreprise'}</h1>
+            <h1 class="brand" style="margin:0">${settings?.companyName || 'ProFlow'}</h1>
+            <div class="muted" style="margin-top:4px">${settings?.ownerName || 'Votre flux professionnel simplifié'}</div>
           </div>
         </div>
         <div class="divider"></div>
@@ -83,17 +139,19 @@ export function openInvoicePrintWindow(invoice: Invoice) {
         </div>
       </div>
       <div class="card brand-border" style="min-width:280px; border-width:2px">
-        <div style="font-size:14px; margin-bottom:4px"><strong class="brand">Facture</strong> ${invoice.invoice_number}</div>
-        <div style="display:flex; justify-content:space-between"><span class="muted">Date</span><span>${new Date(invoice.date).toLocaleDateString('fr-FR')}</span></div>
-        <div style="display:flex; justify-content:space-between"><span class="muted">Échéance</span><span>${new Date(invoice.due_date).toLocaleDateString('fr-FR')}</span></div>
+        <div style="font-size:18px; margin-bottom:8px; font-weight:700" class="brand">Facture N° : ${invoice.invoice_number}</div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span class="muted">Date d'émission</span><span>${new Date(invoice.date).toLocaleDateString('fr-FR')}</span></div>
+        <div style="display:flex; justify-content:space-between"><span class="muted">Date d'échéance</span><span>${new Date(invoice.due_date).toLocaleDateString('fr-FR')}</span></div>
       </div>
     </header>
 
     <section class="row" style="margin-top:24px">
       <div class="card" style="flex:1;">
-        <div style="font-weight:600; margin-bottom:4px" class="brand">Facturer à</div>
-        <div>${invoice.client?.name || ''}</div>
-        <div class="muted">${invoice.client?.email || ''}</div>
+        <div style="font-weight:600; margin-bottom:8px" class="brand">Facturer à</div>
+        <div style="font-weight:600; margin-bottom:4px">${client?.name || 'Client inconnu'}</div>
+        <div class="muted" style="margin-bottom:2px">${client?.email || ''}</div>
+        <div class="muted" style="margin-bottom:2px">${client?.phone || ''}</div>
+        <div class="muted">${client?.address || ''}</div>
       </div>
     </section>
     <main>
@@ -110,7 +168,7 @@ export function openInvoicePrintWindow(invoice: Invoice) {
           </tr>
         </thead>
         <tbody>
-          ${servicesRows}
+          ${servicesRows || '<tr><td colspan="5" class="text-center muted">Aucune prestation trouvée</td></tr>'}
         </tbody>
       </table>
       </div>
@@ -120,10 +178,14 @@ export function openInvoicePrintWindow(invoice: Invoice) {
           <td class="right muted">Total à payer&nbsp;:</td>
           <td class="right">${euro(invoice.subtotal)}</td>
         </tr>
+        <tr>
+          <td colspan="2" class="right muted" style="font-size:11px; padding-top:8px;">TVA non applicable, art.293 B du CGI</td>
+        </tr>
       </table>
     </main>
     <footer style="margin-top:24px" class="muted">
       ${settings?.invoiceTerms || `Conditions de paiement: ${settings?.paymentTerms || 30} jours. Aucune TVA applicable (franchise de base).`}
+      ${invoice.payment_method ? `<br><br><strong>Mode de paiement :</strong> ${invoice.payment_method}` : ''}
     </footer>
     <script>window.onload = () => { window.print(); };</script>
     </div>
