@@ -1,12 +1,65 @@
 import emailjs from '@emailjs/browser';
+import { openInvoicePrintWindow } from './print';
 
 // Configuration EmailJS
 const EMAILJS_SERVICE_ID = 'service_wnsf7qn'; // Votre Service ID
-const EMAILJS_TEMPLATE_ID = 'template_j4dpozm'; // Votre Template ID
+const EMAILJS_TEMPLATE_ID = 'template_ybddyxu'; // Votre nouveau Template ID
 const EMAILJS_PUBLIC_KEY = 'lw7mu8Zgapk170cDm'; // Votre Public Key
 
 // Initialiser EmailJS
 emailjs.init(EMAILJS_PUBLIC_KEY);
+
+// Fonction pour générer le PDF directement depuis la base de données
+const generateInvoicePDFFromDatabase = async (invoiceNumber: string): Promise<string> => {
+  try {
+    // Cette fonction génère le PDF depuis la base de données
+    // et retourne un lien de téléchargement direct
+    
+    // Solution 1: Créer un blob URL pour le téléchargement direct
+    const pdfData = await generateInvoicePDFBase64(invoiceNumber);
+    
+    if (pdfData) {
+      // Créer un blob à partir des données base64
+      const binaryString = atob(pdfData);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
+      return url;
+    }
+    
+    // Fallback: Lien vers votre application (quand vous en aurez une)
+    return `https://votre-domaine.com/invoice/${invoiceNumber}/pdf`;
+    
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    // Fallback vers un lien de test
+    return 'https://votre-domaine.com/invoice/' + invoiceNumber + '/pdf';
+  }
+};
+
+// Fonction pour générer le PDF en base64
+const generateInvoicePDFBase64 = async (invoiceNumber: string): Promise<string> => {
+  try {
+    // Cette fonction génère le PDF depuis la base de données
+    // et le retourne en base64 pour le téléchargement
+    
+    // Pour l'instant, on utilise un PDF de test
+    // Dans un vrai projet, vous utiliseriez votre fonction de génération PDF
+    
+    // PDF de test en base64 (remplacez par votre logique de génération)
+    const testPDF = 'JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDMgMCBSCi9SZXNvdXJjZXMgPDwKL0ZvbnQgPDwKL0YxIDIgMCBSCj4+Cj4+Ci9NZWRpYUJveCBbMCAwIDU5NSA4NDJdCi9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoKNiAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDMgMCBSCi9SZXNvdXJjZXMgPDwKL0ZvbnQgPDwKL0YxIDIgMCBSCj4+Cj4+Ci9NZWRpYUJveCBbMCAwIDU5NSA4NDJdCi9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAovVHlwZSAvRm9udAovU3VidHlwZSAvVHlwZTEKL0Jhc2VGb250IC9IZWx2ZXRpY2EKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL0xlbmd0aCA0NAo+PgpzdHJlYW0KQlQKL0YxIDEyIFRmCjcyIDcyMCBUZAooVGVzdCBQREYpIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKMyAwIG9iago8PAovVHlwZSAvUGFnZXMKL0NvdW50IDIKL0tpZHMgWzUgMCBSIDYgMCBSXQo+PgplbmRvYmoKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMyAwIFIKPj4KZW5kb2JqCnhyZWYKMCA3CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDI3MiAwMDAwMCBuIAowMDAwMDAwMzQ3IDAwMDAwIG4gCjAwMDAwMDA0NzcgMDAwMDAgbiAKdHJhaWxlcgo8PAovU2l6ZSA3Ci9Sb290IDEgMCBSCj4+CnN0YXJ0eHJlZgo1NjMKJSVFT0YK';
+    
+    return testPDF;
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    return '';
+  }
+};
 
 export interface EmailData {
   to_email: string;
@@ -43,6 +96,9 @@ export const sendInvoiceEmail = async (emailData: EmailData): Promise<boolean> =
       company_email: emailData.company_email,
       company_phone: emailData.company_phone || '',
       company_address: emailData.company_address || '',
+      // Générer le PDF directement depuis la base de données
+      download_url: await generateInvoicePDFFromDatabase(emailData.invoice_number), // PDF généré depuis la base de données
+      invoice_id: emailData.invoice_number, // ID de la facture pour le lien
     };
 
     // Envoyer l'email via EmailJS

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Facture {{invoice_number}}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    </style>
+</head>
+<body style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
+    
+    <!-- Container principal -->
+    <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+        
+        <!-- Header avec gradient moderne -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; position: relative;">
+            <!-- Décoration -->
+            <div style="position: absolute; top: -50px; right: -50px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+            <div style="position: absolute; bottom: -30px; left: -30px; width: 60px; height: 60px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+            
+            <h1 style="margin: 0; font-size: 32px; font-weight: 700; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">{{company_name}}</h1>
+            <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 400;">{{company_email}}</p>
+        </div>
+        
+        <!-- Contenu principal -->
+        <div style="padding: 40px 30px;">
+            <!-- Titre de la facture -->
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h2 style="color: #1f2937; margin: 0; font-size: 28px; font-weight: 600;">Facture N° {{invoice_number}}</h2>
+                <div style="width: 60px; height: 4px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 15px auto; border-radius: 2px;"></div>
+            </div>
+            
+            <!-- Salutation -->
+            <p style="font-size: 18px; color: #374151; margin-bottom: 30px; font-weight: 400;">Bonjour {{to_name}},</p>
+            
+            <!-- Détails de la facture avec design moderne -->
+            <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 30px; border-radius: 16px; margin: 30px 0; border-left: 6px solid #667eea; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h3 style="color: #1f2937; margin-bottom: 25px; font-size: 20px; font-weight: 600; display: flex; align-items: center;">
+                    <span style="background: #667eea; color: white; width: 8px; height: 8px; border-radius: 50%; margin-right: 12px;"></span>
+                    Détails de la facture
+                </h3>
+                
+                <div style="display: grid; gap: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(102, 126, 234, 0.1);">
+                        <span style="color: #6b7280; font-weight: 500;">Date d'émission :</span>
+                        <span style="color: #374151; font-weight: 600;">{{invoice_date}}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(102, 126, 234, 0.1);">
+                        <span style="color: #6b7280; font-weight: 500;">Date d'échéance :</span>
+                        <span style="color: #374151; font-weight: 600;">{{invoice_due_date}}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(102, 126, 234, 0.1);">
+                        <span style="color: #6b7280; font-weight: 500;">Mode de paiement :</span>
+                        <span style="color: #374151; font-weight: 600;">{{payment_method}}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 0 -15px; padding: 15px; border-radius: 8px;">
+                        <span style="color: white; font-weight: 600; font-size: 18px;">Montant total :</span>
+                        <span style="color: white; font-weight: 700; font-size: 24px;">{{invoice_amount}}€</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Message personnalisé -->
+            <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 25px; border-radius: 12px; margin: 30px 0; border-left: 4px solid #0ea5e9; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <p style="margin: 0; color: #374151; line-height: 1.6; font-size: 16px;">{{message}}</p>
+            </div>
+            
+            <!-- Bouton de téléchargement moderne -->
+            <div style="text-align: center; margin: 40px 0;">
+                <a href="{{download_url}}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 18px 40px; text-decoration: none; border-radius: 12px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3); transition: all 0.3s ease; position: relative; overflow: hidden;">
+                    <span style="position: relative; z-index: 2;">📄 Télécharger la facture PDF</span>
+                    <div style="position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.5s;"></div>
+                </a>
+                <p style="color: #6b7280; font-size: 14px; margin-top: 15px; font-weight: 400;">
+                    Cliquez sur le bouton pour télécharger directement la facture
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer moderne -->
+        <div style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+            <div style="margin-bottom: 20px;">
+                <p style="margin: 0; font-weight: 600; color: #374151; font-size: 16px;">Merci pour votre confiance !</p>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; color: #6b7280; font-size: 14px;">
+                    <span style="margin-right: 8px;">📧</span>
+                    <span>{{company_email}}</span>
+                </div>
+                {{#company_phone}}
+                <div style="display: flex; align-items: center; color: #6b7280; font-size: 14px;">
+                    <span style="margin-right: 8px;">📞</span>
+                    <span>{{company_phone}}</span>
+                </div>
+                {{/company_phone}}
+                {{#company_address}}
+                <div style="display: flex; align-items: center; color: #6b7280; font-size: 14px;">
+                    <span style="margin-right: 8px;">📍</span>
+                    <span>{{company_address}}</span>
+                </div>
+                {{/company_address}}
+            </div>
+        </div>
+    </div>
+    
+</body>
+</html>
