@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Reset body margins for modal overlays */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Ensure modal overlays cover the entire viewport */
+.modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 /* Custom animations for the auth page */
 @keyframes blob {
   0% {
@@ -28,4 +50,79 @@
 
 .animation-delay-4000 {
   animation-delay: 4s;
+}
+
+/* Dark mode styles for date inputs */
+.dark input[type="date"] {
+  color-scheme: dark;
+  color: white !important;
+}
+
+/* Replace calendar icon with white SVG */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z'/%3e%3c/svg%3e") no-repeat center !important;
+  background-size: 20px 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+  filter: none !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z'/%3e%3c/svg%3e") no-repeat center !important;
+  background-size: 20px 20px !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+.dark input[type="date"]::-webkit-datetime-edit-text {
+  color: white;
+}
+
+.dark input[type="date"]::-webkit-datetime-edit-month-field,
+.dark input[type="date"]::-webkit-datetime-edit-day-field,
+.dark input[type="date"]::-webkit-datetime-edit-year-field {
+  color: white;
+}
+
+/* Force round checkboxes */
+input[type="checkbox"] {
+  border-radius: 50% !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  width: 20px !important;
+  height: 20px !important;
+  border: 2px solid #d1d5db !important;
+  background-color: white !important;
+  cursor: pointer !important;
+  position: relative !important;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+input[type="checkbox"]:checked::after {
+  content: '✓' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: white !important;
+  font-size: 12px !important;
+  font-weight: bold !important;
+}
+
+/* Dark mode checkboxes */
+.dark input[type="checkbox"] {
+  border-color: #6b7280 !important;
+  background-color: #374151 !important;
+}
+
+.dark input[type="checkbox"]:checked {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
 }

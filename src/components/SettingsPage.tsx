@@ -86,7 +86,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg">
+      <div className="rounded-2xl p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold">Paramètres</h1>
@@ -98,17 +98,17 @@ export default function SettingsPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
 
         {/* Billing Settings */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center space-x-2 mb-6">
-            <Euro className="w-5 h-5 text-green-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
+            <Euro className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Paramètres de facturation
             </h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Tarif horaire par défaut (€)
               </label>
               <input
@@ -117,12 +117,12 @@ export default function SettingsPage() {
                 step="0.5"
                 value={settings.defaultHourlyRate}
                 onChange={(e) => handleInputChange('defaultHourlyRate', parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Taux URSSAF (%)
               </label>
               <input
@@ -132,24 +132,24 @@ export default function SettingsPage() {
                 step="0.1"
                 value={settings.urssafRate}
                 onChange={(e) => handleInputChange('urssafRate', parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Préfixe facture
               </label>
               <input
                 type="text"
                 value={settings.invoicePrefix}
                 onChange={(e) => handleInputChange('invoicePrefix', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Délai de paiement (jours)
               </label>
               <input
@@ -157,32 +157,32 @@ export default function SettingsPage() {
                 min="0"
                 value={settings.paymentTerms}
                 onChange={(e) => handleInputChange('paymentTerms', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
           </div>
         </div>
 
         {/* Tax Information */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center space-x-2 mb-6">
-            <Percent className="w-5 h-5 text-orange-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
+            <Percent className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Informations fiscales
             </h3>
           </div>
           
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <Settings className="w-5 h-5 text-blue-600 mt-0.5" />
+              <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
               <div className="flex-1">
-                <h4 className="text-sm font-medium text-blue-900">
+                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">
                   Micro-entreprise - Régime fiscal
                 </h4>
-                <p className="text-sm text-blue-700 mt-1">
+                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
                   En tant que micro-entrepreneur dans le secteur des services, vous bénéficiez :
                 </p>
-                <ul className="text-sm text-blue-700 mt-2 space-y-1 ml-4 list-disc">
+                <ul className="text-sm text-blue-700 dark:text-blue-300 mt-2 space-y-1 ml-4 list-disc">
                   <li>Taux de cotisations sociales : {settings.urssafRate}%</li>
                   <li>Franchise de TVA (pas de TVA à facturer)</li>
                   <li>Comptabilité simplifiée</li>
@@ -193,14 +193,14 @@ export default function SettingsPage() {
           </div>
 
           <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Conditions de facturation (affichées sur le PDF)
             </label>
             <textarea
               rows={4}
               value={settings.invoiceTerms}
               onChange={(e) => handleInputChange('invoiceTerms', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
         </div>
@@ -209,7 +209,7 @@ export default function SettingsPage() {
         <div className="flex justify-end">
           <button
             type="submit"
-            className="inline-flex items-center px-6 py-3 rounded-full text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow"
+            className="inline-flex items-center px-6 py-3 rounded-full text-white bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-800 dark:hover:to-indigo-800 shadow border border-blue-500 dark:border-blue-600"
           >
             <Save className="w-4 h-4 mr-2" />
             Sauvegarder les paramètres

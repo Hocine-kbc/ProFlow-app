@@ -1,0 +1,672 @@
+import React, { useState } from 'react';
+import { Plus, Edit2, Trash2, Clock, Calendar, Euro, Eye, FileText } from 'lucide-react';
+import { useApp } from '../contexts/AppContext';
+import { createService, updateService as updateServiceApi, deleteService as deleteServiceApi } from '../lib/api';
+import { Service, Client } from '../types';
+
+export default function ServicesPage() {
+  const { state, dispatch } = useApp();
+  const { services, clients } = state;
+  const [showModal, setShowModal] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<{ client: Client; items: Service[] } | null>(null);
+  const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'hours' | 'amount'>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [formData, setFormData] = useState({
+    client_id: '',
+    date: '',
+    hours: 0,
+    hourly_rate: 25,
+    description: '',
+    status: 'pending' as 'pending' | 'completed' | 'invoiced',
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const client = clients.find(c => c.id === formData.client_id);
+    
+    try {
+      if (editingService) {
+        const saved = await updateServiceApi(editingService.id, { ...formData });
+        dispatch({ type: 'UPDATE_SERVICE', payload: { ...saved, client } as Service });
+      } else {
+        const saved = await createService({ ...formData } as any);
+        dispatch({ type: 'ADD_SERVICE', payload: { ...saved, client } as Service });
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert('Erreur lors de la sauvegarde de la prestation');
+    }
+    
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setFormData({
+      client_id: '',
+      date: '',
+      hours: 0,
+      hourly_rate: 25,
+      description: '',
+      status: 'pending',
+    });
+    setEditingService(null);
+    setShowModal(false);
+  };
+
+  const handleEdit = (service: Service) => {
+    setFormData({
+      client_id: service.client_id,
+      date: service.date,
+      hours: service.hours,
+      hourly_rate: service.hourly_rate,
+      description: service.description,
+      status: service.status,
+    });
+    setEditingService(service);
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette prestation ?')) return;
+    try {
+      await deleteServiceApi(id);
+      dispatch({ type: 'DELETE_SERVICE', payload: id });
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert('Erreur lors de la suppression');
+    }
+  };
+
+  const calculateAmount = (hours: number, rate: number) => hours * rate;
+  const calculateUrssafDeduction = (amount: number) => amount * 0.22; // 22% URSSAF
+  const calculateNetAmount = (amount: number) => amount - calculateUrssafDeduction(amount);
+
+  const exportGroupToCSV = (group: { client: Client; items: Service[] }) => {
+    const headers = ['Client', 'Date', 'Heures', 'Tarif/h', 'Montant', 'Statut'];
+    const rows = group.items
+      .slice()
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(s => [
+        group.client.name,
+        new Date(s.date).toLocaleDateString('fr-FR'),
+        String(s.hours),
+        `${s.hourly_rate}€`,
+        `${calculateAmount(s.hours, s.hourly_rate).toFixed(2)}€`,
+        s.status,
+      ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `prestations_${group.client.name.replace(/\s+/g, '_')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportGroupToPDF = (group: { client: Client; items: Service[] }) => {
+    const rows = group.items
+      .slice()
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(s => `
+        <tr>
+          <td>${new Date(s.date).toLocaleDateString('fr-FR')}</td>
+          <td style="text-align:right">${s.hours}h</td>
+          <td style="text-align:right">${s.hourly_rate.toFixed(2)}€</td>
+          <td style="text-align:right">${calculateAmount(s.hours, s.hourly_rate).toFixed(2)}€</td>
+          <td>${s.status}</td>
+        </tr>
+      `)
+      .join('');
+    const totalHours = group.items.reduce((acc, s) => acc + s.hours, 0);
+    const totalAmount = group.items.reduce((acc, s) => acc + calculateAmount(s.hours, s.hourly_rate), 0);
+    const html = `<!doctype html>
+      <html lang="fr"><head><meta charset="utf-8" />
+      <title>Prestations - ${group.client.name}</title>
+      <style>
+        @page { size: A4 portrait; margin: 16mm; }
+        body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:#111827; }
+        h1{ font-size:18px; margin:0 0 8px; }
+        .muted{ color:#6b7280; font-size:12px; }
+        table { width:100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; font-size: 12px; }
+        th { text-align:left; background:#f9fafb; color:#374151; }
+        .right{ text-align:right; }
+        .totals{ margin-top: 12px; }
+      </style></head><body>
+        <h1>Prestations – ${group.client.name}</h1>
+        <div class="muted">Total heures: ${totalHours}h · Total brut: ${totalAmount.toFixed(2)}€</div>
+        <table>
+          <thead><tr>
+            <th>Date</th><th class="right">Heures</th><th class="right">Tarif/h</th><th class="right">Montant</th><th>Statut</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <script>window.onload = () => window.print();</script>
+      </body></html>`;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Prestations</h1>
+            <p className="text-white/80 mt-1">Gérez vos prestations par client avec un aperçu clair et moderne.</p>
+          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle prestation
+          </button>
+        </div>
+      </div>
+
+      {/* Services cards by client */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <input
+            type="text"
+            placeholder="Rechercher un client..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
+          />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          >
+            <option value="name">Trier par nom</option>
+            <option value="hours">Trier par heures</option>
+            <option value="amount">Trier par montant</option>
+          </select>
+          <select
+            value={sortDir}
+            onChange={(e) => setSortDir(e.target.value as any)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          >
+            <option value="asc">Ascendant</option>
+            <option value="desc">Descendant</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {clients
+          .map(c => ({
+            client: c,
+            items: services.filter(s => s.client_id === c.id),
+          }))
+          .filter(g => g.items.length > 0)
+          .filter(g => g.client.name.toLowerCase().includes(query.toLowerCase()))
+          .sort((a, b) => {
+            const metrics = (g: { client: Client; items: Service[] }) => ({
+              name: g.client.name.toLowerCase(),
+              hours: g.items.reduce((acc, s) => acc + s.hours, 0),
+              amount: g.items.reduce((acc, s) => acc + calculateAmount(s.hours, s.hourly_rate), 0),
+            });
+            const A = metrics(a);
+            const B = metrics(b);
+            let cmp = 0;
+            if (sortBy === 'name') cmp = A.name.localeCompare(B.name);
+            if (sortBy === 'hours') cmp = A.hours - B.hours;
+            if (sortBy === 'amount') cmp = A.amount - B.amount;
+            return sortDir === 'asc' ? cmp : -cmp;
+          })
+          .map(group => {
+            const totalHours = group.items.reduce((acc, s) => acc + s.hours, 0);
+            const totalAmount = group.items.reduce((acc, s) => acc + calculateAmount(s.hours, s.hourly_rate), 0);
+            const completedServices = group.items.filter(s => s.status === 'completed').length;
+            const invoicedServices = group.items.filter(s => s.status === 'invoiced').length;
+            const pendingServices = group.items.filter(s => s.status === 'pending').length;
+            
+            return (
+              <div key={group.client.id} className="group relative bg-white rounded-3xl shadow-xl border border-gray-100 p-6 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                {/* Gradient background overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-indigo-50/30 to-purple-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                
+                {/* Top accent bar */}
+                <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+                
+                {/* Client info header */}
+                <div className="relative z-10 mb-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                        {group.client.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                          {group.client.name}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          {group.items.length} prestation{group.items.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Status indicator */}
+                    <div className="flex flex-col items-end space-y-1">
+                      {completedServices > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          ✓ {completedServices} terminée{completedServices > 1 ? 's' : ''}
+                        </span>
+                      )}
+                      {invoicedServices > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          📄 {invoicedServices} facturée{invoicedServices > 1 ? 's' : ''}
+                        </span>
+                      )}
+                      {pendingServices > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          ⏳ {pendingServices} en attente
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats grid */}
+                <div className="relative z-10 grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-4 border border-blue-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <Clock className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Heures</div>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-900">{totalHours}h</div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-4 border border-emerald-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                        <Euro className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Montant</div>
+                    </div>
+                    <div className="text-2xl font-bold text-emerald-900">{totalAmount.toFixed(2)}€</div>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="relative z-10 mb-6">
+                  <div className="flex justify-between text-xs text-gray-500 mb-2">
+                    <span>Progression</span>
+                    <span>{Math.round((completedServices + invoicedServices) / group.items.length * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${(completedServices + invoicedServices) / group.items.length * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="relative z-10 space-y-3">
+                  <button
+                    onClick={() => setSelectedGroup(group)}
+                    className="w-full inline-flex items-center justify-center px-4 py-3 rounded-2xl text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 font-medium"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Voir les prestations
+                  </button>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => exportGroupToCSV(group)}
+                      className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-xl text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400 transition-all duration-200 text-sm font-medium"
+                    >
+                      📊 CSV
+                    </button>
+                    <button
+                      onClick={() => exportGroupToPDF(group)}
+                      className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-xl text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400 transition-all duration-200 text-sm font-medium"
+                    >
+                      📄 PDF
+                    </button>
+                  </div>
+                </div>
+
+                {/* Hover effect overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl" />
+              </div>
+            );
+          })}
+      </div>
+
+      {/* Empty state */}
+      {services.length === 0 && (
+        <div className="text-center py-16">
+          <div className="relative">
+            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-100 to-indigo-100 rounded-3xl flex items-center justify-center mb-6">
+              <Clock className="w-12 h-12 text-blue-500" />
+            </div>
+            <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+              <Plus className="w-4 h-4 text-white" />
+            </div>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Aucune prestation enregistrée</h3>
+          <p className="text-gray-500 mb-8 max-w-md mx-auto">
+            Commencez par enregistrer votre première prestation pour voir vos clients et leurs statistiques.
+          </p>
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center px-6 py-3 rounded-2xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 font-medium"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Créer ma première prestation
+          </button>
+        </div>
+      )}
+
+      {/* Modal */}
+      {/* Client details modal */}
+      {selectedGroup && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-gray-200">
+            <div className="p-6 border-b bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">Prestations – {selectedGroup.client.name}</h3>
+                    <p className="text-blue-100 text-sm">{selectedGroup.items.length} prestation{selectedGroup.items.length > 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedGroup(null)}
+                  className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-6 max-h-[70vh] overflow-auto">
+              {/* Stats cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-4 border border-blue-200">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <Clock className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-sm font-medium text-blue-700 uppercase tracking-wide">Total heures</div>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-900">{selectedGroup.items.reduce((acc, s) => acc + s.hours, 0)}h</div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-4 border border-emerald-200">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                      <Euro className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-sm font-medium text-emerald-700 uppercase tracking-wide">Total brut</div>
+                  </div>
+                  <div className="text-2xl font-bold text-emerald-900">{selectedGroup.items.reduce((acc, s) => acc + calculateAmount(s.hours, s.hourly_rate), 0).toFixed(2)}€</div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-4 border border-purple-200">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-sm font-medium text-purple-700 uppercase tracking-wide">Prestations</div>
+                  </div>
+                  <div className="text-2xl font-bold text-purple-900">{selectedGroup.items.length}</div>
+                </div>
+              </div>
+              {/* Table */}
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Heures</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tarif/h</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Montant</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Statut</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      {selectedGroup.items
+                        .slice()
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .map(service => {
+                          const amount = calculateAmount(service.hours, service.hourly_rate);
+                          return (
+                            <tr key={service.id} className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-200">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900">{new Date(service.date).toLocaleDateString('fr-FR')}</div>
+                                <div className="text-xs text-gray-500">{new Date(service.date).toLocaleDateString('fr-FR', { weekday: 'long' })}</div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                                  {service.description || 'Prestation sans description'}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center space-x-2">
+                                  <Clock className="w-4 h-4 text-gray-400" />
+                                  <span className="text-sm font-medium text-gray-900">{service.hours}h</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center space-x-2">
+                                  <Euro className="w-4 h-4 text-gray-400" />
+                                  <span className="text-sm font-medium text-gray-900">{service.hourly_rate}€</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-bold text-gray-900">{amount.toFixed(2)}€</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                  service.status === 'completed'
+                                    ? 'bg-green-100 text-green-800 border border-green-200'
+                                    : service.status === 'invoiced'
+                                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                    : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                }`}>
+                                  {service.status === 'completed' ? '✓ Terminée' : service.status === 'invoiced' ? '📄 Facturée' : '⏳ En attente'}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex space-x-2">
+                                  <button 
+                                    onClick={() => { setSelectedGroup(null); handleEdit(service); }} 
+                                    className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                    title="Modifier"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleDelete(service.id)} 
+                                    className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                    title="Supprimer"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="p-6 border-t bg-gray-50 flex justify-end">
+              <button 
+                onClick={() => setSelectedGroup(null)} 
+                className="px-6 py-3 rounded-xl text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 hover:border-gray-400 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <h3 className="text-lg font-semibold">
+                {editingService ? 'Modifier la prestation' : 'Nouvelle prestation'}
+              </h3>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Client *
+                </label>
+                <select
+                  required
+                  value={formData.client_id}
+                  onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Sélectionner un client</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Heures *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    required
+                    value={formData.hours}
+                    onChange={(e) => setFormData({ ...formData, hours: parseFloat(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tarif/h (€) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={formData.hourly_rate}
+                    onChange={(e) => setFormData({ ...formData, hourly_rate: parseFloat(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Détails de la prestation..."
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Statut
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="pending">En attente</option>
+                  <option value="completed">Terminée</option>
+                  <option value="invoiced">Facturée</option>
+                </select>
+              </div>
+              
+              {/* Preview calculation */}
+              {formData.hours > 0 && formData.hourly_rate > 0 && (
+                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Montant brut:</span>
+                    <span className="font-medium">
+                      {calculateAmount(formData.hours, formData.hourly_rate).toFixed(2)}€
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-red-600">
+                    <span>Déduction URSSAF (22%):</span>
+                    <span>
+                      -{calculateUrssafDeduction(calculateAmount(formData.hours, formData.hourly_rate)).toFixed(2)}€
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm font-semibold text-green-600 border-t pt-2">
+                    <span>Montant net:</span>
+                    <span>
+                      {calculateNetAmount(calculateAmount(formData.hours, formData.hourly_rate)).toFixed(2)}€
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {editingService ? 'Modifier' : 'Ajouter'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

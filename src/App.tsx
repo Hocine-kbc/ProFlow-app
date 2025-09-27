@@ -8,6 +8,7 @@ import StatsPage from './components/StatsPage';
 import SettingsPage from './components/SettingsPage';
 import ProfilePage from './components/ProfilePage';
 import { AppProvider, useApp } from './contexts/AppContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { Client, Service, Invoice } from './types';
 import { fetchClients, fetchServices, fetchInvoices } from './lib/api';
 import AuthPage from './components/AuthPage';
@@ -104,14 +105,15 @@ function AppContent() {
         const clients = await fetchClients();
         dispatch({ type: 'SET_CLIENTS', payload: clients });
       } catch (e) {
-        // fall back to sample locally if table empty or error
-        dispatch({ type: 'SET_CLIENTS', payload: sampleClients });
+        // Pas de fallback - utiliser un tableau vide
+        dispatch({ type: 'SET_CLIENTS', payload: [] });
       }
       try {
         const services = await fetchServices();
         dispatch({ type: 'SET_SERVICES', payload: services });
       } catch (e) {
-        dispatch({ type: 'SET_SERVICES', payload: sampleServices });
+        // Pas de fallback - utiliser un tableau vide
+        dispatch({ type: 'SET_SERVICES', payload: [] });
       }
       try {
         const invoices = await fetchInvoices();
@@ -124,15 +126,13 @@ function AppContent() {
         dispatch({ type: 'SET_INVOICES', payload: [] });
       }
     })();
-    const monthlyRevenue = sampleServices
-      .filter(s => new Date(s.date).getMonth() === new Date().getMonth())
-      .reduce((acc, s) => acc + (s.hours * s.hourly_rate * 0.78), 0);
+    // Les statistiques seront calculées dynamiquement dans StatsPage
     const stats = {
-      monthly_revenue: monthlyRevenue,
-      quarterly_revenue: sampleServices.reduce((acc, s) => acc + (s.hours * s.hourly_rate * 0.78), 0),
-      annual_revenue: sampleServices.reduce((acc, s) => acc + (s.hours * s.hourly_rate * 0.78), 0),
-      total_clients: sampleClients.length,
-      total_hours: sampleServices.reduce((acc, s) => acc + s.hours, 0),
+      monthly_revenue: 0,
+      quarterly_revenue: 0,
+      annual_revenue: 0,
+      total_clients: 0,
+      total_hours: 0,
       pending_invoices: 0,
     };
     dispatch({ type: 'SET_STATS', payload: stats });
@@ -141,7 +141,7 @@ function AppContent() {
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onNavigate={setCurrentPage} />;
       case 'clients':
         return <ClientsPage />;
       case 'services':
@@ -155,7 +155,7 @@ function AppContent() {
       case 'profile':
         return <ProfilePage />;
       default:
-        return <Dashboard />;
+        return <Dashboard onNavigate={setCurrentPage} />;
     }
   };
 
@@ -172,9 +172,11 @@ function AppContent() {
 
 function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ThemeProvider>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ThemeProvider>
   );
 }
 

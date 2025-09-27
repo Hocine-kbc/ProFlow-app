@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Home, Users, Clock, FileText, BarChart3, Settings, LogOut, User } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { X, Home, Users, Clock, FileText, BarChart3, Settings, User, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,48 +8,125 @@ interface LayoutProps {
 }
 
 const menuItems = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: Home },
-  { id: 'clients', label: 'Clients', icon: Users },
-  { id: 'services', label: 'Prestations', icon: Clock },
-  { id: 'invoices', label: 'Factures', icon: FileText },
-  { id: 'stats', label: 'Statistiques', icon: BarChart3 },
-  { id: 'settings', label: 'Paramètres', icon: Settings },
-  { id: 'profile', label: 'Profil', icon: User },
+  { id: 'dashboard', label: 'Tableau de bord', icon: Home, color: 'blue' },
+  { id: 'clients', label: 'Clients', icon: Users, color: 'green' },
+  { id: 'services', label: 'Prestations', icon: Clock, color: 'orange' },
+  { id: 'invoices', label: 'Factures', icon: FileText, color: 'purple' },
+  { id: 'stats', label: 'Statistiques', icon: BarChart3, color: 'indigo' },
+  { id: 'settings', label: 'Paramètres', icon: Settings, color: 'gray' },
+  { id: 'profile', label: 'Profil', icon: User, color: 'pink' },
 ];
 
 export default function Layout({ children, currentPage, onPageChange }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Fonction pour obtenir les classes de couleur
+  const getColorClasses = (color: string) => {
+    const colorMap = {
+      blue: {
+        active: 'bg-gradient-to-r from-blue-500 to-blue-600',
+        icon: 'bg-blue-100 dark:bg-blue-900/30',
+        iconHover: 'group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30',
+        iconColor: 'text-blue-600 dark:text-blue-400'
+      },
+      green: {
+        active: 'bg-gradient-to-r from-green-500 to-green-600',
+        icon: 'bg-green-100 dark:bg-green-900/30',
+        iconHover: 'group-hover:bg-green-100 dark:group-hover:bg-green-900/30',
+        iconColor: 'text-green-600 dark:text-green-400'
+      },
+      orange: {
+        active: 'bg-gradient-to-r from-orange-500 to-orange-600',
+        icon: 'bg-orange-100 dark:bg-orange-900/30',
+        iconHover: 'group-hover:bg-orange-100 dark:group-hover:bg-orange-900/30',
+        iconColor: 'text-orange-600 dark:text-orange-400'
+      },
+      purple: {
+        active: 'bg-gradient-to-r from-purple-500 to-purple-600',
+        icon: 'bg-purple-100 dark:bg-purple-900/30',
+        iconHover: 'group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30',
+        iconColor: 'text-purple-600 dark:text-purple-400'
+      },
+      indigo: {
+        active: 'bg-gradient-to-r from-indigo-500 to-indigo-600',
+        icon: 'bg-indigo-100 dark:bg-indigo-900/30',
+        iconHover: 'group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30',
+        iconColor: 'text-indigo-600 dark:text-indigo-400'
+      },
+      gray: {
+        active: 'bg-gradient-to-r from-gray-500 to-gray-600',
+        icon: 'bg-gray-100 dark:bg-gray-700',
+        iconHover: 'group-hover:bg-gray-100 dark:group-hover:bg-gray-700',
+        iconColor: 'text-gray-600 dark:text-gray-400'
+      },
+      pink: {
+        active: 'bg-gradient-to-r from-pink-500 to-pink-600',
+        icon: 'bg-pink-100 dark:bg-pink-900/30',
+        iconHover: 'group-hover:bg-pink-100 dark:group-hover:bg-pink-900/30',
+        iconColor: 'text-pink-600 dark:text-pink-400'
+      }
+    };
+
+    return colorMap[color as keyof typeof colorMap] || colorMap.blue;
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          className="fixed top-0 left-0 right-0 bottom-0 w-full h-full z-40 bg-black bg-opacity-50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+      <div className={`fixed inset-y-0 left-0 z-50 ${sidebarCollapsed ? 'w-16' : 'w-72'} bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg transform lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center space-x-3">
-            <img src="/logo.png" alt="ProFlow Logo" className="w-8 h-8" />
-            <h1 className="text-xl font-bold text-blue-600">ProFlow</h1>
+      }`} style={{
+        transition: 'width 300ms ease-in-out, transform 300ms ease-in-out'
+      }}>
+        {/* Header avec gradient */}
+        <div className="relative h-20 p-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700">
+          <div className="flex items-center justify-between h-full">
+            {!sidebarCollapsed && (
+              <div className="flex items-center justify-center w-full h-full">
+                <img src="/ProFlowlogo.png" alt="ProFlow Logo" className="w-full h-full object-cover" />
+              </div>
+            )}
+            {sidebarCollapsed && (
+              <div className="flex items-center justify-center w-full h-full">
+                <img src="/logoPF.png" alt="ProFlow Logo" className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className="flex items-center space-x-2 absolute top-0 right-0 h-full">
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className={`h-full bg-white/20 hover:bg-white/30 text-white transition-colors hidden lg:block z-10 ${
+                  sidebarCollapsed ? 'w-4 rounded-l-lg' : 'w-8 rounded-l-lg'
+                }`}
+                title={sidebarCollapsed ? 'Agrandir le menu' : 'Réduire le menu'}
+              >
+                {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={20} />}
+              </button>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors lg:hidden z-10"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="text-gray-500 hover:text-gray-700 lg:hidden"
-          >
-            <X size={24} />
-          </button>
         </div>
         
-        <nav className="mt-6">
+        {/* Navigation moderne */}
+        <nav className={`${sidebarCollapsed ? 'p-2' : 'p-4'} space-y-2`}>
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const isActive = currentPage === item.id;
+            const colors = getColorClasses(item.color);
+            
             return (
               <button
                 key={item.id}
@@ -58,47 +134,54 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                   onPageChange(item.id);
                   setSidebarOpen(false);
                 }}
-                className={`w-full flex items-center px-6 py-3 text-left transition-colors duration-200 ${
-                  currentPage === item.id
-                    ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-3' : 'px-4 py-3'} text-left transition-all duration-200 rounded-xl group ${
+                  isActive
+                    ? `${colors.active} text-white`
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                 }`}
+                title={sidebarCollapsed ? item.label : ''}
               >
-                <Icon size={20} className="mr-3" />
-                {item.label}
+                <div className={`p-2 rounded-lg ${sidebarCollapsed ? '' : 'mr-3'} transition-colors ${
+                  isActive 
+                    ? 'bg-white/20' 
+                    : `${colors.icon} ${colors.iconHover}`
+                }`}>
+                  <Icon size={18} className={isActive ? 'text-white' : `${colors.iconColor} group-hover:${colors.iconColor.split(' ')[0]}`} />
+                </div>
+                {!sidebarCollapsed && (
+                  <>
+                    <span className="font-medium">{item.label}</span>
+                    {isActive && (
+                      <div className="ml-auto w-2 h-2 bg-white rounded-full"></div>
+                    )}
+                  </>
+                )}
               </button>
             );
           })}
-          <div className="px-6 mt-6">
-            <button
-              onClick={async () => { await supabase.auth.signOut(); }}
-              className="w-full flex items-center px-4 py-2 text-left text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
-            >
-              <LogOut size={20} className="mr-3" />
-              Se déconnecter
-            </button>
-          </div>
         </nav>
+
+        {/* Footer avec informations */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+          {!sidebarCollapsed ? (
+            <div className="text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Version 1.0.0
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                © 2024 ProFlow
+              </p>
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <div className="w-8 h-8"></div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main content */}
-      <div className="lg:ml-64">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b lg:hidden">
-          <div className="flex items-center justify-between px-6 py-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="text-gray-500 hover:text-gray-700 lg:hidden"
-            >
-              <Menu size={24} />
-            </button>
-            
-            <div className="flex items-center space-x-3">
-              <img src="/logo.png" alt="ProFlow Logo" className="w-6 h-6" />
-              <span className="text-lg font-semibold text-gray-800">ProFlow</span>
-            </div>
-          </div>
-        </header>
+      <div className={`${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'}`}>
 
         {/* Page content */}
         <main className="p-6 lg:pt-6">
