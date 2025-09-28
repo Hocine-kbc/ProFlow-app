@@ -50,37 +50,6 @@ export default function StatsPage() {
     return monthlyData;
   };
 
-  // Calculate quarterly revenue
-  const getQuarterlyRevenue = () => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const quarters = [];
-    
-    for (let q = 1; q <= 4; q++) {
-      const startMonth = (q - 1) * 3;
-      const endMonth = startMonth + 2;
-      
-      const quarterServices = services.filter(service => {
-        const serviceDate = new Date(service.date);
-        const month = serviceDate.getMonth();
-        return serviceDate.getFullYear() === currentYear &&
-               month >= startMonth && month <= endMonth;
-      });
-      
-      const revenue = quarterServices.reduce((acc, service) => 
-        acc + (service.hours * service.hourly_rate * netRate), 0
-      );
-      
-      quarters.push({
-        quarter: `Q${q} ${currentYear}`,
-        revenue: revenue,
-        hours: quarterServices.reduce((acc, service) => acc + service.hours, 0),
-        services: quarterServices.length
-      });
-    }
-    
-    return quarters;
-  };
 
 
   // Calculate annual revenue
@@ -101,7 +70,6 @@ export default function StatsPage() {
   };
 
   const monthlyData = getMonthlyRevenue();
-  const quarterlyData = getQuarterlyRevenue();
   const annualData = getAnnualRevenue();
   
   // Calculate quarterly revenue BRUT for the chart

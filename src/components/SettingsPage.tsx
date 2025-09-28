@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Save, Settings, Euro, Percent } from 'lucide-react';
-import { uploadLogo, fetchSettings as fetchSettingsApi, upsertSettings } from '../lib/api';
+import { fetchSettings as fetchSettingsApi, upsertSettings } from '../lib/api';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
@@ -17,7 +17,6 @@ export default function SettingsPage() {
     logoUrl: '',
     invoiceTerms: 'Paiement à 30 jours. Pas de TVA (franchise en base).',
   });
-  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Load saved settings on mount if present
   useEffect(() => {
@@ -61,21 +60,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleLogoUpload = async (file?: File) => {
-    if (!file) return;
-    try {
-      setUploadingLogo(true);
-      const publicUrl = await uploadLogo(file);
-      setSettings(prev => ({ ...prev, logoUrl: publicUrl }));
-      // persist immediately so preview is not lost on refresh
-      localStorage.setItem('business-settings', JSON.stringify({ ...settings, logoUrl: publicUrl }));
-    } catch (err) {
-      // eslint-disable-next-line no-alert
-      alert("Échec du téléversement du logo. Vérifiez votre connexion et vos droits de stockage Supabase (bucket 'logos').");
-    } finally {
-      setUploadingLogo(false);
-    }
-  };
 
   const handleInputChange = (key: string, value: string | number) => {
     setSettings(prev => ({
