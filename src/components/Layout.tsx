@@ -85,7 +85,8 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       <div className={`fixed inset-y-0 left-0 z-50 ${sidebarCollapsed ? 'w-16' : 'w-72'} bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg transform lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`} style={{
-        transition: 'width 300ms ease-in-out, transform 300ms ease-in-out'
+        transition: 'width 300ms ease-in-out, transform 300ms ease-in-out',
+        zIndex: 50
       }}>
         {/* Header avec gradient */}
         <div className="relative h-20 p-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700">
@@ -121,63 +122,56 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         </div>
         
         {/* Navigation moderne */}
-        <nav className={`${sidebarCollapsed ? 'p-2' : 'p-4'} space-y-2`}>
+        <nav className="p-4 space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
             const colors = getColorClasses(item.color);
             
             return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onPageChange(item.id);
-                  setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-3' : 'px-4 py-3'} text-left transition-all duration-200 rounded-xl group ${
-                  isActive
-                    ? `${colors.active} text-white`
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
-                }`}
-                title={sidebarCollapsed ? item.label : ''}
-              >
-                <div className={`p-2 rounded-lg ${sidebarCollapsed ? '' : 'mr-3'} transition-colors ${
-                  isActive 
-                    ? 'bg-white/20' 
-                    : `${colors.icon} ${colors.iconHover}`
-                }`}>
-                  <Icon size={18} className={isActive ? 'text-white' : `${colors.iconColor} group-hover:${colors.iconColor.split(' ')[0]}`} />
-                </div>
-                {!sidebarCollapsed && (
-                  <>
-                    <span className="font-medium">{item.label}</span>
-                    {isActive && (
-                      <div className="ml-auto w-2 h-2 bg-white rounded-full"></div>
-                    )}
-                  </>
-                )}
-              </button>
+              <div key={item.id} className={`${sidebarCollapsed ? 'flex justify-center' : ''}`}>
+                <button
+                  onClick={() => {
+                    onPageChange(item.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`${sidebarCollapsed ? 'w-12' : 'w-full'} flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-1.5'} text-left rounded-xl group relative ${
+                    isActive
+                      ? `${colors.active} text-white`
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                  style={{ height: '54px', minHeight: '54px' }}
+                  title={sidebarCollapsed ? item.label : ''}
+                >
+                  <div className={`rounded-lg ${
+                    isActive 
+                      ? 'bg-white/20' 
+                      : `${colors.icon} ${colors.iconHover}`
+                  }`} style={{ 
+                    minWidth: '42px', 
+                    minHeight: '42px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    marginRight: sidebarCollapsed ? '0' : '8px',
+                    padding: '8px'
+                  }}>
+                    <Icon size={18} className={isActive ? 'text-white' : `${colors.iconColor} group-hover:${colors.iconColor.split(' ')[0]}`} />
+                  </div>
+                  {!sidebarCollapsed && (
+                    <div className="flex-1">
+                      <span className="font-medium whitespace-nowrap">{item.label}</span>
+                      {isActive && (
+                        <div className="absolute top-1/2 right-4 transform -translate-y-1/2 w-2 h-2 bg-white rounded-full"></div>
+                      )}
+                    </div>
+                  )}
+                </button>
+              </div>
             );
           })}
         </nav>
 
-        {/* Footer avec informations */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-          {!sidebarCollapsed ? (
-            <div className="text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Version 1.0.0
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                © 2024 ProFlow
-              </p>
-            </div>
-          ) : (
-            <div className="flex justify-center">
-              <div className="w-8 h-8"></div>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Main content */}

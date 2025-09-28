@@ -2,38 +2,97 @@ import { supabase } from './supabase';
 import { Client, Service, Invoice, Settings } from '../types';
 
 export async function fetchClients(): Promise<Client[]> {
-  const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data || []) as Client[];
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching clients:', error);
+      // If table doesn't exist, return empty array
+      if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
+        console.log('Clients table does not exist, returning empty array');
+        return [];
+      }
+      throw error;
+    }
+    
+    return (data || []) as Client[];
+  } catch (error) {
+    console.error('Failed to fetch clients:', error);
+    // Return empty array if there's any error
+    return [];
+  }
 }
 
 export async function createClient(payload: Omit<Client, 'id' | 'created_at' | 'updated_at'>): Promise<Client> {
-  const now = new Date().toISOString();
-  const toInsert = { ...payload, created_at: now, updated_at: now } as any;
-  const { data, error } = await supabase
-    .from('clients')
-    .insert(toInsert)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return data as Client;
+  try {
+    const now = new Date().toISOString();
+    const toInsert = { ...payload, created_at: now, updated_at: now } as any;
+    const { data, error } = await supabase
+      .from('clients')
+      .insert(toInsert)
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('Error creating client:', error);
+      throw error;
+    }
+    
+    return data as Client;
+  } catch (error) {
+    console.error('Failed to create client:', error);
+    throw error;
+  }
 }
 
 export async function updateClient(id: string, payload: Partial<Client>): Promise<Client> {
-  const { data, error } = await supabase
-    .from('clients')
-    .update({ ...payload, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return data as Client;
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .update({ ...payload, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('Error updating client:', error);
+      throw error;
+    }
+    
+    return data as Client;
+  } catch (error) {
+    console.error('Failed to update client:', error);
+    throw error;
+  }
 }
 
 export async function deleteClient(id: string): Promise<void> {
+  // Vérifier s'il y a des factures associées
+  const { data: invoices } = await supabase
+    .from('invoices')
+    .select('id')
+    .eq('client_id', id);
+  
+  // Si des factures existent, on ne supprime pas le client
+  if (invoices && invoices.length > 0) {
+    throw new Error(`Impossible de supprimer ce client car il a ${invoices.length} facture(s) associée(s). Supprimez d'abord les factures.`);
+  }
+  
+  // Supprimer d'abord toutes les prestations associées au client
+  const { error: servicesError } = await supabase
+    .from('services')
+    .delete()
+    .eq('client_id', id);
+  
+  if (servicesError) {
+    console.error('Error deleting services:', servicesError);
+    throw new Error('Erreur lors de la suppression des prestations associées');
+  }
+  
+  // Puis supprimer le client
   const { error } = await supabase.from('clients').delete().eq('id', id);
   if (error) throw error;
 }
