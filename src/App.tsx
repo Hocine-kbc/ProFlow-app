@@ -118,10 +118,7 @@ function AppContent() {
       try {
         const invoices = await fetchInvoices();
         dispatch({ type: 'SET_INVOICES', payload: invoices });
-        console.log('Invoices loaded successfully:', invoices.length, 'invoices');
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('Erreur fetchInvoices', e);
         // Initialiser avec un tableau vide si la requête échoue
         dispatch({ type: 'SET_INVOICES', payload: [] });
       }

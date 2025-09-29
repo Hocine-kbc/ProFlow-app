@@ -9,10 +9,8 @@ export async function fetchClients(): Promise<Client[]> {
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('Error fetching clients:', error);
       // If table doesn't exist, return empty array
       if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
-        console.log('Clients table does not exist, returning empty array');
         return [];
       }
       throw error;
@@ -20,7 +18,6 @@ export async function fetchClients(): Promise<Client[]> {
     
     return (data || []) as Client[];
   } catch (error) {
-    console.error('Failed to fetch clients:', error);
     // Return empty array if there's any error
     return [];
   }
@@ -145,10 +142,8 @@ export async function fetchInvoices(): Promise<Invoice[]> {
       .order('date', { ascending: false });
     
     if (error) {
-      console.error('Error fetching invoices:', error);
       // If table doesn't exist, return empty array
       if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
-        console.log('Invoices table does not exist, returning empty array');
         return [];
       }
       throw error;
@@ -163,7 +158,7 @@ export async function fetchInvoices(): Promise<Invoice[]> {
           const paymentMethods = JSON.parse(localStorage.getItem('invoice-payment-methods') || '{}');
           paymentMethod = paymentMethods[invoice.id] || null;
         } catch (e) {
-          console.warn('Could not retrieve payment method from localStorage:', e);
+          // Gestion silencieuse des erreurs
         }
       }
       
@@ -178,10 +173,8 @@ export async function fetchInvoices(): Promise<Invoice[]> {
       };
     });
     
-    console.log('Fetched invoices:', invoices);
     return invoices as Invoice[];
   } catch (error) {
-    console.error('Failed to fetch invoices:', error);
     // Return empty array if there's any error
     return [];
   }

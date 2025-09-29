@@ -11,7 +11,36 @@ interface DashboardProps {
 
 export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   const { state } = useApp();
-  const { stats, services, clients, invoices } = state;
+  const { services, clients, invoices } = state;
+  
+  // Calculer les statistiques en temps réel à partir des données du contexte
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  // CA mensuel basé sur les services
+  const monthlyRevenue = services
+    .filter(service => {
+      const serviceDate = new Date(service.date);
+      return serviceDate.getMonth() === currentMonth && 
+             serviceDate.getFullYear() === currentYear;
+    })
+    .reduce((sum, service) => sum + (service.hours * service.hourly_rate), 0);
+  
+  // Heures du mois
+  const currentMonthHours = services
+    .filter(service => {
+      const serviceDate = new Date(service.date);
+      return serviceDate.getMonth() === currentMonth && 
+             serviceDate.getFullYear() === currentYear;
+    })
+    .reduce((sum, service) => sum + service.hours, 0);
+  
+  // Total des heures
+  const totalHours = services.reduce((sum, service) => sum + service.hours, 0);
+  
+  // Factures en attente
+  const pendingInvoices = invoices.filter(inv => inv.status === 'sent');
   const { isDark, toggleTheme } = useTheme();
   
   // État pour le filtre d'année
@@ -41,7 +70,6 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   };
   
   const recentServices = services.slice(0, 5);
-  const pendingInvoices = invoices.filter(inv => inv.status === 'sent');
   
   // Années disponibles (basées sur les données existantes)
   const availableYears = Array.from(new Set([
@@ -74,7 +102,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   const totalInvoices = Math.max(1, invoices.length);
 
   // Données pour le graphique des heures par mois
-  const monthlyHours = months.map((m) => {
+  const monthlyHoursData = months.map((m) => {
     const total = services
       .filter(s => {
         const d = new Date(s.date);
@@ -83,7 +111,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
       .reduce((acc, s) => acc + s.hours, 0);
     return { label: m.toLocaleDateString('fr-FR', { month: 'short' }), total };
   });
-  const maxHours = Math.max(1, ...monthlyHours.map(m => m.total));
+  const maxHours = Math.max(1, ...monthlyHoursData.map(m => m.total));
 
 
   // Top clients par chiffre d'affaires
@@ -191,7 +219,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">CA Mensuel</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats.monthly_revenue.toFixed(2)}€
+                {monthlyRevenue.toFixed(2)}€
               </p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
@@ -229,11 +257,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Heures ce mois</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {services.filter(s => {
-                  const thisMonth = new Date();
-                  thisMonth.setDate(1);
-                  return new Date(s.date) >= thisMonth;
-                }).reduce((acc, s) => acc + s.hours, 0)}h
+                {currentMonthHours}h
               </p>
             </div>
             <div className="p-3 bg-purple-100 rounded-full">
@@ -241,7 +265,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
             </div>
           </div>
           <div className="mt-4 flex items-center text-sm">
-            <span className="text-gray-500 dark:text-gray-300">Total: {stats.total_hours}h</span>
+            <span className="text-gray-500 dark:text-gray-300">Total: {totalHours}h</span>
           </div>
         </div>
 
@@ -360,7 +384,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
           <div className="p-6">
             <div className="flex items-end justify-between gap-2 h-40 px-2">
-              {monthlyHours.map((m, idx) => (
+              {monthlyHoursData.map((m, idx) => (
                 <div key={idx} className="flex flex-col items-center group flex-1">
                   <div className="relative w-full flex flex-col items-center">
                     <div className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
@@ -380,8 +404,8 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
             </div>
             <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
               <div className="flex justify-between text-xs text-gray-500 dark:text-gray-300">
-                <span>Total: {monthlyHours.reduce((acc, m) => acc + m.total, 0)}h</span>
-                <span>Moyenne: {(monthlyHours.reduce((acc, m) => acc + m.total, 0) / 12).toFixed(1)}h/mois</span>
+                <span>Total: {monthlyHoursData.reduce((acc, m) => acc + m.total, 0)}h</span>
+                <span>Moyenne: {(monthlyHoursData.reduce((acc, m) => acc + m.total, 0) / 12).toFixed(1)}h/mois</span>
               </div>
             </div>
           </div>
