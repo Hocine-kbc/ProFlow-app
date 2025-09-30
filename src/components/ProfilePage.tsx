@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Building2, User, Mail, Phone, MapPin, Hash, Upload } from 'lucide-react';
+import { Save, Building2, User, Mail, Phone, MapPin, Hash, Upload, Trash2, Edit3 } from 'lucide-react';
 import { uploadLogo, fetchSettings as fetchSettingsApi, upsertSettings } from '../lib/api';
+import { useApp } from '../contexts/AppContext';
 
 export default function ProfilePage() {
+  const { showNotification } = useApp();
   const [settings, setSettings] = useState({
     companyName: '',
     ownerFirstName: '',
@@ -71,6 +73,39 @@ export default function ProfilePage() {
     }
   };
 
+  const handleLogoDelete = async () => {
+    if (!settings.logoUrl) return;
+    
+    try {
+      const next = { ...settings, logoUrl: '' };
+      setSettings(next);
+      localStorage.setItem('business-settings', JSON.stringify(next));
+      
+      // Optionnel : supprimer le fichier du bucket Supabase
+      // await deleteLogo(settings.logoUrl);
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert("Erreur lors de la suppression du logo.");
+    }
+  };
+
+  const handleLogoEdit = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleLogoUpload(file);
+      }
+    };
+    input.click();
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -82,8 +117,9 @@ export default function ProfilePage() {
       
       const saved = await upsertSettings(settingsToSave as any);
       localStorage.setItem('business-settings', JSON.stringify(saved));
-      // eslint-disable-next-line no-alert
-      alert('Profil entreprise sauvegardé');
+      
+      // Afficher la notification de succès
+      showNotification('success', 'Profil sauvegardé', 'Vos informations ont été mises à jour avec succès');
     } catch (err) {
       // Combiner le prénom et le nom pour le localStorage
       const settingsToSave = {
@@ -91,8 +127,9 @@ export default function ProfilePage() {
         ownerName: `${settings.ownerFirstName} ${settings.ownerLastName}`.trim()
       };
       localStorage.setItem('business-settings', JSON.stringify(settingsToSave));
-      // eslint-disable-next-line no-alert
-      alert('Sauvegardé en local (erreur Supabase)');
+      
+      // Afficher la notification d'avertissement
+      showNotification('warning', 'Sauvegarde locale', 'Profil sauvegardé en local (erreur de connexion)');
     }
   };
 
@@ -121,48 +158,81 @@ export default function ProfilePage() {
             <h1 className="text-2xl font-bold">Profil entreprise</h1>
             <p className="text-white/80 mt-1">Informations légales et données entreprise</p>
           </div>
+          <div className="mt-4 sm:mt-0">
+            <button 
+              type="submit" 
+              form="profile-form"
+              className="inline-flex items-center px-6 py-3 rounded-full text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+            >
+              <Save className="w-5 h-5 mr-2" />
+              Sauvegarder
+            </button>
+          </div>
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
+      <form id="profile-form" onSubmit={handleSave} className="space-y-6">
         {/* Company Logo Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-          <div className="flex items-center space-x-6">
-            <div className="flex-shrink-0">
-              <div className="relative w-32 h-32 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center ring-4 ring-indigo-200 dark:ring-indigo-700">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            {/* Logo et informations */}
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              {/* Logo */}
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 flex-shrink-0">
                 {settings.logoUrl ? (
                   <img src={settings.logoUrl} alt="Logo entreprise" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="text-center">
-                    <img src="/ProFlowlogo.png" alt="ProFlow Logo" className="w-16 h-16 mx-auto mb-2" />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">ProFlow</p>
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                )}
+              </div>
+
+              {/* Informations */}
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">Logo de l'entreprise</h3>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
+                  {settings.logoUrl ? "Logo personnalisé actif" : "Aucun logo personnalisé"}
+                </p>
+                {uploadingLogo && (
+                  <div className="flex items-center text-blue-600 dark:text-blue-400 text-xs mt-1">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 dark:border-blue-400 mr-2"></div>
+                    Téléchargement...
                   </div>
                 )}
-                <label className="absolute bottom-2 right-2 bg-indigo-600 dark:bg-indigo-700 text-white p-2 rounded-full cursor-pointer shadow-lg hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-colors">
-                  <Upload className="w-4 h-4" />
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={(e) => handleLogoUpload(e.target.files?.[0] || undefined)} 
-                    disabled={uploadingLogo} 
-                  />
-                </label>
               </div>
             </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Logo de l'entreprise</h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                {settings.logoUrl 
-                  ? "Votre logo personnalisé sera utilisé sur les factures et documents."
-                  : "Le logo ProFlow par défaut est utilisé. Téléchargez votre propre logo."
-                }
-              </p>
-              {uploadingLogo && (
-                <div className="flex items-center text-sm text-indigo-600 dark:text-indigo-400">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 dark:border-indigo-400 mr-2"></div>
-                  Téléchargement en cours...
-                </div>
+
+            {/* Actions */}
+            <div className="flex flex-wrap gap-2 sm:gap-2">
+              {settings.logoUrl ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleLogoEdit}
+                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full transition-all duration-200 font-medium text-xs sm:text-sm opacity-70 hover:opacity-100"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span className="hidden sm:inline">Modifier</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogoDelete}
+                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 hover:bg-red-50 dark:bg-gray-700 dark:hover:bg-red-900/20 text-gray-600 hover:text-red-600 dark:text-gray-300 dark:hover:text-red-400 rounded-full transition-all duration-200 font-medium text-xs sm:text-sm opacity-70 hover:opacity-100"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span className="hidden sm:inline">Supprimer</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleLogoEdit}
+                  className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-1 sm:py-1.5 bg-gray-100 hover:bg-indigo-50 dark:bg-gray-700 dark:hover:bg-indigo-900/20 text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 rounded-full transition-all duration-200 font-medium text-xs sm:text-sm opacity-70 hover:opacity-100"
+                >
+                  <Upload className="w-3 h-3" />
+                  <span className="hidden sm:inline">Ajouter</span>
+                </button>
               )}
             </div>
           </div>
@@ -298,16 +368,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <button 
-            type="submit" 
-            className="inline-flex items-center px-8 py-4 rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-700 dark:to-purple-700 hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-800 dark:hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 border border-indigo-500 dark:border-indigo-600"
-          >
-            <Save className="w-5 h-5 mr-2" />
-            Sauvegarder les modifications
-          </button>
-        </div>
       </form>
     </div>
   );

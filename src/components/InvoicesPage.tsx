@@ -6,10 +6,9 @@ import { sendInvoiceEmail, EmailData } from '../lib/emailService';
 import { createInvoice, updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi } from '../lib/api';
 import { Invoice } from '../types';
 import AlertModal from './AlertModal';
-import Notification from './Notification';
 
 export default function InvoicesPage() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, showNotification } = useApp();
   const { invoices, clients, services } = state;
   
   // Debug: Log the current state
@@ -38,17 +37,6 @@ export default function InvoicesPage() {
     message: '',
     type: 'warning',
     onConfirm: () => {}
-  });
-  const [notification, setNotification] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    type: 'success' | 'error' | 'warning' | 'info';
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    type: 'success'
   });
   const [emailData, setEmailData] = useState({
     to: '',
@@ -137,6 +125,7 @@ export default function InvoicesPage() {
           status: 'draft',
         } as any);
         dispatch({ type: 'UPDATE_INVOICE', payload: { ...editingInvoice, ...saved, client, services: invoiceServices } as Invoice });
+        showNotification('success', 'Facture modifiée', 'La facture a été mise à jour avec succès');
       } else {
         const saved = await createInvoice({
           client_id: formData.client_id,
@@ -158,11 +147,12 @@ export default function InvoicesPage() {
             payload: { ...service, status: 'invoiced', updated_at: new Date().toISOString() }
           });
         });
+        showNotification('success', 'Facture créée', 'La facture a été créée avec succès');
       }
     } catch (err) {
       console.error('Error in handleSubmit:', err);
       // eslint-disable-next-line no-alert
-      alert(editingInvoice ? 'Erreur lors de la modification de la facture' : 'Erreur lors de la création de la facture');
+      showNotification('error', 'Erreur', editingInvoice ? 'Erreur lors de la modification de la facture' : 'Erreur lors de la création de la facture');
       return;
     }
     
@@ -242,7 +232,7 @@ export default function InvoicesPage() {
         });
       } catch (err) {
         // eslint-disable-next-line no-alert
-        alert("Erreur lors de la mise à jour de la facture");
+        showNotification('error', 'Erreur', 'Erreur lors de la mise à jour de la facture');
       }
     }
   };
@@ -273,20 +263,10 @@ export default function InvoicesPage() {
           // Update local state
           dispatch({ type: 'DELETE_INVOICE', payload: id });
           
-          setNotification({
-            isOpen: true,
-            title: 'Facture supprimée',
-            message: 'La facture a été supprimée avec succès.',
-            type: 'success'
-          });
+          showNotification('success', 'Facture supprimée', 'La facture a été supprimée avec succès');
         } catch (err) {
           console.error('Error deleting invoice:', err);
-          setNotification({
-            isOpen: true,
-            title: 'Erreur',
-            message: 'Une erreur est survenue lors de la suppression de la facture.',
-            type: 'error'
-          });
+          showNotification('error', 'Erreur', 'Une erreur est survenue lors de la suppression de la facture');
         } finally {
           setDeletingInvoice(null);
         }
@@ -348,30 +328,15 @@ export default function InvoicesPage() {
           console.error('Error updating invoice status:', error);
         }
 
-        setNotification({
-          isOpen: true,
-          title: 'Email envoyé',
-          message: 'La facture a été envoyée avec succès !',
-          type: 'success'
-        });
+        showNotification('success', 'Email envoyé', 'La facture a été envoyée avec succès !');
         setEmailModal(null);
         setEmailData({ to: '', subject: '', message: '' });
       } else {
-        setNotification({
-          isOpen: true,
-          title: 'Erreur d\'envoi',
-          message: 'Erreur lors de l\'envoi de l\'email. Vérifiez que le backend est démarré.',
-          type: 'error'
-        });
+        showNotification('error', 'Erreur d\'envoi', 'Erreur lors de l\'envoi de l\'email. Vérifiez que le backend est démarré.');
       }
     } catch (error) {
       console.error('Error sending email:', error);
-      setNotification({
-        isOpen: true,
-        title: 'Erreur d\'envoi',
-        message: 'Une erreur est survenue lors de l\'envoi de l\'email.',
-        type: 'error'
-      });
+      showNotification('error', 'Erreur d\'envoi', 'Une erreur est survenue lors de l\'envoi de l\'email.');
     } finally {
       setSendingEmail(false);
     }
@@ -400,7 +365,7 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="relative rounded-2xl p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -418,17 +383,18 @@ export default function InvoicesPage() {
         </div>
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Factures</h1>
-            <p className="text-white/80 mt-1">Émission et suivi de vos factures clients</p>
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold">Factures</h1>
+            <p className="text-sm sm:text-base text-white/80 mt-1">Émission et suivi de vos factures clients</p>
           </div>
-          <div className="mt-4 sm:mt-0 flex space-x-2">
+          <div className="mt-4 sm:mt-0 flex justify-end">
             <button
               onClick={() => setShowModal(true)}
-              className="inline-flex items-center px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20"
+              className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Nouvelle facture
+              <span className="hidden sm:inline">Nouvelle facture</span>
+              <span className="sm:hidden">Nouvelle</span>
             </button>
           </div>
         </div>
@@ -453,23 +419,142 @@ export default function InvoicesPage() {
       {/* Mini chart */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">CA mensuel (6 derniers mois)</h3>
-        <div className="flex items-end gap-3 h-24">
-          {monthlyTotals.map((m, idx) => (
-            <div key={idx} className="flex flex-col items-center flex-1">
-              <div
-                className="w-full rounded-t bg-gradient-to-t from-blue-500 to-indigo-500"
-                style={{ height: `${(m.total / maxBar) * 100}%` }}
-                title={`${m.total.toFixed(2)}€`}
-              />
-              <span className="mt-1 text-xs text-gray-600">{m.label}</span>
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <div className="flex items-end gap-1 sm:gap-3 h-20 sm:h-24 min-w-[320px]">
+            {monthlyTotals.map((m, idx) => (
+              <div key={idx} className="flex flex-col items-center flex-1 min-w-[40px]">
+                <div
+                  className="w-full rounded-t bg-gradient-to-t from-blue-500 to-indigo-500"
+                  style={{ height: `${(m.total / maxBar) * 100}%` }}
+                  title={`${m.total.toFixed(2)}€`}
+                />
+                <span className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                  {m.label}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Invoices table */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Vue mobile - Cards */}
+        <div className="block sm:hidden">
+          {invoices.length === 0 ? (
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+              <div className="flex flex-col items-center space-y-2">
+                <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+                <p className="text-lg font-medium">Aucune facture trouvée</p>
+                <p className="text-sm">Créez votre première facture en cliquant sur le bouton "Nouvelle"</p>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200 dark:divide-gray-600">
+              {invoices.map((invoice) => (
+                <div key={invoice.id} className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        {invoice.invoice_number}
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {invoice.client?.name || clients.find(c => c.id === invoice.client_id)?.name || 'Client inconnu'}
+                      </p>
+                    </div>
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                      invoice.status === 'paid' 
+                        ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                        : invoice.status === 'sent'
+                        ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                    }`}>
+                      {invoice.status === 'paid' ? 'Payée' : 
+                       invoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Date</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {new Date(invoice.date).toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Montant HT</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {invoice.subtotal.toFixed(2)}€
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Montant Net</p>
+                      <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                        {invoice.net_amount.toFixed(2)}€
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => setPreviewInvoice(invoice)}
+                        className="p-2 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                        title="Aperçu"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      {invoice.status === 'draft' && (
+                        <button
+                          onClick={() => openEdit(invoice)}
+                          className="p-2 rounded-full text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                          title="Modifier"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {invoice.status === 'draft' && (
+                        <button
+                          onClick={() => setEmailModal(invoice)}
+                          className="p-2 rounded-full text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                          title="Envoyer"
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                      )}
+                      {invoice.status === 'sent' && (
+                        <button
+                          onClick={() => updateInvoiceStatus(invoice.id, 'paid')}
+                          className="p-2 rounded-full text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                          title="Marquer payée"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => openInvoicePrintWindow(invoice, clients, services)}
+                        className="p-2 rounded-full text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                        title="PDF"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(invoice.id)}
+                        className="p-2 rounded-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Vue desktop - Table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
@@ -609,18 +694,28 @@ export default function InvoicesPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                    <FileText className="w-5 h-5" />
+            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 sm:p-6 text-white relative overflow-hidden">
+              {/* Decorative lines - consistent with other page headers */}
+              <div className="absolute inset-0 opacity-20">
+                {/* Traits horizontaux qui traversent */}
+                <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
+                <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
+                <div className="absolute top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
+                <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
+                <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
+              </div>
+              
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold">{editingInvoice ? 'Modifier la facture' : 'Nouvelle facture'}</h3>
-                    <p className="text-white/80 text-sm">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg sm:text-xl font-bold truncate">{editingInvoice ? 'Modifier la facture' : 'Nouvelle facture'}</h3>
+                    <p className="text-white/80 text-xs sm:text-sm hidden sm:block">
                       {editingInvoice ? 'Mettez à jour les informations de la facture' : 'Créez une nouvelle facture pour votre client'}
                     </p>
                   </div>
@@ -639,18 +734,18 @@ export default function InvoicesPage() {
             
             {/* Scrollable content */}
             <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
-              <form onSubmit={handleSubmit} className="p-6 space-y-8">
+              <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6 sm:space-y-8">
                 {/* Client and Invoice Number Section */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-4 h-4 text-blue-600 dark:text-blue-400 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 sm:p-6">
+                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 dark:bg-blue-900/30 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
                     Informations générales
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Client *
@@ -857,12 +952,12 @@ export default function InvoicesPage() {
             </div>
             
             {/* Footer with buttons */}
-            <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
-              <div className="flex space-x-4">
+            <div className="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="flex-1 px-6 py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium"
+                  className="flex-1 px-4 sm:px-6 py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium text-sm sm:text-base"
                 >
                   Annuler
                 </button>
@@ -870,9 +965,10 @@ export default function InvoicesPage() {
                   type="submit"
                   onClick={handleSubmit}
                   disabled={selectedServices.length === 0}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-700 dark:to-indigo-700 dark:hover:from-blue-800 dark:hover:to-indigo-800 text-white rounded-xl border border-blue-500 dark:border-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+                  className="flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-700 dark:to-indigo-700 dark:hover:from-blue-800 dark:hover:to-indigo-800 text-white rounded-full border border-blue-500 dark:border-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
                 >
-                  {editingInvoice ? 'Mettre à jour la facture' : 'Créer la facture'}
+                  <span className="hidden sm:inline">{editingInvoice ? 'Mettre à jour la facture' : 'Créer la facture'}</span>
+                  <span className="sm:hidden">{editingInvoice ? 'Mettre à jour' : 'Créer'}</span>
                 </button>
               </div>
             </div>
@@ -882,36 +978,62 @@ export default function InvoicesPage() {
 
       {/* Invoice Preview Modal */}
       {previewInvoice && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-xs sm:max-w-2xl lg:max-w-4xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all">
             {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                    <Eye className="w-5 h-5" />
+            <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-4 sm:p-6 text-white relative overflow-hidden">
+              {/* Decorative lines - consistent with other page headers */}
+              <div className="absolute inset-0 opacity-20">
+                {/* Traits horizontaux qui traversent */}
+                <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
+                <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
+                <div className="absolute top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
+                <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
+                <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
+              </div>
+              
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold">Aperçu de la facture</h3>
-                    <p className="text-white/80 text-sm">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg sm:text-xl font-bold truncate">Aperçu de la facture</h3>
+                    <p className="text-white/80 text-xs sm:text-sm truncate">
                       Facture N° {previewInvoice.invoice_number} • {new Date(previewInvoice.date).toLocaleDateString('fr-FR')}
                     </p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        previewInvoice.status === 'paid' 
+                          ? 'bg-green-100 text-green-800'
+                          : previewInvoice.status === 'sent'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {previewInvoice.status === 'paid' ? 'Payée' : 
+                         previewInvoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
+                      </span>
+                      <span className="text-white/60 text-xs">
+                        {previewInvoice.net_amount.toFixed(2)}€
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex space-x-3">
+                <div className="flex space-x-1 sm:space-x-2">
                   <button
                     onClick={() => openInvoicePrintWindow(previewInvoice, clients, services)}
-                    className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors flex items-center space-x-2 font-medium"
+                    className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 flex items-center space-x-1 sm:space-x-2 font-medium hover:scale-105 hover:shadow-lg text-sm"
                   >
-                    <Download className="w-4 h-4" />
-                    <span>Télécharger PDF</span>
+                    <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Télécharger PDF</span>
+                    <span className="sm:hidden">PDF</span>
                   </button>
                   <button
                     onClick={() => setPreviewInvoice(null)}
-                    className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+                    className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200 hover:scale-110"
                     title="Fermer"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -920,31 +1042,29 @@ export default function InvoicesPage() {
             </div>
             
             {/* Scrollable content */}
-            <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
-              <div className="p-6">
+            <div className="overflow-y-auto max-h-[calc(95vh-200px)] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+              <div className="p-4 sm:p-8">
                 {/* Invoice Content */}
-                <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-2xl p-8 max-w-5xl mx-auto shadow-lg">
+                <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-3xl p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto shadow-2xl hover:shadow-3xl transition-all duration-300">
                   {/* Header */}
-                  <div className="flex justify-between items-start mb-8 pb-6 border-b border-gray-200">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-                        {(() => {
-                          // Get business settings from localStorage
-                          let settings: any = null;
-                          try {
-                            const raw = localStorage.getItem('business-settings');
-                            settings = raw ? JSON.parse(raw) : null;
-                          } catch {}
-                          
-                          return settings?.logoUrl ? (
-                            <img src={settings.logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
-                          ) : (
-                            <img src="/ProFlowlogo.png" alt="Logo" className="w-8 h-8" />
-                          );
-                        })()}
-                      </div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-8 sm:mb-12 pb-6 sm:pb-8 border-b-2 border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-0">
+                    <div className="flex items-center space-x-3 sm:space-x-6">
+                      {(() => {
+                        // Get business settings from localStorage
+                        let settings: any = null;
+                        try {
+                          const raw = localStorage.getItem('business-settings');
+                          settings = raw ? JSON.parse(raw) : null;
+                        } catch {}
+                        
+                        return settings?.logoUrl ? (
+                          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                            <img src={settings.logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
+                          </div>
+                        ) : null;
+                      })()}
                       <div>
-                        <h1 className="text-3xl font-bold text-gray-900">
+                        <h1 className="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
                           {(() => {
                             let settings: any = null;
                             try {
@@ -954,7 +1074,7 @@ export default function InvoicesPage() {
                             return settings?.companyName || 'ProFlow';
                           })()}
                         </h1>
-                        <p className="text-gray-600 font-medium">
+                        <p className="text-gray-600 dark:text-gray-400 font-medium text-lg">
                           {(() => {
                             let settings: any = null;
                             try {
@@ -964,7 +1084,7 @@ export default function InvoicesPage() {
                             return settings?.ownerName || 'Votre flux professionnel simplifié';
                           })()}
                         </p>
-                        <div className="mt-2 text-sm text-gray-500">
+                        <div className="mt-3 text-base text-gray-500 dark:text-gray-400 leading-relaxed">
                           {(() => {
                             let settings: any = null;
                             try {
@@ -984,7 +1104,7 @@ export default function InvoicesPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl">
+                      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                         <h2 className="text-2xl font-bold">FACTURE</h2>
                         <p className="text-blue-100 font-semibold">N° {previewInvoice.invoice_number}</p>
                       </div>
@@ -992,10 +1112,10 @@ export default function InvoicesPage() {
                   </div>
 
                   {/* Client Info */}
-                  <div className="mb-8">
+                  <div className="mb-12">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
-                        <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-8 border border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                        <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-6 flex items-center">
                           <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
                             <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -1003,17 +1123,17 @@ export default function InvoicesPage() {
                           </div>
                           Facturé à
                         </h3>
-                        <div className="text-gray-900 space-y-2">
-                          <p className="text-lg font-bold text-gray-900">
+                        <div className="text-gray-900 dark:text-white space-y-2">
+                          <p className="text-lg font-bold text-gray-900 dark:text-white">
                             {previewInvoice.client?.name || clients.find(c => c.id === previewInvoice.client_id)?.name || 'Client inconnu'}
                           </p>
-                          <p className="text-gray-700">{previewInvoice.client?.email || clients.find(c => c.id === previewInvoice.client_id)?.email || ''}</p>
-                          <p className="text-gray-700">{previewInvoice.client?.phone || clients.find(c => c.id === previewInvoice.client_id)?.phone || ''}</p>
-                          <p className="text-gray-700">{previewInvoice.client?.address || clients.find(c => c.id === previewInvoice.client_id)?.address || ''}</p>
+                          <p className="text-gray-700 dark:text-gray-300">{previewInvoice.client?.email || clients.find(c => c.id === previewInvoice.client_id)?.email || ''}</p>
+                          <p className="text-gray-700 dark:text-gray-300">{previewInvoice.client?.phone || clients.find(c => c.id === previewInvoice.client_id)?.phone || ''}</p>
+                          <p className="text-gray-700 dark:text-gray-300">{previewInvoice.client?.address || clients.find(c => c.id === previewInvoice.client_id)?.address || ''}</p>
                         </div>
                       </div>
-                      <div className="bg-green-50 rounded-xl p-6 border border-green-200">
-                        <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4 flex items-center">
+                      <div className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-8 border border-green-200 dark:border-green-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                        <h3 className="text-xl font-bold text-green-900 dark:text-green-100 mb-6 flex items-center">
                           <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-3">
                             <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1021,23 +1141,23 @@ export default function InvoicesPage() {
                           </div>
                           Détails de la facture
                         </h3>
-                        <div className="text-gray-900 space-y-3">
+                        <div className="text-gray-900 dark:text-white space-y-3">
                           <div className="flex justify-between items-center">
-                            <span className="font-medium text-gray-700">Date :</span>
-                            <span className="font-semibold">{new Date(previewInvoice.date).toLocaleDateString('fr-FR')}</span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Date :</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{new Date(previewInvoice.date).toLocaleDateString('fr-FR')}</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="font-medium text-gray-700">Échéance :</span>
-                            <span className="font-semibold">{new Date(previewInvoice.due_date).toLocaleDateString('fr-FR')}</span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Échéance :</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{new Date(previewInvoice.due_date).toLocaleDateString('fr-FR')}</span>
                           </div>
                           {previewInvoice.payment_method && (
                             <div className="flex justify-between items-center">
-                              <span className="font-medium text-gray-700">Mode de paiement :</span>
+                              <span className="font-medium text-gray-700 dark:text-gray-300">Mode de paiement :</span>
                               <span className="font-semibold text-blue-600 dark:text-blue-400">{previewInvoice.payment_method}</span>
                             </div>
                           )}
-                          <div className="flex justify-between items-center pt-2 border-t border-green-200">
-                            <span className="font-medium text-gray-700">Statut :</span>
+                          <div className="flex justify-between items-center pt-2 border-t border-green-200 dark:border-green-700">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Statut :</span>
                             <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
                               previewInvoice.status === 'paid' 
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-800'
@@ -1055,8 +1175,8 @@ export default function InvoicesPage() {
                   </div>
 
                   {/* Services Table */}
-                  <div className="mb-8">
-                    <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                  <div className="mb-12">
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 flex items-center">
                       <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3">
                         <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1102,31 +1222,31 @@ export default function InvoicesPage() {
                     }
                     
                     return (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                          <thead className="bg-gradient-to-r from-purple-50 to-indigo-50">
+                      <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800">
+                        <table className="min-w-full border-0 rounded-2xl overflow-hidden">
+                          <thead className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
                             <tr>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Description</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Heures</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tarif/h</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Total</th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 first:rounded-tl-2xl last:rounded-tr-2xl">Description</th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Heures</th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Tarif/h</th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 last:rounded-tr-2xl">Total</th>
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-600">
                             {invoiceServices.length > 0 ? (
                               invoiceServices.map((service, index) => (
-                                <tr key={service.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white font-medium">{service.description || 'N/A'}</td>
+                                <tr key={service.id || index} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${index === invoiceServices.length - 1 ? 'last:rounded-b-2xl' : ''}`}>
+                                  <td className={`px-6 py-4 text-sm text-gray-900 dark:text-white font-medium ${index === invoiceServices.length - 1 ? 'first:rounded-bl-2xl' : ''}`}>{service.description || 'N/A'}</td>
                                   <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{new Date(service.date).toLocaleDateString('fr-FR')}</td>
                                   <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{service.hours}h</td>
                                   <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{service.hourly_rate}€</td>
-                                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white font-bold">{(service.hours * service.hourly_rate).toFixed(2)}€</td>
+                                  <td className={`px-6 py-4 text-sm text-gray-900 dark:text-white font-bold ${index === invoiceServices.length - 1 ? 'last:rounded-br-2xl' : ''}`}>{(service.hours * service.hourly_rate).toFixed(2)}€</td>
                                 </tr>
                               ))
                             ) : (
                               <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center">
+                                <td colSpan={5} className="px-6 py-12 text-center rounded-b-2xl">
                                   <div className="flex flex-col items-center">
                                     <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
                                       <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1149,8 +1269,8 @@ export default function InvoicesPage() {
                   {/* Totals */}
                   <div className="flex justify-end">
                     <div className="w-96">
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 shadow-sm">
-                        <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-8 border border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                        <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
                           <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
                             <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -1158,18 +1278,32 @@ export default function InvoicesPage() {
                           </div>
                           Récapitulatif
                         </h4>
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-center py-3 border-b border-blue-200">
-                            <span className="text-gray-700 font-medium">Sous-total HT :</span>
-                            <span className="text-lg font-bold text-gray-900">{previewInvoice.subtotal.toFixed(2)}€</span>
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center py-3 border-b border-blue-200 dark:border-blue-700">
+                              <span className="text-gray-700 dark:text-gray-300 font-medium">Sous-total HT :</span>
+                              <span className="text-lg font-bold text-gray-900 dark:text-white">{previewInvoice.subtotal.toFixed(2)}€</span>
+                            </div>
+                            <div className="flex justify-between items-center py-4 bg-white dark:bg-gray-800 rounded-lg px-4 border-2 border-blue-200 dark:border-blue-700">
+                              <span className="text-xl font-bold text-gray-900 dark:text-white">Total à payer :</span>
+                              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{previewInvoice.net_amount.toFixed(2)}€</span>
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center py-4 bg-white rounded-lg px-4 border-2 border-blue-200">
-                            <span className="text-xl font-bold text-gray-900">Total à payer :</span>
-                            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{previewInvoice.subtotal.toFixed(2)}€</span>
-                          </div>
-                        </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Footer with metadata */}
+            <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+              <div className="flex items-center justify-center">
+                <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
+                  <div>
+                    <span className="font-medium">Créée le :</span> {new Date(previewInvoice.created_at || previewInvoice.date).toLocaleDateString('fr-FR')}
+                  </div>
+                  <div>
+                    <span className="font-medium">Dernière modification :</span> {new Date(previewInvoice.updated_at || previewInvoice.date).toLocaleDateString('fr-FR')}
                   </div>
                 </div>
               </div>
@@ -1183,8 +1317,18 @@ export default function InvoicesPage() {
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 p-6 text-white rounded-t-2xl">
-              <div className="flex items-center justify-between">
+            <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 p-6 text-white rounded-t-2xl relative overflow-hidden">
+              {/* Decorative lines - consistent with other page headers */}
+              <div className="absolute inset-0 opacity-20">
+                {/* Traits horizontaux qui traversent */}
+                <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
+                <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
+                <div className="absolute top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
+                <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
+                <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
+              </div>
+              
+              <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1327,16 +1471,6 @@ export default function InvoicesPage() {
         cancelText="Annuler"
       />
 
-      {/* Notification */}
-      <Notification
-        isOpen={notification.isOpen}
-        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
-        title={notification.title}
-        message={notification.message}
-        type={notification.type}
-        autoClose={true}
-        duration={3000}
-      />
     </div>
   );
 }

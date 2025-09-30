@@ -4,10 +4,9 @@ import { useApp } from '../contexts/AppContext';
 import { createClient, updateClient as updateClientApi, deleteClient as deleteClientApi } from '../lib/api';
 import { Client } from '../types';
 import AlertModal from './AlertModal';
-import Notification from './Notification';
 
 export default function ClientsPage() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, showNotification } = useApp();
   const { clients } = state;
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -24,17 +23,6 @@ export default function ClientsPage() {
     type: 'warning',
     onConfirm: () => {}
   });
-  const [notification, setNotification] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    type: 'success' | 'error' | 'warning' | 'info';
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    type: 'success'
-  });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -42,6 +30,7 @@ export default function ClientsPage() {
     street: '',
     postalCode: '',
     city: '',
+    country: '',
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -51,7 +40,7 @@ export default function ClientsPage() {
     e.preventDefault();
     
     // Reconstituer l'adresse complète
-    const addressParts = [formData.street, formData.postalCode, formData.city].filter(part => part.trim());
+    const addressParts = [formData.street, formData.postalCode, formData.city, formData.country].filter(part => part.trim());
     const fullAddress = addressParts.join(', ');
     
     // Créer l'objet client avec seulement les champs existants dans la base de données
@@ -66,21 +55,23 @@ export default function ClientsPage() {
       if (editingClient) {
         const saved = await updateClientApi(editingClient.id, clientData as Partial<Client>);
         dispatch({ type: 'UPDATE_CLIENT', payload: saved });
+        showNotification('success', 'Client modifié', 'Le client a été mis à jour avec succès');
       } else {
         const saved = await createClient(clientData as any);
         dispatch({ type: 'ADD_CLIENT', payload: saved });
+        showNotification('success', 'Client créé', 'Le client a été créé avec succès');
       }
     } catch (err) {
       console.error('Error saving client:', err);
       // eslint-disable-next-line no-alert
-      alert('Erreur lors de la sauvegarde du client');
+      showNotification('error', 'Erreur', 'Erreur lors de la sauvegarde du client');
     }
     
     resetForm();
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', street: '', postalCode: '', city: '' });
+    setFormData({ name: '', email: '', phone: '', street: '', postalCode: '', city: '', country: '' });
     setEditingClient(null);
     setShowModal(false);
   };
@@ -90,12 +81,14 @@ export default function ClientsPage() {
     let street = '';
     let postalCode = '';
     let city = '';
+    let country = '';
     
     if (client.address) {
       const addressParts = client.address.split(', ');
       street = addressParts[0] || '';
       postalCode = addressParts[1] || '';
       city = addressParts[2] || '';
+      country = addressParts[3] || '';
     }
     
     setFormData({
@@ -105,6 +98,7 @@ export default function ClientsPage() {
       street: street,
       postalCode: postalCode,
       city: city,
+      country: country,
     });
     setEditingClient(client);
     setShowModal(true);
@@ -121,20 +115,10 @@ export default function ClientsPage() {
         try {
           await deleteClientApi(id);
           dispatch({ type: 'DELETE_CLIENT', payload: id });
-          setNotification({
-            isOpen: true,
-            title: 'Client supprimé',
-            message: 'Le client et ses prestations ont été supprimés avec succès. Les factures ont été conservées.',
-            type: 'success'
-          });
+          showNotification('success', 'Client supprimé', 'Le client et ses prestations ont été supprimés avec succès. Les factures ont été conservées.');
         } catch (err: any) {
           console.error('Error deleting client:', err);
-          setNotification({
-            isOpen: true,
-            title: 'Impossible de supprimer le client',
-            message: err.message || 'Ce client a des factures associées. Supprimez d\'abord les factures avant de supprimer le client.',
-            type: 'error'
-          });
+          showNotification('error', 'Impossible de supprimer le client', err.message || 'Ce client a des factures associées. Supprimez d\'abord les factures avant de supprimer le client.');
         }
       }
     });
@@ -155,7 +139,7 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="relative rounded-2xl p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -173,22 +157,25 @@ export default function ClientsPage() {
         </div>
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Clients</h1>
-            <p className="text-white/80 mt-1">Gestion centralisée de votre portefeuille clients</p>
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold">Clients</h1>
+            <p className="text-white/80 mt-1 text-sm sm:text-base">Gestion centralisée de votre portefeuille clients</p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nouveau client
-          </button>
+          <div className="mt-4 sm:mt-0 flex justify-end">
+            <button
+              onClick={() => setShowModal(true)}
+              className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Nouveau client</span>
+              <span className="sm:hidden">Nouveau</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Search and filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -200,34 +187,125 @@ export default function ClientsPage() {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
             />
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             {filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''} trouvé{filteredClients.length !== 1 ? 's' : ''}
           </div>
         </div>
       </div>
 
-      {/* Clients table */}
+      {/* Clients - Mobile Cards / Desktop Table */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        {/* Mobile Cards View */}
+        <div className="block sm:hidden">
+          {currentClients.map((client) => {
+            const firstLetter = client.name.charAt(0).toUpperCase();
+            const colors = [
+              'from-blue-500 to-indigo-600',
+              'from-green-500 to-emerald-600',
+              'from-purple-500 to-violet-600',
+              'from-pink-500 to-rose-600',
+              'from-orange-500 to-red-600',
+              'from-teal-500 to-cyan-600',
+              'from-yellow-500 to-amber-600',
+              'from-red-500 to-pink-600',
+              'from-indigo-500 to-blue-600',
+              'from-emerald-500 to-green-600',
+              'from-violet-500 to-purple-600',
+              'from-rose-500 to-pink-600',
+              'from-amber-500 to-yellow-600',
+              'from-cyan-500 to-teal-600',
+              'from-lime-500 to-green-600',
+              'from-sky-500 to-blue-600',
+              'from-fuchsia-500 to-purple-600',
+              'from-stone-500 to-gray-600',
+              'from-slate-500 to-gray-600',
+              'from-zinc-500 to-gray-600',
+              'from-neutral-500 to-gray-600',
+              'from-gray-500 to-slate-600',
+              'from-red-500 to-orange-600',
+              'from-orange-500 to-amber-600',
+              'from-yellow-500 to-lime-600',
+              'from-lime-500 to-green-600'
+            ];
+            const colorIndex = firstLetter.charCodeAt(0) % colors.length;
+            const gradientClass = colors[colorIndex];
+            
+            return (
+              <div key={client.id} className="border-b border-gray-200 dark:border-gray-600 p-4 last:border-b-0">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <div className={`w-10 h-10 bg-gradient-to-br ${gradientClass} rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0`}>
+                      {firstLetter}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        {client.name}
+                      </h3>
+                      <div className="mt-1 space-y-1">
+                        <div className="flex items-center text-xs text-gray-600 dark:text-gray-300">
+                          <Mail className="w-3 h-3 mr-2 flex-shrink-0" />
+                          <span className="truncate">{client.email}</span>
+                        </div>
+                        {client.phone && (
+                          <div className="flex items-center text-xs text-gray-600 dark:text-gray-300">
+                            <Phone className="w-3 h-3 mr-2 flex-shrink-0" />
+                            <span>{client.phone}</span>
+                          </div>
+                        )}
+                        {client.address && (
+                          <div className="text-xs text-gray-600 dark:text-gray-300">
+                            <span className="break-words">{client.address}</span>
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Ajouté le {new Date(client.created_at).toLocaleDateString('fr-FR')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1 ml-2">
+                    <button
+                      onClick={() => handleEdit(client)}
+                      className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
+                      title="Modifier"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(client.id)}
+                      className="p-2 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Client
                 </th>
-                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                    Contact
                  </th>
-                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                    Adresse
                  </th>
-                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                    Date d'ajout
                  </th>
-                <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -235,7 +313,7 @@ export default function ClientsPage() {
             <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
               {currentClients.map((client) => (
                 <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       {(() => {
                         const firstLetter = client.name.charAt(0).toUpperCase();
@@ -271,34 +349,34 @@ export default function ClientsPage() {
                         const gradientClass = colors[colorIndex];
                         
                         return (
-                          <div className={`w-10 h-10 bg-gradient-to-br ${gradientClass} rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md`}>
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br ${gradientClass} rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-md`}>
                             {firstLetter}
                           </div>
                         );
                       })()}
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <div className="ml-3 sm:ml-4">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px] sm:max-w-none">
                           {client.name}
                         </div>
                       </div>
                     </div>
                   </td>
-                   <td className="px-6 py-4">
+                   <td className="px-3 sm:px-6 py-3 sm:py-4">
                      <div className="space-y-1">
-                       <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                         <Mail className="w-4 h-4 mr-2" />
+                       <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                         <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                          <span className="truncate max-w-xs" title={client.email}>{client.email}</span>
                        </div>
                        {client.phone && (
-                         <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                           <Phone className="w-4 h-4 mr-2" />
+                         <div className="flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                           <Phone className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                            <span>{client.phone}</span>
                          </div>
                        )}
                      </div>
                    </td>
-                   <td className="px-6 py-4">
-                     <div className="text-sm text-gray-600 dark:text-gray-300 max-w-xs">
+                   <td className="px-3 sm:px-6 py-3 sm:py-4 hidden lg:table-cell">
+                     <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 max-w-xs">
                        {client.address ? (
                          <span className="break-words whitespace-normal">
                            {client.address}
@@ -308,17 +386,17 @@ export default function ClientsPage() {
                        )}
                      </div>
                    </td>
-                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
                      {new Date(client.created_at).toLocaleDateString('fr-FR')}
                    </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-1">
                       <button
                         onClick={() => handleEdit(client)}
                         className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                       >
                         <Edit2 className="w-3 h-3 mr-1" />
-                        Modifier
+                        <span className="hidden sm:inline">Modifier</span>
                       </button>
                       <button
                         onClick={() => handleDelete(client.id)}
@@ -336,28 +414,29 @@ export default function ClientsPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700 dark:text-gray-300">
-                Affichage de {startIndex + 1} à {Math.min(endIndex, filteredClients.length)} sur {filteredClients.length} clients
+          <div className="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                <span className="hidden sm:inline">Affichage de {startIndex + 1} à {Math.min(endIndex, filteredClients.length)} sur {filteredClients.length} clients</span>
+                <span className="sm:hidden">{startIndex + 1}-{Math.min(endIndex, filteredClients.length)} / {filteredClients.length}</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center space-x-2">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="inline-flex items-center px-2 py-1 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="inline-flex items-center px-3 py-2 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
-                  <ChevronLeft className="w-3 h-3" />
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400">
-                  Page {currentPage} sur {totalPages}
+                <span className="px-3 py-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                  {currentPage} / {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="inline-flex items-center px-2 py-1 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="inline-flex items-center px-3 py-2 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
-                  <ChevronRight className="w-3 h-3" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -384,16 +463,16 @@ export default function ClientsPage() {
       {/* Modal */}
       {showModal && (
         <div 
-          className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 fixed inset-0"
         >
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-t-2xl">
-              <h3 className="text-lg font-semibold">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-xs w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6 border-b bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-t-2xl">
+              <h3 className="text-base sm:text-lg font-semibold">
                 {editingClient ? 'Modifier le client' : 'Nouveau client'}
               </h3>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Nom complet *
@@ -469,17 +548,29 @@ export default function ClientsPage() {
                 </div>
               </div>
               
-              <div className="flex space-x-3 pt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Pays
+                </label>
+                <input
+                  type="text"
+                  value={formData.country}
+                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+              
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm sm:text-base"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all"
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-sm sm:text-base"
                 >
                   {editingClient ? 'Modifier' : 'Ajouter'}
                 </button>
@@ -501,16 +592,6 @@ export default function ClientsPage() {
         cancelText="Annuler"
       />
 
-      {/* Notification */}
-      <Notification
-        isOpen={notification.isOpen}
-        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
-        title={notification.title}
-        message={notification.message}
-        type={notification.type}
-        autoClose={true}
-        duration={3000}
-      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { Client, Service, Invoice, BusinessStats } from '../types';
+import { NotificationData, NotificationType } from '../components/Notification';
 
 interface AppState {
   clients: Client[];
@@ -8,6 +9,7 @@ interface AppState {
   stats: BusinessStats;
   loading: boolean;
   error: string | null;
+  notifications: NotificationData[];
 }
 
 type AppAction =
@@ -25,7 +27,9 @@ type AppAction =
   | { type: 'ADD_INVOICE'; payload: Invoice }
   | { type: 'UPDATE_INVOICE'; payload: Invoice }
   | { type: 'DELETE_INVOICE'; payload: string }
-  | { type: 'SET_STATS'; payload: BusinessStats };
+  | { type: 'SET_STATS'; payload: BusinessStats }
+  | { type: 'ADD_NOTIFICATION'; payload: NotificationData }
+  | { type: 'REMOVE_NOTIFICATION'; payload: string };
 
 const initialState: AppState = {
   clients: [],
@@ -41,6 +45,7 @@ const initialState: AppState = {
   },
   loading: false,
   error: null,
+  notifications: [],
 };
 
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -99,6 +104,16 @@ function appReducer(state: AppState, action: AppAction): AppState {
       };
     case 'SET_STATS':
       return { ...state, stats: action.payload };
+    case 'ADD_NOTIFICATION':
+      return {
+        ...state,
+        notifications: [...state.notifications, action.payload],
+      };
+    case 'REMOVE_NOTIFICATION':
+      return {
+        ...state,
+        notifications: state.notifications.filter(notification => notification.id !== action.payload),
+      };
     default:
       return state;
   }
@@ -107,13 +122,26 @@ function appReducer(state: AppState, action: AppAction): AppState {
 const AppContext = createContext<{
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
+  showNotification: (type: NotificationType, title: string, message?: string, duration?: number) => void;
 } | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
+  const showNotification = (type: NotificationType, title: string, message?: string, duration?: number) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const notification: NotificationData = {
+      id,
+      type,
+      title,
+      message,
+      duration,
+    };
+    dispatch({ type: 'ADD_NOTIFICATION', payload: notification });
+  };
+
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{ state, dispatch, showNotification }}>
       {children}
     </AppContext.Provider>
   );

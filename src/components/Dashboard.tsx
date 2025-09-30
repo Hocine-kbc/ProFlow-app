@@ -1,9 +1,6 @@
 import { useState } from 'react';
-import { Users, Clock, Euro, FileText, TrendingUp, BarChart3, PieChart, Plus, ChevronLeft, ChevronRight, Moon, Sun, Power } from 'lucide-react';
+import { Users, Clock, Euro, FileText, TrendingUp, BarChart3, PieChart, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { supabase } from '../lib/supabase';
-import AlertModal from './AlertModal';
 
 interface DashboardProps {
   onNavigate?: (page: string) => void;
@@ -41,13 +38,9 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   
   // Factures en attente
   const pendingInvoices = invoices.filter(inv => inv.status === 'sent');
-  const { isDark, toggleTheme } = useTheme();
   
   // État pour le filtre d'année
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  
-  // État pour l'alerte de déconnexion
-  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
 
   // Fonctions de navigation entre les années
   const goToPreviousYear = () => {
@@ -64,10 +57,6 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
     }
   };
 
-  // Fonction de déconnexion avec confirmation
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
   
   const recentServices = services.slice(0, 5);
   
@@ -88,7 +77,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
         return d.getFullYear() === m.getFullYear() && d.getMonth() === m.getMonth();
       })
       .reduce((acc, s) => acc + (s.hours * s.hourly_rate), 0);
-    return { label: m.toLocaleDateString('fr-FR', { month: 'short' }), total };
+    return { label: m.toLocaleDateString('fr-FR', { month: 'short' }).charAt(0), total };
   });
   const maxBar = Math.max(1, ...monthlyTotals.map(m => m.total));
 
@@ -109,7 +98,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
         return d.getFullYear() === m.getFullYear() && d.getMonth() === m.getMonth();
       })
       .reduce((acc, s) => acc + s.hours, 0);
-    return { label: m.toLocaleDateString('fr-FR', { month: 'short' }), total };
+    return { label: m.toLocaleDateString('fr-FR', { month: 'short' }).charAt(0), total };
   });
   const maxHours = Math.max(1, ...monthlyHoursData.map(m => m.total));
 
@@ -160,7 +149,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
 
   return (
     <div className="space-y-6">
-      <div className="relative rounded-2xl p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -183,67 +172,50 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
           <div className="absolute top-0 bottom-0 left-0 right-0 w-full h-0.5 bg-white/15 transform -rotate-45 origin-center"></div>
         </div>
         
-        {/* Boutons d'action - Coin haut droit */}
-        <div className="absolute top-6 right-6 z-20 flex items-center space-x-2">
-          <button
-            onClick={toggleTheme}
-            className="p-3 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-200 shadow-lg hover:shadow-xl"
-            title={isDark ? 'Mode clair' : 'Mode sombre'}
-          >
-            {isDark ? <Sun className="w-5 h-5 text-yellow-300" /> : <Moon className="w-5 h-5 text-white" />}
-          </button>
-          
-          <button
-            onClick={() => setShowLogoutAlert(true)}
-            className="p-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm transition-all duration-200 shadow-lg hover:shadow-xl"
-            title="Se déconnecter"
-          >
-            <Power className="w-5 h-5 text-red-200" />
-          </button>
-        </div>
 
-        <div className="relative z-10 text-center">
-          <div className="flex items-center justify-center space-x-3 mb-3">
-            <span className="text-4xl">{greeting.emoji}</span>
-            <h1 className="text-3xl font-bold">{greeting.message} !</h1>
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <span className="text-xl sm:text-2xl">{greeting.emoji}</span>
+              <h1 className="text-xl sm:text-2xl font-bold">{greeting.message} !</h1>
+            </div>
+            <p className="text-white/80 mt-1 text-sm sm:text-base">{greeting.subtitle}</p>
           </div>
-          <p className="text-white/90 text-lg font-medium mb-2">{greeting.subtitle}</p>
-          <p className="text-white/80 text-sm">Tableau de bord - Aperçu de votre activité</p>
         </div>
       </div>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">CA Mensuel</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">CA Mensuel</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                 {monthlyRevenue.toFixed(2)}€
               </p>
             </div>
-            <div className="p-3 bg-green-100 rounded-full">
-              <Euro className="w-6 h-6 text-green-600" />
+            <div className="p-2 sm:p-3 bg-green-100 rounded-full">
+              <Euro className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
-            <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+          <div className="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm">
+            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-1" />
             <span className="text-green-600">+12.3%</span>
             <span className="text-gray-500 dark:text-gray-300 ml-2">ce mois</span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Clients</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{clients.length}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Clients</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{clients.length}</p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
+              <Users className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
+          <div className="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm">
             <span className="text-gray-500 dark:text-gray-300">+{clients.filter(c => {
               const oneMonthAgo = new Date();
               oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
@@ -252,34 +224,34 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Heures ce mois</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Heures ce mois</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                 {currentMonthHours}h
               </p>
             </div>
-            <div className="p-3 bg-purple-100 rounded-full">
-              <Clock className="w-6 h-6 text-purple-600" />
+            <div className="p-2 sm:p-3 bg-purple-100 rounded-full">
+              <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-purple-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
+          <div className="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm">
             <span className="text-gray-500 dark:text-gray-300">Total: {totalHours}h</span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Factures en attente</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{pendingInvoices.length}</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Factures en attente</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{pendingInvoices.length}</p>
             </div>
-            <div className="p-3 bg-orange-100 rounded-full">
-              <FileText className="w-6 h-6 text-orange-600" />
+            <div className="p-2 sm:p-3 bg-orange-100 rounded-full">
+              <FileText className="w-4 h-4 sm:w-6 sm:h-6 text-orange-600" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
+          <div className="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm">
             <span className="text-gray-500 dark:text-gray-300">
               {pendingInvoices.reduce((acc, inv) => acc + inv.subtotal, 0).toFixed(2)}€ en attente
             </span>
@@ -288,61 +260,66 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
       </div>
 
       {/* Graphiques et analyses */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Graphique CA mensuel */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-600">
-            <div className="flex items-center justify-between">
+          <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center space-x-2">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Évolution du CA</h3>
+                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Évolution du CA</h3>
               </div>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={goToPreviousYear}
                   disabled={selectedYear <= Math.min(...availableYears)}
-                  className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
+                  className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
                   title="Année précédente"
                 >
-                  <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                  <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-300" />
                 </button>
-                <span className="px-3 py-1 text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 rounded-lg min-w-[60px] text-center">
+                <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 rounded-lg min-w-[50px] sm:min-w-[60px] text-center">
                   {selectedYear}
                 </span>
                 <button
                   onClick={goToNextYear}
                   disabled={selectedYear >= Math.max(...availableYears)}
-                  className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
+                  className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
                   title="Année suivante"
                 >
-                  <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-300" />
                 </button>
               </div>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">Janvier à Décembre {selectedYear}</p>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-300 mt-1">Janvier à Décembre {selectedYear}</p>
           </div>
-          <div className="p-6">
-            <div className="flex items-end justify-between gap-2 h-40 px-2">
-              {monthlyTotals.map((m, idx) => (
-                <div key={idx} className="flex flex-col items-center group flex-1">
-                  <div className="relative w-full flex flex-col items-center">
-                    <div className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
-                      {m.total > 0 ? `${m.total.toFixed(0)}€` : ''}
+          <div className="p-4 sm:p-6">
+            <div className="overflow-x-auto">
+              <div className="flex items-end justify-between gap-0.5 sm:gap-1 md:gap-2 h-32 sm:h-40 px-0.5 sm:px-1 md:px-2 min-w-[320px] sm:min-w-0">
+                {monthlyTotals.map((m, idx) => (
+                  <div key={idx} className="flex flex-col items-center group flex-1 min-w-[25px] sm:min-w-0">
+                    <div className="relative w-full flex flex-col items-center">
+                      <div className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-1 hidden sm:block">
+                        {m.total > 0 ? `${m.total.toFixed(0)}€` : ''}
+                      </div>
+                      <div
+                        className="w-full rounded-t-lg bg-gradient-to-t from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 cursor-pointer group-hover:shadow-lg"
+                        style={{ height: `${Math.max(6, (m.total / maxBar) * 100)}px` }}
+                        title={`${m.label}: ${m.total.toFixed(2)}€`}
+                      />
                     </div>
-                    <div
-                      className="w-full rounded-t-lg bg-gradient-to-t from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 cursor-pointer group-hover:shadow-lg"
-                      style={{ height: `${Math.max(8, (m.total / maxBar) * 120)}px` }}
-                      title={`${m.label}: ${m.total.toFixed(2)}€`}
-                    />
+                    <div className="mt-1 sm:mt-2 md:mt-3 text-center">
+                      <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                        <span className="sm:hidden">{m.label}</span>
+                        <span className="hidden sm:inline">{months[idx].toLocaleDateString('fr-FR', { month: 'short' })}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="mt-3 text-center">
-                    <div className="text-xs font-medium text-gray-600 dark:text-gray-300">{m.label}</div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
-              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-300">
+            <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-600">
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs text-gray-500 dark:text-gray-300">
                 <span>Total: {monthlyTotals.reduce((acc, m) => acc + m.total, 0).toFixed(0)}€</span>
                 <span>Moyenne: {(monthlyTotals.reduce((acc, m) => acc + m.total, 0) / 12).toFixed(0)}€/mois</span>
               </div>
@@ -352,58 +329,63 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
 
         {/* Graphique heures mensuelles */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-600">
-            <div className="flex items-center justify-between">
+          <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-purple-600" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Heures travaillées</h3>
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Heures travaillées</h3>
               </div>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={goToPreviousYear}
                   disabled={selectedYear <= Math.min(...availableYears)}
-                  className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
+                  className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
                   title="Année précédente"
                 >
-                  <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                  <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-300" />
                 </button>
-                <span className="px-3 py-1 text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 rounded-lg min-w-[60px] text-center">
+                <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 rounded-lg min-w-[50px] sm:min-w-[60px] text-center">
                   {selectedYear}
                 </span>
                 <button
                   onClick={goToNextYear}
                   disabled={selectedYear >= Math.max(...availableYears)}
-                  className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
+                  className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
                   title="Année suivante"
                 >
-                  <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-300" />
                 </button>
               </div>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">Janvier à Décembre {selectedYear}</p>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-300 mt-1">Janvier à Décembre {selectedYear}</p>
           </div>
-          <div className="p-6">
-            <div className="flex items-end justify-between gap-2 h-40 px-2">
-              {monthlyHoursData.map((m, idx) => (
-                <div key={idx} className="flex flex-col items-center group flex-1">
-                  <div className="relative w-full flex flex-col items-center">
-                    <div className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">
-                      {m.total > 0 ? `${m.total}h` : ''}
+          <div className="p-4 sm:p-6">
+            <div className="overflow-x-auto">
+              <div className="flex items-end justify-between gap-0.5 sm:gap-1 md:gap-2 h-32 sm:h-40 px-0.5 sm:px-1 md:px-2 min-w-[320px] sm:min-w-0">
+                {monthlyHoursData.map((m, idx) => (
+                  <div key={idx} className="flex flex-col items-center group flex-1 min-w-[25px] sm:min-w-0">
+                    <div className="relative w-full flex flex-col items-center">
+                      <div className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-1 hidden sm:block">
+                        {m.total > 0 ? `${m.total}h` : ''}
+                      </div>
+                      <div
+                        className="w-full rounded-t-lg bg-gradient-to-t from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all duration-300 cursor-pointer group-hover:shadow-lg"
+                        style={{ height: `${Math.max(6, (m.total / maxHours) * 100)}px` }}
+                        title={`${m.label}: ${m.total}h`}
+                      />
                     </div>
-                    <div
-                      className="w-full rounded-t-lg bg-gradient-to-t from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all duration-300 cursor-pointer group-hover:shadow-lg"
-                      style={{ height: `${Math.max(8, (m.total / maxHours) * 120)}px` }}
-                      title={`${m.label}: ${m.total}h`}
-                    />
+                    <div className="mt-1 sm:mt-2 md:mt-3 text-center">
+                      <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                        <span className="sm:hidden">{m.label}</span>
+                        <span className="hidden sm:inline">{months[idx].toLocaleDateString('fr-FR', { month: 'short' })}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="mt-3 text-center">
-                    <div className="text-xs font-medium text-gray-600 dark:text-gray-300">{m.label}</div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
-              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-300">
+            <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-600">
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs text-gray-500 dark:text-gray-300">
                 <span>Total: {monthlyHoursData.reduce((acc, m) => acc + m.total, 0)}h</span>
                 <span>Moyenne: {(monthlyHoursData.reduce((acc, m) => acc + m.total, 0) / 12).toFixed(1)}h/mois</span>
               </div>
@@ -413,24 +395,24 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
 
         {/* Graphique en secteurs des statuts */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-600">
+          <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
             <div className="flex items-center space-x-2">
-              <PieChart className="w-5 h-5 text-green-600" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Statuts des factures</h3>
+              <PieChart className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Statuts des factures</h3>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">Répartition actuelle</p>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-300 mt-1">Répartition actuelle</p>
           </div>
-          <div className="p-6">
-            <div className="space-y-4">
+          <div className="p-4 sm:p-6">
+            <div className="space-y-3 sm:space-y-4">
               {invoiceStatusData.map((item) => (
                 <div key={item.label} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-4 h-4 rounded-full ${item.color}`}></div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</span>
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full ${item.color}`}></div>
+                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">{item.label}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">{item.value}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-300 ml-2">
+                    <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">{item.value}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-300 ml-1 sm:ml-2">
                       ({Math.round((item.value / totalInvoices) * 100)}%)
                     </span>
                   </div>
@@ -442,29 +424,29 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
 
         {/* Top clients */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-600">
+          <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
             <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-indigo-600" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Top clients</h3>
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Top clients</h3>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">Par chiffre d'affaires</p>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-300 mt-1">Par chiffre d'affaires</p>
           </div>
-          <div className="p-6">
-            <div className="space-y-4">
+          <div className="p-4 sm:p-6">
+            <div className="space-y-3 sm:space-y-4">
               {topClients.map((item, idx) => (
                 <div key={item.client.id} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                       {idx + 1}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{item.client.name}</p>
+                      <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-none">{item.client.name}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-300">{item.revenue.toFixed(2)}€</p>
                     </div>
                   </div>
-                  <div className="w-16 bg-gray-200 rounded-full h-2">
+                  <div className="w-12 sm:w-16 bg-gray-200 rounded-full h-1.5 sm:h-2">
                     <div 
-                      className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full"
+                      className="bg-gradient-to-r from-indigo-500 to-purple-600 h-1.5 sm:h-2 rounded-full"
                       style={{ width: `${(item.revenue / Math.max(1, topClients[0]?.revenue || 1)) * 100}%` }}
                     ></div>
                   </div>
@@ -476,103 +458,157 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
       </div>
 
       {/* Activité récente */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-600">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Prestations récentes</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+          <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Prestations récentes</h3>
           </div>
-          <div className="divide-y divide-gray-200 dark:divide-gray-600">
-            {recentServices.map((service) => (
-              <div key={service.id} className="p-6 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-full">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {clients.find(c => c.id === service.client_id)?.name || 'Client inconnu'}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-300">
-                      {new Date(service.date).toLocaleDateString('fr-FR')}
-                    </p>
-                  </div>
+          <div className="divide-y divide-gray-200 dark:divide-gray-600 flex-1 flex flex-col">
+            {services.length === 0 ? (
+              <div className="p-6 sm:p-8 text-center flex-1 flex flex-col justify-center">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {service.hours}h
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    {(service.hours * service.hourly_rate).toFixed(2)}€
-                  </p>
-                </div>
+                <h4 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-2">Aucune prestation</h4>
+                <p className="text-gray-500 dark:text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4">
+                  Vous n'avez pas encore enregistré de prestations. 
+                  <br />
+                  Enregistrez votre première prestation pour commencer.
+                </p>
+                <button
+                  onClick={() => onNavigate?.('services')}
+                  className="inline-flex items-center px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
+                >
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                  Enregistrer une prestation
+                </button>
               </div>
-            ))}
+            ) : (
+              <>
+                <div className="flex-1">
+                  {recentServices.map((service, index) => (
+                    <div key={service.id} className="relative">
+                      <div className="p-4 sm:p-6 flex items-center justify-between">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                          <div className="p-1.5 sm:p-2 bg-blue-100 rounded-full">
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-none">
+                              {clients.find(c => c.id === service.client_id)?.name || 'Client inconnu'}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-300">
+                              {new Date(service.date).toLocaleDateString('fr-FR')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                            {service.hours}h
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-300">
+                            {(service.hours * service.hourly_rate).toFixed(2)}€
+                          </p>
+                        </div>
+                      </div>
+                      {/* Trait de séparation décoratif */}
+                      {index < recentServices.length - 1 && (
+                        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-blue-300 to-transparent opacity-50"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {services.length > 5 && (
+                  <div className="p-3 sm:p-4 text-center border-t border-gray-200 dark:border-gray-600">
+                    <button
+                      onClick={() => onNavigate?.('services')}
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
+                    >
+                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                      Voir toutes les prestations
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-600">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Factures récentes</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+          <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Factures récentes</h3>
           </div>
-          <div className="divide-y divide-gray-200 dark:divide-gray-600">
+          <div className="divide-y divide-gray-200 dark:divide-gray-600 flex-1 flex flex-col">
             {invoices.length === 0 ? (
-              <div className="p-8 text-center">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-8 h-8 text-gray-400" />
+              <div className="p-6 sm:p-8 text-center flex-1 flex flex-col justify-center">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                 </div>
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Aucune facture</h4>
-                <p className="text-gray-500 dark:text-gray-300 text-sm mb-4">
+                <h4 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-2">Aucune facture</h4>
+                <p className="text-gray-500 dark:text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4">
                   Vous n'avez pas encore créé de factures. 
                   <br />
                   Créez votre première facture pour commencer.
                 </p>
                 <button
                   onClick={() => onNavigate?.('invoices')}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-sm font-medium"
+                  className="inline-flex items-center px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Créer une facture
                 </button>
               </div>
             ) : (
               <>
-                {invoices.slice(0, 3).map((invoice) => (
-                  <div key={invoice.id} className="p-6 flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-green-100 rounded-full">
-                        <FileText className="w-4 h-4 text-green-600" />
+                <div className="flex-1">
+                  {invoices.slice(0, 5).map((invoice, index) => (
+                    <div key={invoice.id} className="relative">
+                      <div className="p-4 sm:p-6 flex items-center justify-between">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                          <div className="p-1.5 sm:p-2 bg-green-100 rounded-full">
+                            <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                              #{invoice.invoice_number}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-300 truncate max-w-[120px] sm:max-w-none">
+                              {invoice.client?.name || clients.find(c => c.id === invoice.client_id)?.name || 'Client inconnu'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                            {invoice.subtotal.toFixed(2)}€
+                          </p>
+                          <span className={`inline-flex px-1.5 sm:px-2 py-1 text-xs font-medium rounded-full ${
+                            invoice.status === 'paid' 
+                              ? 'bg-green-100 text-green-800'
+                              : invoice.status === 'sent'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                          }`}>
+                            {invoice.status === 'paid' ? 'Payée' : 
+                             invoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          #{invoice.invoice_number}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-300">
-                          {invoice.client?.name || clients.find(c => c.id === invoice.client_id)?.name || 'Client inconnu'}
-                        </p>
-                      </div>
+                      {/* Trait de séparation décoratif */}
+                      {index < invoices.slice(0, 5).length - 1 && (
+                        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-green-300 to-transparent opacity-50"></div>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {invoice.subtotal.toFixed(2)}€
-                      </p>
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        invoice.status === 'paid' 
-                          ? 'bg-green-100 text-green-800'
-                          : invoice.status === 'sent'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                      }`}>
-                        {invoice.status === 'paid' ? 'Payée' : 
-                         invoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                {invoices.length > 3 && (
-                  <div className="p-4 text-center border-t border-gray-200 dark:border-gray-600">
-                    <p className="text-sm text-gray-500 dark:text-gray-300">
-                      + {invoices.length - 3} autre{invoices.length - 3 > 1 ? 's' : ''} facture{invoices.length - 3 > 1 ? 's' : ''}
-                    </p>
+                  ))}
+                </div>
+                {invoices.length > 5 && (
+                  <div className="p-3 sm:p-4 text-center border-t border-gray-200 dark:border-gray-600">
+                    <button
+                      onClick={() => onNavigate?.('invoices')}
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
+                    >
+                      <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                      Voir toutes les factures
+                    </button>
                   </div>
                 )}
               </>
@@ -581,17 +617,6 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
         </div>
       </div>
 
-      {/* Alerte de déconnexion */}
-      <AlertModal
-        isOpen={showLogoutAlert}
-        onClose={() => setShowLogoutAlert(false)}
-        onConfirm={handleLogout}
-        title="Se déconnecter"
-        message="Êtes-vous sûr de vouloir vous déconnecter ?"
-        confirmText="Déconnexion"
-        cancelText="Annuler"
-        type="warning"
-      />
     </div>
   );
 }

@@ -4,10 +4,9 @@ import { useApp } from '../contexts/AppContext';
 import { createService, updateService as updateServiceApi, deleteService as deleteServiceApi } from '../lib/api';
 import { Service } from '../types';
 import AlertModal from './AlertModal';
-import Notification from './Notification';
 
 export default function ServicesPage() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, showNotification } = useApp();
   const { services, clients } = state;
   
   // Debug: Log services and clients data
@@ -32,17 +31,6 @@ export default function ServicesPage() {
     message: '',
     type: 'warning',
     onConfirm: () => {}
-  });
-  const [notification, setNotification] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    type: 'success' | 'error' | 'warning' | 'info';
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    type: 'success'
   });
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'hours' | 'amount' | 'date'>('amount');
@@ -71,17 +59,14 @@ export default function ServicesPage() {
       if (editingService) {
         const saved = await updateServiceApi(editingService.id, { ...formData });
         dispatch({ type: 'UPDATE_SERVICE', payload: { ...saved, client } as Service });
+        showNotification('success', 'Prestation modifiée', 'La prestation a été mise à jour avec succès');
       } else {
         const saved = await createService({ ...formData } as any);
         dispatch({ type: 'ADD_SERVICE', payload: { ...saved, client } as Service });
+        showNotification('success', 'Prestation créée', 'La prestation a été créée avec succès');
       }
     } catch (err) {
-      setNotification({
-        isOpen: true,
-        title: 'Erreur de sauvegarde',
-        message: 'Une erreur est survenue lors de la sauvegarde de la prestation.',
-        type: 'error'
-      });
+      showNotification('error', 'Erreur de sauvegarde', 'Une erreur est survenue lors de la sauvegarde de la prestation');
     }
     
     resetForm();
@@ -123,19 +108,9 @@ export default function ServicesPage() {
         try {
           await deleteServiceApi(id);
           dispatch({ type: 'DELETE_SERVICE', payload: id });
-          setNotification({
-            isOpen: true,
-            title: 'Prestation supprimée',
-            message: 'La prestation a été supprimée avec succès.',
-            type: 'success'
-          });
+          showNotification('success', 'Prestation supprimée', 'La prestation a été supprimée avec succès');
         } catch (err) {
-          setNotification({
-            isOpen: true,
-            title: 'Erreur de suppression',
-            message: 'Une erreur est survenue lors de la suppression de la prestation.',
-            type: 'error'
-          });
+          showNotification('error', 'Erreur de suppression', 'Une erreur est survenue lors de la suppression de la prestation');
         }
       }
     });
@@ -229,22 +204,12 @@ export default function ServicesPage() {
             dispatch({ type: 'DELETE_SERVICE', payload: serviceId });
           });
           
-          setNotification({
-            isOpen: true,
-            title: 'Prestations supprimées',
-            message: `${selectedServices.size} prestation(s) ont été supprimée(s) avec succès.`,
-            type: 'success'
-          });
+          showNotification('success', 'Prestations supprimées', `${selectedServices.size} prestation(s) ont été supprimée(s) avec succès`);
           
           setSelectedServices(new Set());
           setIsSelectionMode(false);
         } catch (err) {
-          setNotification({
-            isOpen: true,
-            title: 'Erreur de suppression',
-            message: 'Une erreur est survenue lors de la suppression des prestations.',
-            type: 'error'
-          });
+          showNotification('error', 'Erreur de suppression', 'Une erreur est survenue lors de la suppression des prestations');
         }
       }
     });
@@ -253,7 +218,7 @@ export default function ServicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="relative rounded-2xl p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -271,28 +236,31 @@ export default function ServicesPage() {
         </div>
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Prestations</h1>
-            <p className="text-white/80 mt-1">Suivi et facturation de vos prestations professionnelles</p>
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold">Prestations</h1>
+            <p className="text-white/80 mt-1 text-sm sm:text-base">Suivi et facturation de vos prestations professionnelles</p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvelle prestation
-          </button>
+          <div className="mt-4 sm:mt-0 flex justify-end">
+            <button
+              onClick={() => setShowModal(true)}
+              className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Nouvelle prestation</span>
+              <span className="sm:hidden">Nouvelle</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Filtres et recherche améliorés */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 shadow-sm">
         <div className="flex items-center mb-4">
-          <Filter className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-2" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filtres et recherche</h3>
+          <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 dark:text-gray-400 mr-2" />
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Filtres et recherche</h3>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {/* Recherche */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -486,7 +454,120 @@ export default function ServicesPage() {
 
       {/* Tableau des prestations */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Vue mobile - Cards */}
+        <div className="block sm:hidden">
+          {/* Checkbox "Tout sélectionner" pour mobile */}
+          {isSelectionMode && currentServices.length > 0 && (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-700">
+              <button
+                onClick={() => {
+                  const allSelected = currentServices.every(service => selectedServices.has(service.id));
+                  if (allSelected) {
+                    // Désélectionner toutes les prestations de la page courante
+                    currentServices.forEach(service => {
+                      if (selectedServices.has(service.id)) {
+                        toggleServiceSelection(service.id);
+                      }
+                    });
+                  } else {
+                    // Sélectionner toutes les prestations de la page courante
+                    currentServices.forEach(service => {
+                      if (!selectedServices.has(service.id)) {
+                        toggleServiceSelection(service.id);
+                      }
+                    });
+                  }
+                }}
+                className="flex items-center space-x-2 text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+              >
+                {currentServices.every(service => selectedServices.has(service.id)) ? (
+                  <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                ) : (
+                  <Square className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                )}
+                <span className="text-sm font-medium">
+                  {currentServices.every(service => selectedServices.has(service.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
+                </span>
+              </button>
+            </div>
+          )}
+          
+          {currentServices.map((service) => {
+            const client = clients.find(c => c.id === service.client_id);
+            const amount = calculateAmount(service.hours, service.hourly_rate);
+            
+            return (
+              <div key={service.id} className="border-b border-gray-200 dark:border-gray-600 p-3 last:border-b-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      {isSelectionMode && (
+                        <button
+                          onClick={() => toggleServiceSelection(service.id)}
+                          className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                        >
+                          {selectedServices.has(service.id) ? (
+                            <CheckSquare className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                          ) : (
+                            <Square className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                          )}
+                        </button>
+                      )}
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {client?.name || 'Client inconnu'}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(service.date).toLocaleDateString('fr-FR')}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 line-clamp-1">
+                      {service.description || 'Aucune description'}
+                    </p>
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex space-x-3">
+                        <span className="text-gray-600 dark:text-gray-400">{service.hours}h</span>
+                        <span className="text-gray-600 dark:text-gray-400">{service.hourly_rate}€/h</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{amount.toFixed(2)}€</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                          service.status === 'completed'
+                            ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                            : service.status === 'invoiced'
+                            ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300'
+                            : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
+                        }`}>
+                          {service.status === 'completed' ? 'Terminée' : service.status === 'invoiced' ? 'Facturée' : 'En attente'}
+                        </span>
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={() => handleEdit(service)}
+                            className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
+                            title="Modifier"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(service.id)}
+                            className="p-2 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Vue desktop - Table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
@@ -496,12 +577,14 @@ export default function ServicesPage() {
                       onClick={() => {
                         const allSelected = currentServices.every(service => selectedServices.has(service.id));
                         if (allSelected) {
+                          // Désélectionner toutes les prestations de la page courante
                           currentServices.forEach(service => {
                             if (selectedServices.has(service.id)) {
                               toggleServiceSelection(service.id);
                             }
                           });
                         } else {
+                          // Sélectionner toutes les prestations de la page courante
                           currentServices.forEach(service => {
                             if (!selectedServices.has(service.id)) {
                               toggleServiceSelection(service.id);
@@ -510,6 +593,7 @@ export default function ServicesPage() {
                         }
                       }}
                       className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      title={currentServices.every(service => selectedServices.has(service.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
                     >
                       {currentServices.every(service => selectedServices.has(service.id)) ? (
                         <CheckSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -653,14 +737,14 @@ export default function ServicesPage() {
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           onClick={() => handleEdit(service)}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
+                          className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                         >
                           <Edit2 className="w-3 h-3 mr-1" />
                           Modifier
                         </button>
                         <button
                           onClick={() => handleDelete(service.id)}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
+                          className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -684,17 +768,17 @@ export default function ServicesPage() {
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="inline-flex items-center px-2 py-1 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
                   <ChevronLeft className="w-3 h-3" />
                 </button>
-                <span className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400">
+                <span className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-600/30 rounded-full">
                   Page {currentPage} sur {totalPages}
                 </span>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="inline-flex items-center px-2 py-1 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
                   <ChevronRight className="w-3 h-3" />
                 </button>
@@ -717,7 +801,7 @@ export default function ServicesPage() {
 
       {showModal && (
         <div 
-          className="fixed bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" 
+          className="fixed bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50" 
           style={{ 
             top: 0, 
             left: 0, 
@@ -725,19 +809,18 @@ export default function ServicesPage() {
             bottom: 0, 
             width: '100vw', 
             height: '100vh',
-            margin: 0,
-            padding: '1rem'
+            margin: 0
           }}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="p-6 border-b flex-shrink-0 rounded-t-lg">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-xs w-full max-h-[95vh] flex flex-col overflow-hidden">
+            <div className="p-4 sm:p-6 border-b flex-shrink-0 rounded-t-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white">
+              <h3 className="text-lg font-semibold">
                 {editingService ? 'Modifier la prestation' : 'Nouvelle prestation'}
               </h3>
             </div>
             
             <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-              <div className="p-6 space-y-4 flex-1 overflow-auto">
+              <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-auto">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Client *
@@ -904,20 +987,22 @@ export default function ServicesPage() {
                 )}
               </div>
               
-              <div className="p-6 border-t flex space-x-3 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all"
-                >
-                  {editingService ? 'Modifier' : 'Ajouter'}
-                </button>
+              <div className="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-sm font-medium"
+                  >
+                    {editingService ? 'Modifier' : 'Ajouter'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -936,16 +1021,6 @@ export default function ServicesPage() {
         cancelText="Annuler"
       />
 
-      {/* Notification */}
-      <Notification
-        isOpen={notification.isOpen}
-        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
-        title={notification.title}
-        message={notification.message}
-        type={notification.type}
-        autoClose={true}
-        duration={3000}
-      />
     </div>
   );
 }
