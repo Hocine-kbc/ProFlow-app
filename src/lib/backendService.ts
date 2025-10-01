@@ -14,12 +14,25 @@ export const sendInvoiceViaBackend = async (invoiceId: string): Promise<BackendR
   try {
     console.log(`📧 Envoi de la facture ${invoiceId} via le backend...`);
     
+    // Récupérer les données d'entreprise depuis localStorage
+    let companySettings = null;
+    try {
+      const raw = localStorage.getItem('business-settings');
+      companySettings = raw ? JSON.parse(raw) : null;
+      console.log('🏢 Données d\'entreprise récupérées:', companySettings);
+    } catch (error) {
+      console.warn('⚠️ Impossible de récupérer les données d\'entreprise:', error);
+    }
+    
     const response = await fetch(`${BACKEND_URL}/send-invoice`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ invoiceId }),
+      body: JSON.stringify({ 
+        invoiceId,
+        companySettings 
+      }),
     });
 
     const data = await response.json();

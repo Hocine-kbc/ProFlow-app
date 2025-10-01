@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 import { generateInvoicePDFWithPuppeteer } from './src/lib/puppeteerPdfGenerator.js';
 
 // Configuration
@@ -22,7 +23,20 @@ if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.test-ke
   console.log('⚠️ SENDGRID_API_KEY non configurée. SendGrid ne sera pas utilisé.');
 }
 
-// Gmail supprimé - focus sur SendGrid uniquement
+// Configuration Gmail (solution de secours)
+let gmailTransporter = null;
+if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+  gmailTransporter = nodemailer.createTransporter({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD
+    }
+  });
+  console.log('✅ Gmail configuré comme solution de secours');
+} else {
+  console.log('⚠️ Gmail non configuré. Variables GMAIL_USER et GMAIL_APP_PASSWORD manquantes.');
+}
 
 // Middleware
 app.use(cors());
@@ -40,7 +54,7 @@ const supabase = createClient(
 // Route pour envoyer une facture
 app.post('/api/send-invoice', async (req, res) => {
   try {
-    const { invoiceId } = req.body;
+    const { invoiceId, companySettings } = req.body;
     if (!invoiceId) return res.status(400).json({ error: 'ID requis' });
 
     // Récup facture
@@ -99,9 +113,6 @@ app.post('/api/send-invoice', async (req, res) => {
       services ? services.map(s => ({ description: s.description, hours: s.hours, rate: s.hourly_rate })) : 'Aucun service'
     );
 
-    // Récup infos entreprise (table company n'existe pas, on utilise des données par défaut)
-    console.log('ℹ️ Utilisation des données entreprise par défaut');
-
     // Fusionner données
     invoice.client = client;
     
@@ -122,14 +133,42 @@ app.post('/api/send-invoice', async (req, res) => {
       subtotal: invoice.subtotal,
       net_amount: invoice.net_amount
     });
-    const companyData = {
-      name: 'CleanBiz Pro',
-      owner: 'KEBCI Hocine',
-      address: '6 avenue Salvador Allende, 69100 Villeurbanne',
-      email: 'kebcihocine94@gmail.com',
-      phone: '0603543524',
-      siret: '123 456 789 00010'
+
+    // Debug: Log des données d'entreprise reçues
+    console.log('🏢 Données d\'entreprise reçues:', companySettings);
+    
+    // Utiliser les données d'entreprise fournies par le frontend ou des paramètres par défaut
+    const companyData = companySettings ? {
+      name: companySettings.companyName || 'ProFlow',
+      owner: companySettings.ownerName || 'Votre flux professionnel simplifié',
+      address: companySettings.address || '',
+      email: companySettings.email || '',
+      phone: companySettings.phone || '',
+      siret: companySettings.siret || '',
+      logoUrl: companySettings.logoUrl || null,
+      // Paramètres de conditions de paiement
+      invoiceTerms: companySettings.invoiceTerms || null,
+      paymentTerms: companySettings.paymentTerms || null,
+      paymentDays: companySettings.paymentDays || 30,
+      paymentMethod: companySettings.paymentMethod || null,
+      additionalTerms: companySettings.additionalTerms || null
+    } : {
+      name: 'ProFlow',
+      owner: 'Votre flux professionnel simplifié',
+      address: '123 Rue ProFlow, 75001 Paris',
+      email: 'contact@proflow.com',
+      phone: '01 23 45 67 89',
+      siret: '123 456 789 00010',
+      logoUrl: null,
+      // Paramètres par défaut pour les conditions de paiement
+      invoiceTerms: null,
+      paymentTerms: null,
+      paymentDays: 30,
+      paymentMethod: null,
+      additionalTerms: null
     };
+    
+    console.log('🏢 Données d\'entreprise utilisées:', companyData);
 
     // Générer le PDF avec Puppeteer
     const pdfData = await generateInvoicePDFWithPuppeteer(invoice, companyData);
@@ -157,27 +196,60 @@ app.post('/api/send-invoice', async (req, res) => {
 
     try {
       await sgMail.send(msg);
-      console.log('✅ Email envoyé avec succès à:', invoice.client.email);
+      console.log('✅ Email envoyé avec succès (SendGrid) à:', invoice.client.email);
       res.json({ success: true, message: 'Facture envoyée avec succès' });
     } catch (emailError) {
       console.error('❌ Erreur SendGrid:', emailError.message);
       
-      // Logs détaillés pour déboguer
-      if (emailError.response && emailError.response.body && emailError.response.body.errors) {
-        console.log('🚨 Détails de l\'erreur SendGrid:');
-        emailError.response.body.errors.forEach((err, index) => {
-          console.log(`   Erreur ${index + 1}: ${err.message}`);
-          if (err.field) console.log(`   Champ: ${err.field}`);
-          if (err.help) console.log(`   Aide: ${err.help}`);
+      // Essayer Gmail comme solution de secours
+      if (gmailTransporter) {
+        try {
+          console.log('🔄 Tentative d\'envoi avec Gmail...');
+          
+          const gmailMsg = {
+            from: process.env.GMAIL_USER,
+            to: invoice.client.email,
+            subject: `Facture ${invoice.invoice_number}`,
+            text: `Bonjour ${invoice.client.name}, veuillez trouver ci-joint votre facture.`,
+            attachments: [
+              {
+                filename: pdfData.fileName,
+                content: pdfData.buffer,
+                contentType: 'application/pdf'
+              }
+            ]
+          };
+          
+          await gmailTransporter.sendMail(gmailMsg);
+          console.log('✅ Email envoyé avec succès (Gmail) à:', invoice.client.email);
+          res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
+        } catch (gmailError) {
+          console.error('❌ Erreur Gmail:', gmailError.message);
+          res.json({ 
+            success: false, 
+            message: 'PDF généré mais email non envoyé (SendGrid et Gmail ont échoué)', 
+            pdfPath: pdfData.filePath,
+            error: `SendGrid: ${emailError.message}, Gmail: ${gmailError.message}`
+          });
+        }
+      } else {
+        // Logs détaillés pour déboguer SendGrid
+        if (emailError.response && emailError.response.body && emailError.response.body.errors) {
+          console.log('🚨 Détails de l\'erreur SendGrid:');
+          emailError.response.body.errors.forEach((err, index) => {
+            console.log(`   Erreur ${index + 1}: ${err.message}`);
+            if (err.field) console.log(`   Champ: ${err.field}`);
+            if (err.help) console.log(`   Aide: ${err.help}`);
+          });
+        }
+        
+        res.json({ 
+          success: false, 
+          message: 'PDF généré mais email non envoyé (SendGrid échoué, Gmail non configuré)', 
+          pdfPath: pdfData.filePath,
+          error: emailError.message 
         });
       }
-      
-      res.json({ 
-        success: false, 
-        message: 'PDF généré mais email non envoyé', 
-        pdfPath: pdfData.filePath,
-        error: emailError.message 
-      });
     }
 
   } catch (err) {

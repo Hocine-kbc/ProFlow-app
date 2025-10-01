@@ -6,7 +6,8 @@ import {
   Users, 
   AlertCircle,
   CheckCircle,
-  XCircle
+  XCircle,
+  FileText
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -59,7 +60,11 @@ interface RecentInvoice {
   due_date: string;
 }
 
-export default function StatsPage() {
+interface StatsPageProps {
+  onPageChange?: (page: string) => void;
+}
+
+export default function StatsPage({ onPageChange }: StatsPageProps) {
   const [kpiData, setKpiData] = useState<KPIData>({
     totalRevenue: 0,
     annualRevenue: 0,
@@ -74,7 +79,6 @@ export default function StatsPage() {
   const [clientRevenue, setClientRevenue] = useState<ClientRevenue[]>([]);
   const [recentInvoices, setRecentInvoices] = useState<RecentInvoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDemoData, setIsDemoData] = useState(false);
   const [chartView, setChartView] = useState<'pie' | 'bar'>('bar');
 
   // Secteur actif custom pour agrandir la part au survol
@@ -199,82 +203,21 @@ export default function StatsPage() {
       let clients = null;
 
       if (invoicesError) {
-        
-        // Utiliser les données de démonstration en cas d'erreur
-        invoices = [
-          {
-            id: 'demo-1',
-            invoice_number: 'FAC-2024-001',
-            client_id: 'client-1',
-            date: '2024-01-15',
-            due_date: '2024-02-15',
-            subtotal: 1500,
-            status: 'paid'
-          },
-          {
-            id: 'demo-2',
-            invoice_number: 'FAC-2024-002',
-            client_id: 'client-2',
-            date: '2024-02-10',
-            due_date: '2024-03-10',
-            subtotal: 2300,
-            status: 'paid'
-          },
-          {
-            id: 'demo-3',
-            invoice_number: 'FAC-2024-003',
-            client_id: 'client-1',
-            date: '2024-03-05',
-            due_date: '2024-04-05',
-            subtotal: 1800,
-            status: 'sent'
-          }
-        ];
-
-        clients = [
-          { id: 'client-1', name: 'Client Demo 1' },
-          { id: 'client-2', name: 'Client Demo 2' }
-        ];
-
-        setIsDemoData(true);
-        
-        // Créer des données de démonstration pour les graphiques
-        const demoClientRevenue = [
-          { name: 'Client Demo 1', revenue: 1500, percentage: 39.5 },
-          { name: 'Client Demo 2', revenue: 2300, percentage: 60.5 }
-        ];
-        
-        const demoMonthlyData = [
-          { month: 'Jan', revenue: 1500, invoices: 1 },
-          { month: 'Fév', revenue: 2300, invoices: 1 },
-          { month: 'Mar', revenue: 0, invoices: 0 },
-          { month: 'Avr', revenue: 0, invoices: 0 },
-          { month: 'Mai', revenue: 0, invoices: 0 },
-          { month: 'Juin', revenue: 0, invoices: 0 },
-          { month: 'Juil', revenue: 0, invoices: 0 },
-          { month: 'Août', revenue: 0, invoices: 0 },
-          { month: 'Sep', revenue: 0, invoices: 0 },
-          { month: 'Oct', revenue: 0, invoices: 0 },
-          { month: 'Nov', revenue: 0, invoices: 0 },
-          { month: 'Déc', revenue: 0, invoices: 0 }
-        ];
-        
-        setClientRevenue(demoClientRevenue);
-        setMonthlyRevenue(demoMonthlyData);
+        console.error('Erreur lors de la récupération des factures:', invoicesError);
+        return;
       }
 
-      // Récupérer tous les clients seulement si on n'a pas déjà des données de démonstration
-      if (!clients) {
-        const { data: clientsData, error: clientsError } = await supabase
-          .from('clients')
-          .select('*');
+      // Récupérer tous les clients
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('clients')
+        .select('*');
 
-        if (clientsError) {
-          return;
-        }
-
-        clients = clientsData;
+      if (clientsError) {
+        console.error('Erreur lors de la récupération des clients:', clientsError);
+        return;
       }
+
+      clients = clientsData;
 
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -318,71 +261,6 @@ export default function StatsPage() {
         pendingAmount
       });
 
-      // Si aucune donnée, utiliser des données de démonstration
-      if (!invoices || invoices.length === 0) {
-        
-        // Utiliser les données de démonstration
-        invoices = [
-          {
-            id: 'demo-1',
-            invoice_number: 'FAC-2024-001',
-            client_id: 'client-1',
-            date: '2024-01-15',
-            due_date: '2024-02-15',
-            subtotal: 1500,
-            status: 'paid'
-          },
-          {
-            id: 'demo-2',
-            invoice_number: 'FAC-2024-002',
-            client_id: 'client-2',
-            date: '2024-02-10',
-            due_date: '2024-03-10',
-            subtotal: 2300,
-            status: 'paid'
-          },
-          {
-            id: 'demo-3',
-            invoice_number: 'FAC-2024-003',
-            client_id: 'client-1',
-            date: '2024-03-05',
-            due_date: '2024-04-05',
-            subtotal: 1800,
-            status: 'sent'
-          }
-        ];
-
-        clients = [
-          { id: 'client-1', name: 'Client Demo 1' },
-          { id: 'client-2', name: 'Client Demo 2' }
-        ];
-
-        setIsDemoData(true);
-        
-        // Créer des données de démonstration pour les graphiques
-        const demoClientRevenue = [
-          { name: 'Client Demo 1', revenue: 1500, percentage: 39.5 },
-          { name: 'Client Demo 2', revenue: 2300, percentage: 60.5 }
-        ];
-        
-        const demoMonthlyData = [
-          { month: 'Jan', revenue: 1500, invoices: 1 },
-          { month: 'Fév', revenue: 2300, invoices: 1 },
-          { month: 'Mar', revenue: 0, invoices: 0 },
-          { month: 'Avr', revenue: 0, invoices: 0 },
-          { month: 'Mai', revenue: 0, invoices: 0 },
-          { month: 'Juin', revenue: 0, invoices: 0 },
-          { month: 'Juil', revenue: 0, invoices: 0 },
-          { month: 'Août', revenue: 0, invoices: 0 },
-          { month: 'Sep', revenue: 0, invoices: 0 },
-          { month: 'Oct', revenue: 0, invoices: 0 },
-          { month: 'Nov', revenue: 0, invoices: 0 },
-          { month: 'Déc', revenue: 0, invoices: 0 }
-        ];
-        
-        setClientRevenue(demoClientRevenue);
-        setMonthlyRevenue(demoMonthlyData);
-      }
 
       // Calculer les revenus mensuels pour l'année en cours
       const monthlyData: MonthlyRevenue[] = [];
@@ -391,7 +269,7 @@ export default function StatsPage() {
         const monthStart = date.toISOString().split('T')[0];
         const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
         
-        const monthInvoices = invoices.filter(inv => 
+        const monthInvoices = (invoices || []).filter(inv => 
           inv.status === 'paid' && 
           inv.date >= monthStart && 
           inv.date <= monthEnd
@@ -459,10 +337,9 @@ export default function StatsPage() {
         }));
 
       setRecentInvoices(recentInvoicesData);
-      setIsDemoData(false);
 
     } catch (error) {
-      // Gestion silencieuse des erreurs
+      console.error('Erreur lors du chargement des statistiques:', error);
     } finally {
       setLoading(false);
     }
@@ -482,7 +359,7 @@ export default function StatsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="relative rounded-2xl p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
           <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
@@ -498,133 +375,143 @@ export default function StatsPage() {
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Statistiques</h1>
-            <p className="text-white/80 mt-1">Tableaux de bord et analyses financières</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Statistiques</h1>
+            <p className="text-white/80 mt-1 text-sm sm:text-base">Tableaux de bord et analyses financières</p>
           </div>
         </div>
       </div>
 
-      {/* Bannière d'information pour les données de démonstration */}
-      {isDemoData && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+      {/* Message si aucune donnée */}
+      {!loading && kpiData.totalRevenue === 0 && kpiData.paidInvoices === 0 && (
+        <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Aucune donnée disponible
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Commencez par créer des clients et des factures pour voir vos statistiques ici.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => onPageChange?.('clients')}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Gérer les clients
+            </button>
+            <button
+              onClick={() => onPageChange?.('invoices')}
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                Données de démonstration
-              </h3>
-              <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
-                <p>
-                  Aucune donnée réelle trouvée dans votre base de données. 
-                  Les statistiques affichées sont des données de démonstration pour vous montrer le fonctionnement de la page.
-                </p>
-              </div>
-            </div>
+              Créer des factures
+            </button>
           </div>
         </div>
       )}
 
-
-      {/* Cartes KPI */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-fadeIn" role="region" aria-label="Indicateurs clés de performance">
+      {/* Cartes KPI - Version améliorée et responsive */}
+      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 animate-fadeIn" role="region" aria-label="Indicateurs clés de performance">
         {/* Chiffre d'affaires total */}
         <div 
-          className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer"
+          className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
           role="article"
           aria-label="Chiffre d'affaires total"
         >
-          <div className="absolute top-4 right-4 p-3 bg-green-100 dark:bg-green-900/30 rounded-full" aria-hidden="true">
-            <Euro className="w-6 h-6 text-green-600 dark:text-green-400" />
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 sm:p-2.5 bg-green-100 dark:bg-green-900/30 rounded-full group-hover:scale-110 transition-transform duration-300" aria-hidden="true">
+            <Euro className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-green-600 dark:text-green-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">CA Total</p>
+          <div className="pr-10 sm:pr-12 lg:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">CA Total</p>
             <p 
-              className="text-2xl font-bold text-gray-900 dark:text-white"
+              className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight"
               aria-label={`Chiffre d'affaires total: ${kpiData.totalRevenue.toLocaleString('fr-FR')} euros`}
             >
               {kpiData.totalRevenue.toLocaleString('fr-FR')}€
             </p>
           </div>
-          <div className="mt-4 flex items-center text-sm">
+          <div className="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm">
             <span className="text-gray-500 dark:text-gray-400">Toutes les factures payées</span>
           </div>
         </div>
 
         {/* Chiffre d'affaires annuel */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
-          <div className="absolute top-4 right-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-            <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group">
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 sm:p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-full group-hover:scale-110 transition-transform duration-300">
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">CA Annuel</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="pr-10 sm:pr-12 lg:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">CA Annuel</p>
+            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
               {kpiData.annualRevenue.toLocaleString('fr-FR')}€
             </p>
           </div>
-          <div className="mt-4 flex items-center text-sm">
+          <div className="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm">
             <span className="text-gray-500 dark:text-gray-400">Année en cours</span>
           </div>
         </div>
 
         {/* Factures payées */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
-          <div className="absolute top-4 right-4 p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-full">
-            <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group">
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 sm:p-2.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full group-hover:scale-110 transition-transform duration-300">
+            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Factures Payées</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="pr-10 sm:pr-12 lg:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Factures Payées</p>
+            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
               {kpiData.paidInvoices}
             </p>
           </div>
-          <div className="mt-4 flex items-center text-sm">
+          <div className="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm">
             <span className="text-gray-500 dark:text-gray-400">Total factures réglées</span>
           </div>
         </div>
 
         {/* Clients actifs */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
-          <div className="absolute top-4 right-4 p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-            <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group">
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 sm:p-2.5 bg-purple-100 dark:bg-purple-900/30 rounded-full group-hover:scale-110 transition-transform duration-300">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-purple-600 dark:text-purple-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Clients Actifs</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="pr-10 sm:pr-12 lg:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Clients Actifs</p>
+            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
               {kpiData.activeClients}
             </p>
           </div>
-          <div className="mt-4 flex items-center text-sm">
+          <div className="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm">
             <span className="text-gray-500 dark:text-gray-400">Avec factures payées</span>
           </div>
-          </div>
         </div>
+      </div>
 
-      {/* Graphiques */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" role="region" aria-label="Graphiques et analyses">
+      {/* Graphiques - Version améliorée et responsive */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6" role="region" aria-label="Graphiques et analyses">
         {/* Évolution du CA mensuel */}
         <div 
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6"
+          className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6"
           role="img"
           aria-label="Graphique d'évolution du chiffre d'affaires mensuel"
         >
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Évolution du chiffre d'affaires
             </h3>
-            <div className="flex items-center space-x-4 text-sm">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+            <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm">
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-blue-500"></div>
                 <span className="text-gray-600 dark:text-gray-400">CA Mensuel</span>
+              </div>
+            </div>
           </div>
-          </div>
-        </div>
 
           {monthlyRevenue.length > 0 ? (
-            <div className="h-80">
+            <div className="h-64 sm:h-72 lg:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyRevenue} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <defs>
@@ -725,49 +612,49 @@ export default function StatsPage() {
       </div>
 
         {/* Répartition par client */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Répartition par client
-          </h3>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+          <div className="flex flex-col space-y-4 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                Répartition par client
+              </h3>
+              <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-blue-500"></div>
                 <span>Top {clientRevenue.length} clients</span>
               </div>
-              <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1" role="tablist" aria-label="Type de graphique">
-                <button
-                  onClick={() => setChartView('bar')}
-                  role="tab"
-                  aria-selected={chartView === 'bar'}
-                  aria-controls="chart-content"
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
-                    chartView === 'bar'
-                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                  }`}
-                >
-                  Barres
-                </button>
-                <button
-                  onClick={() => setChartView('pie')}
-                  role="tab"
-                  aria-selected={chartView === 'pie'}
-                  aria-controls="chart-content"
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
-                    chartView === 'pie'
-                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                  }`}
-                >
-                  Camembert
-                </button>
-                    </div>
-                  </div>
-                </div>
+            </div>
+            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 w-fit" role="tablist" aria-label="Type de graphique">
+              <button
+                onClick={() => setChartView('bar')}
+                role="tab"
+                aria-selected={chartView === 'bar'}
+                aria-controls="chart-content"
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+                  chartView === 'bar'
+                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                Barres
+              </button>
+              <button
+                onClick={() => setChartView('pie')}
+                role="tab"
+                aria-selected={chartView === 'pie'}
+                aria-controls="chart-content"
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+                  chartView === 'pie'
+                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                Camembert
+              </button>
+            </div>
+          </div>
           
           {clientRevenue.length > 0 ? (
-            <div className="h-80" id="chart-content" role="tabpanel" aria-label="Graphique de répartition par client">
+            <div className="h-64 sm:h-72 lg:h-80" id="chart-content" role="tabpanel" aria-label="Graphique de répartition par client">
               <ResponsiveContainer width="100%" height="100%">
                 {chartView === 'bar' ? (
                   <BarChart 
@@ -946,69 +833,167 @@ export default function StatsPage() {
           </div>
         </div>
 
-      {/* Suivi des factures */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Suivi des factures - Version améliorée et responsive */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Factures en attente */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6 hover:shadow-md transition-shadow duration-300">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Factures en attente
-          </h3>
-            <AlertCircle className="w-5 h-5 text-orange-500" />
+            </h3>
+            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-orange-600 dark:text-orange-400 mb-2">
               {kpiData.pendingInvoices}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               {kpiData.pendingAmount.toLocaleString('fr-FR')}€ en attente
-                  </p>
-                </div>
+            </p>
+          </div>
         </div>
 
         {/* Factures en retard */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6 hover:shadow-md transition-shadow duration-300">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Factures en retard
             </h3>
-            <XCircle className="w-5 h-5 text-red-500" />
+            <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-red-600 dark:text-red-400">
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-red-600 dark:text-red-400 mb-2">
               {kpiData.overdueInvoices}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               Nécessitent un suivi
-                  </p>
-                </div>
-              </div>
+            </p>
+          </div>
+        </div>
 
         {/* Montant total en attente */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6 hover:shadow-md transition-shadow duration-300 sm:col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Montant en attente
             </h3>
-            <Clock className="w-5 h-5 text-blue-500" />
+            <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
               {kpiData.pendingAmount.toLocaleString('fr-FR')}€
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               En attente de paiement
             </p>
           </div>
         </div>
       </div>
 
-      {/* Tableau des dernières factures */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+      {/* Dernières factures - Version améliorée et responsive */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">
           Dernières factures
         </h3>
-        <div className="overflow-x-auto">
+        
+        {/* Message si aucune facture */}
+        {recentInvoices.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+              <FileText className="w-8 h-8 text-gray-400" />
+            </div>
+            <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Aucune facture
+            </h4>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Créez votre première facture pour commencer à suivre vos revenus.
+            </p>
+            <button
+              onClick={() => onPageChange?.('invoices')}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Créer une facture
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Vue mobile - Cards améliorées */}
+            <div className="block md:hidden space-y-3">
+          {recentInvoices.map((invoice) => (
+            <div key={invoice.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {invoice.invoice_number}
+                </span>
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                  invoice.status === 'paid' 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                    : invoice.status === 'sent'
+                    ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                }`}>
+                  {invoice.status === 'paid' ? 'Payée' : 
+                   invoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
+                </span>
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                {invoice.client_name}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-bold text-gray-900 dark:text-white">
+                  {invoice.amount.toLocaleString('fr-FR')}€
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Échéance: {new Date(invoice.due_date).toLocaleDateString('fr-FR')}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Vue tablet - Cards horizontales */}
+        <div className="hidden md:block lg:hidden space-y-3">
+          {recentInvoices.map((invoice) => (
+            <div key={invoice.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {invoice.invoice_number}
+                    </span>
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                      invoice.status === 'paid' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                        : invoice.status === 'sent'
+                        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                    }`}>
+                      {invoice.status === 'paid' ? 'Payée' : 
+                       invoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {invoice.client_name}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">
+                    {invoice.amount.toLocaleString('fr-FR')}€
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {new Date(invoice.due_date).toLocaleDateString('fr-FR')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Vue desktop - Table */}
+        <div className="hidden lg:block overflow-x-auto">
           <table 
             className="w-full"
             role="table"
@@ -1016,16 +1001,16 @@ export default function StatsPage() {
           >
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">N° Facture</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Client</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Montant</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Statut</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Échéance</th>
+                <th className="text-left py-3 px-4 font-medium text-sm text-gray-600 dark:text-gray-400">N° Facture</th>
+                <th className="text-left py-3 px-4 font-medium text-sm text-gray-600 dark:text-gray-400">Client</th>
+                <th className="text-left py-3 px-4 font-medium text-sm text-gray-600 dark:text-gray-400">Montant</th>
+                <th className="text-left py-3 px-4 font-medium text-sm text-gray-600 dark:text-gray-400">Statut</th>
+                <th className="text-left py-3 px-4 font-medium text-sm text-gray-600 dark:text-gray-400">Échéance</th>
               </tr>
             </thead>
             <tbody>
               {recentInvoices.map((invoice) => (
-                <tr key={invoice.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr key={invoice.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
                   <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white">
                     {invoice.invoice_number}
                   </td>
@@ -1055,6 +1040,8 @@ export default function StatsPage() {
             </tbody>
           </table>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

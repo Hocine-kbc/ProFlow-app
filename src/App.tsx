@@ -140,13 +140,13 @@ function AppContent() {
       case 'dashboard':
         return <Dashboard onNavigate={setCurrentPage} />;
       case 'clients':
-        return <ClientsPage />;
+        return <ClientsPage onPageChange={setCurrentPage} />;
       case 'services':
         return <ServicesPage />;
       case 'invoices':
         return <InvoicesPage />;
       case 'stats':
-        return <StatsPage />;
+        return <StatsPage onPageChange={setCurrentPage} />;
       case 'settings':
         return <SettingsPage />;
       case 'profile':

@@ -1,10 +1,10 @@
 // Générateur de PDF avec Puppeteer
 // Remplace PDFKit par une solution basée sur HTML + TailwindCSS
 
-import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
-import { generateInvoiceHTML } from './invoiceTemplate.js';
+import { generateSharedInvoiceHTML } from './sharedInvoiceTemplate.js';
+import { browserPool } from './browserPool.js';
 
 /**
  * Génère un PDF de facture avec Puppeteer à partir d'un template HTML
@@ -14,8 +14,12 @@ import { generateInvoiceHTML } from './invoiceTemplate.js';
  */
 export async function generateInvoicePDFWithPuppeteer(invoiceData, companyData) {
   let browser;
+  let page;
   
   try {
+    console.log('⏱️ Début génération PDF...');
+    const startTime = Date.now();
+    
     // Créer le répertoire temp s'il n'existe pas
     const tempDir = path.join(process.cwd(), 'temp');
     if (!fs.existsSync(tempDir)) {
@@ -26,32 +30,37 @@ export async function generateInvoicePDFWithPuppeteer(invoiceData, companyData) 
     const fileName = `facture_${invoiceData.invoice_number}_${Date.now()}.pdf`;
     const filePath = path.join(tempDir, fileName);
 
-    // Générer le HTML avec le template
-    const htmlContent = generateInvoiceHTML(invoiceData, companyData);
+    // Préparer les données pour le template partagé
+    const settings = {
+      companyName: companyData.name,
+      ownerName: companyData.owner,
+      address: companyData.address,
+      email: companyData.email,
+      phone: companyData.phone,
+      siret: companyData.siret,
+      logoUrl: companyData.logoUrl,
+      // Paramètres de conditions de paiement
+      invoiceTerms: companyData.invoiceTerms,
+      paymentTerms: companyData.paymentTerms,
+      paymentDays: companyData.paymentDays,
+      paymentMethod: companyData.paymentMethod,
+      additionalTerms: companyData.additionalTerms
+    };
 
-    // Lancer Puppeteer
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-gpu'
-      ]
-    });
+    // Générer le HTML avec le template partagé
+    const htmlContent = generateSharedInvoiceHTML(invoiceData, invoiceData.client, invoiceData.services, settings);
 
-    const page = await browser.newPage();
+    // Utiliser le pool de navigateurs pour de meilleures performances
+    browser = await browserPool.getBrowser();
+    page = await browser.newPage();
 
-    // Configurer la page pour le PDF
+    // Configurer la page pour le PDF avec optimisations
     await page.setContent(htmlContent, {
-      waitUntil: 'networkidle0'
+      waitUntil: 'domcontentloaded' // Plus rapide que networkidle0
     });
 
-    // Attendre que TailwindCSS soit chargé
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Attendre que le contenu soit rendu (temps réduit)
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // Générer le PDF
     const pdfBuffer = await page.pdf({
@@ -70,7 +79,9 @@ export async function generateInvoicePDFWithPuppeteer(invoiceData, companyData) 
     // Sauvegarder le fichier
     fs.writeFileSync(filePath, pdfBuffer);
 
-    console.log(`✅ PDF généré avec succès: ${fileName}`);
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    console.log(`✅ PDF généré avec succès en ${duration}ms: ${fileName}`);
 
     return {
       buffer: pdfBuffer,
@@ -82,8 +93,11 @@ export async function generateInvoicePDFWithPuppeteer(invoiceData, companyData) 
     console.error('❌ Erreur lors de la génération du PDF:', error);
     throw new Error(`Erreur génération PDF: ${error.message}`);
   } finally {
+    if (page) {
+      await page.close();
+    }
     if (browser) {
-      await browser.close();
+      browserPool.releaseBrowser(browser);
     }
   }
 }
@@ -96,8 +110,12 @@ export async function generateInvoicePDFWithPuppeteer(invoiceData, companyData) 
  */
 export async function generateInvoicePDFWithPuppeteerAdvanced(invoiceData, companyData, options = {}) {
   let browser;
+  let page;
   
   try {
+    console.log('⏱️ Début génération PDF avancé...');
+    const startTime = Date.now();
+    
     const tempDir = path.join(process.cwd(), 'temp');
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
@@ -106,22 +124,29 @@ export async function generateInvoicePDFWithPuppeteerAdvanced(invoiceData, compa
     const fileName = `facture_${invoiceData.invoice_number}_${Date.now()}.pdf`;
     const filePath = path.join(tempDir, fileName);
 
-    const htmlContent = generateInvoiceHTML(invoiceData, companyData);
+    // Préparer les données pour le template partagé
+    const settings = {
+      companyName: companyData.name,
+      ownerName: companyData.owner,
+      address: companyData.address,
+      email: companyData.email,
+      phone: companyData.phone,
+      siret: companyData.siret,
+      logoUrl: companyData.logoUrl,
+      // Paramètres de conditions de paiement
+      invoiceTerms: companyData.invoiceTerms,
+      paymentTerms: companyData.paymentTerms,
+      paymentDays: companyData.paymentDays,
+      paymentMethod: companyData.paymentMethod,
+      additionalTerms: companyData.additionalTerms
+    };
 
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-gpu'
-      ]
-    });
+    // Générer le HTML avec le template partagé
+    const htmlContent = generateSharedInvoiceHTML(invoiceData, invoiceData.client, invoiceData.services, settings);
 
-    const page = await browser.newPage();
+    // Utiliser le pool de navigateurs
+    browser = await browserPool.getBrowser();
+    page = await browser.newPage();
 
     // Injecter des styles CSS personnalisés si nécessaire
     await page.evaluateOnNewDocument(() => {
@@ -136,10 +161,10 @@ export async function generateInvoicePDFWithPuppeteerAdvanced(invoiceData, compa
     });
 
     await page.setContent(htmlContent, {
-      waitUntil: 'networkidle0'
+      waitUntil: 'domcontentloaded' // Plus rapide
     });
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500)); // Temps réduit
 
     const pdfBuffer = await page.pdf({
       format: options.format || 'A4',
@@ -158,7 +183,9 @@ export async function generateInvoicePDFWithPuppeteerAdvanced(invoiceData, compa
 
     fs.writeFileSync(filePath, pdfBuffer);
 
-    console.log(`✅ PDF avancé généré avec succès: ${fileName}`);
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    console.log(`✅ PDF avancé généré avec succès en ${duration}ms: ${fileName}`);
 
     return {
       buffer: pdfBuffer,
@@ -170,8 +197,11 @@ export async function generateInvoicePDFWithPuppeteerAdvanced(invoiceData, compa
     console.error('❌ Erreur lors de la génération du PDF avancé:', error);
     throw new Error(`Erreur génération PDF avancé: ${error.message}`);
   } finally {
+    if (page) {
+      await page.close();
+    }
     if (browser) {
-      await browser.close();
+      browserPool.releaseBrowser(browser);
     }
   }
 }

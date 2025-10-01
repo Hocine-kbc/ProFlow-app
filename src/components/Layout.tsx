@@ -112,7 +112,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                 <img src="/logoPF.png" alt="ProFlow Logo" className="w-full h-full object-cover" />
               </div>
             )}
-            <div className="flex items-center space-x-2 absolute top-0 right-0 h-full">
+            <div className="flex items-center space-x-2 absolute top-2 right-2 h-auto">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 className={`h-full bg-white/20 hover:bg-white/30 text-white transition-colors hidden lg:block z-10 ${

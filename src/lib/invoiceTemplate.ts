@@ -43,12 +43,6 @@ export function generateInvoiceHTML(invoiceData: InvoiceData, companyData: Compa
     return new Date(dateString).toLocaleDateString('fr-FR');
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
-  };
 
 
   return `<!DOCTYPE html>
@@ -56,85 +50,172 @@ export function generateInvoiceHTML(invoiceData: InvoiceData, companyData: Compa
 <head>
   <meta charset="UTF-8">
   <title>Facture ${invoiceData.invoice_number}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: 'Arial', sans-serif; }
-    table { page-break-inside: auto; }
-    tr { page-break-inside: avoid; page-break-after: auto; }
-    @media print {
-      .print-break {
-        page-break-before: always;
-      }
-      body {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #fff;
+      color: #333;
+      margin: 40px;
+    }
+
+    .invoice-box {
+      max-width: 800px;
+      margin: auto;
+    }
+
+    /* Header entreprise + bloc facture */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 40px;
+    }
+
+    .company {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .company h2 {
+      margin: 0;
+      font-size: 20px;
+      color: #1d4ed8 !important;
+    }
+
+    .invoice-info {
+      border: 1px solid #ddd;
+      padding: 15px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.6;
+      background: #f9fafb;
+    }
+
+    .invoice-info h1 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: #1d4ed8 !important;
+    }
+
+    /* Section client */
+    .client {
+      margin-bottom: 30px;
+    }
+
+    .client h3 {
+      color: #1d4ed8 !important;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+
+    /* Tableau prestations */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+
+    table th, table td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    table th {
+      background: #f3f4f6 !important;
+      color: #1d4ed8 !important;
+      font-weight: 600;
+    }
+
+    /* Total */
+    .total {
+      text-align: right;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    .total strong {
+      font-size: 18px;
+      color: #1d4ed8 !important;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.6;
+      text-align: center;
     }
   </style>
 </head>
-<body class="bg-white text-gray-800">
-  <div class="max-w-3xl mx-auto p-10">
-    
-    <!-- En-tête -->
-    <div class="flex justify-between items-start mb-10">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">${companyData.name}</h1>
-        <p class="text-sm">${companyData.owner}</p>
-        <p class="text-sm">${companyData.address}</p>
-        <p class="text-sm">${companyData.email} • ${companyData.phone}</p>
-        <p class="text-sm">SIRET : ${companyData.siret}</p>
+<body>
+  <div class="invoice-box">
+    <!-- Header -->
+    <div class="header">
+      <div class="company">
+        <h2>${companyData.name}</h2>
+        <p>
+          ${companyData.owner}<br>
+          ${companyData.address}<br>
+          ${companyData.email} • ${companyData.phone}<br>
+          SIRET: ${companyData.siret}
+        </p>
       </div>
-      <div class="text-right">
-        <h2 class="text-xl font-semibold mb-2">Facture</h2>
-        <p class="text-sm"><strong>N° :</strong> ${invoiceData.invoice_number}</p>
-        <p class="text-sm"><strong>Date :</strong> ${formatDate(invoiceData.date)}</p>
-        <p class="text-sm"><strong>Échéance :</strong> ${formatDate(invoiceData.due_date)}</p>
+      <div class="invoice-info">
+        <h1>Facture N° : ${invoiceData.invoice_number}</h1>
+        <p>
+          Date d'émission : ${formatDate(invoiceData.date)}<br>
+          Date d'échéance : ${formatDate(invoiceData.due_date)}
+        </p>
       </div>
     </div>
 
-    <!-- Infos client -->
-    <div class="mb-10">
-      <h3 class="text-lg font-semibold mb-2">Facturer à :</h3>
-      <p class="text-sm">${invoiceData.client.name}</p>
-      <p class="text-sm">${invoiceData.client.address || 'Adresse non renseignée'}</p>
-      <p class="text-sm">${invoiceData.client.email} • ${invoiceData.client.phone || ''}</p>
+    <!-- Client -->
+    <div class="client">
+      <h3>Facturer à</h3>
+      <p>
+        ${invoiceData.client.name}<br>
+        ${invoiceData.client.email}<br>
+        ${invoiceData.client.phone || ''}<br>
+        ${invoiceData.client.address || ''}
+      </p>
     </div>
 
-    <!-- Tableau des prestations -->
-    <table class="w-full border-collapse mb-10 text-sm table-auto">
+    <!-- Tableau prestations -->
+    <table>
       <thead>
-        <tr class="bg-gray-100 border-b">
-          <th class="p-3 text-left">Description</th>
-          <th class="p-3 text-left">Qté/Heures</th>
-          <th class="p-3 text-left">Tarif H</th>
-          <th class="p-3 text-right">Montant</th>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Heures</th>
+          <th>Tarif</th>
+          <th>Montant</th>
         </tr>
       </thead>
       <tbody>
-        ${invoiceData.services.map((service, index) => `
-        <tr class="border-b">
-          <td class="p-3">${service.description}</td>
-          <td class="p-3">${service.hours}</td>
-          <td class="p-3">${formatCurrency(service.hourly_rate)}</td>
-          <td class="p-3 text-right">${formatCurrency(service.hours * service.hourly_rate)}</td>
+        ${invoiceData.services.map((service) => `
+        <tr>
+          <td>${formatDate(invoiceData.date)}</td>
+          <td>${service.description}</td>
+          <td>${service.hours}</td>
+          <td>${service.hourly_rate.toFixed(2)}€</td>
+          <td>${(service.hours * service.hourly_rate).toFixed(2)}€</td>
         </tr>
         `).join('')}
       </tbody>
     </table>
 
     <!-- Totaux -->
-    <div class="text-right mb-16">
-      <p class="text-base mb-2"><strong>Sous-total :</strong> ${formatCurrency(invoiceData.subtotal)}</p>
-      <p class="text-2xl font-bold text-gray-900">TOTAL : ${formatCurrency(invoiceData.subtotal)} €</p>
+    <div class="total">
+      <p><strong>Total à payer : ${invoiceData.subtotal.toFixed(2)} €</strong></p>
     </div>
 
-    <!-- Mentions légales -->
-    <div class="text-xs text-gray-600 border-t pt-6 leading-relaxed">
-      <p>TVA non applicable, art. 293 B du CGI.</p>
-      <p>Paiement sous 30 jours par virement bancaire.</p>
-      <p>Merci de votre confiance.</p>
-    </div>
-
+    <!-- Footer -->
+    <footer>
+      TVA non applicable, art.293 B du CGI<br>
+      Paiement à 30 jours. Pas de TVA (franchise en base).
+    </footer>
   </div>
 </body>
 </html>`;

@@ -69,46 +69,59 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="relative rounded-2xl p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
-        {/* Traits qui traversent tout le header */}
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header amélioré et responsive */}
+      <div className="relative rounded-xl sm:rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+        {/* Traits décoratifs - Version responsive */}
         <div className="absolute inset-0 opacity-20">
-          {/* Traits horizontaux qui traversent */}
-          <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
-          <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
-          <div className="absolute top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
-          <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
-          <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
+          {/* Traits horizontaux */}
+          <div className="absolute top-6 sm:top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
+          <div className="absolute top-12 sm:top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
+          <div className="absolute top-18 sm:top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
+          <div className="absolute bottom-16 sm:bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
+          <div className="absolute bottom-8 sm:bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
           
-          {/* Traits verticaux qui traversent */}
-          <div className="absolute top-0 bottom-0 left-12 w-0.5 h-full bg-white/20 transform rotate-12"></div>
-          <div className="absolute top-0 bottom-0 left-24 w-0.5 h-full bg-white/15 transform -rotate-6"></div>
-          <div className="absolute top-0 bottom-0 right-12 w-0.5 h-full bg-white/20 transform rotate-45"></div>
-          <div className="absolute top-0 bottom-0 right-24 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
+          {/* Traits verticaux */}
+          <div className="absolute top-0 bottom-0 left-8 sm:left-12 w-0.5 h-full bg-white/20 transform rotate-12"></div>
+          <div className="absolute top-0 bottom-0 left-16 sm:left-24 w-0.5 h-full bg-white/15 transform -rotate-6"></div>
+          <div className="absolute top-0 bottom-0 right-8 sm:right-12 w-0.5 h-full bg-white/20 transform rotate-45"></div>
+          <div className="absolute top-0 bottom-0 right-16 sm:right-24 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
         </div>
         
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
-            <h1 className="text-2xl font-bold">Paramètres</h1>
-            <p className="text-white/80 mt-1">Paramètres de facturation et configuration fiscale</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Paramètres</h1>
+            <p className="text-white/80 mt-1 text-sm sm:text-base">Paramètres de facturation et configuration fiscale</p>
+          </div>
+          
+          {/* Bouton de sauvegarde dans le header pour tous les écrans */}
+          <div className="flex justify-end sm:justify-start">
+            <button
+              type="submit"
+              form="settings-form"
+              className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 rounded-full text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 hover:border-white/50 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              <span className="text-sm font-medium">Sauvegarder</span>
+            </button>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form id="settings-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
 
-        {/* Billing Settings */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center space-x-2 mb-6">
+        {/* Billing Settings - Version améliorée et responsive */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+          <div className="flex items-center space-x-2 mb-4 sm:mb-6">
             <Euro className="w-5 h-5 text-green-600 dark:text-green-400" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Paramètres de facturation
             </h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Tarif horaire par défaut (€)
               </label>
               <input
@@ -117,12 +130,13 @@ export default function SettingsPage() {
                 step="0.5"
                 value={settings.defaultHourlyRate}
                 onChange={(e) => handleInputChange('defaultHourlyRate', parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                placeholder="25.00"
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Taux URSSAF (%)
               </label>
               <input
@@ -132,24 +146,26 @@ export default function SettingsPage() {
                 step="0.1"
                 value={settings.urssafRate}
                 onChange={(e) => handleInputChange('urssafRate', parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                placeholder="22.0"
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Préfixe facture
               </label>
               <input
                 type="text"
                 value={settings.invoicePrefix}
                 onChange={(e) => handleInputChange('invoicePrefix', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                placeholder="FAC"
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Délai de paiement (jours)
               </label>
               <input
@@ -157,32 +173,46 @@ export default function SettingsPage() {
                 min="0"
                 value={settings.paymentTerms}
                 onChange={(e) => handleInputChange('paymentTerms', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                placeholder="30"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Conditions de paiement personnalisées
+              </label>
+              <textarea
+                value={settings.invoiceTerms}
+                onChange={(e) => handleInputChange('invoiceTerms', e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                placeholder="Paiement à 30 jours. Pas de TVA (franchise en base)."
+                rows={3}
               />
             </div>
           </div>
         </div>
 
-        {/* Tax Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center space-x-2 mb-6">
+        {/* Tax Information - Version améliorée et responsive */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+          <div className="flex items-center space-x-2 mb-4 sm:mb-6">
             <Percent className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Informations fiscales
             </h3>
           </div>
           
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
-            <div className="flex items-start space-x-3">
-              <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-3">
+              <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
                   Micro-entreprise - Régime fiscal
                 </h4>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
                   En tant que micro-entrepreneur dans le secteur des services, vous bénéficiez :
                 </p>
-                <ul className="text-sm text-blue-700 dark:text-blue-300 mt-2 space-y-1 ml-4 list-disc">
+                <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1 ml-4 list-disc">
                   <li>Taux de cotisations sociales : {settings.urssafRate}%</li>
                   <li>Franchise de TVA (pas de TVA à facturer)</li>
                   <li>Comptabilité simplifiée</li>
@@ -192,7 +222,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-4 sm:mt-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Conditions de facturation (affichées sur le PDF)
             </label>
@@ -200,21 +230,12 @@ export default function SettingsPage() {
               rows={4}
               value={settings.invoiceTerms}
               onChange={(e) => handleInputChange('invoiceTerms', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200 resize-none"
+              placeholder="Paiement à 30 jours. Pas de TVA (franchise en base)."
             />
           </div>
         </div>
 
-        {/* Save button */}
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            className="inline-flex items-center px-6 py-3 rounded-full text-white bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-800 dark:hover:to-indigo-800 shadow border border-blue-500 dark:border-blue-600"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Sauvegarder les paramètres
-          </button>
-        </div>
       </form>
     </div>
   );

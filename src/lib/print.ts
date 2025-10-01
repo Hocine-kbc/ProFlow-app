@@ -1,8 +1,5 @@
-import { Invoice, Service } from '../types';
-
-function euro(amount: number): string {
-  return `${amount.toFixed(2)}€`;
-}
+import { Invoice } from '../types';
+import { generateSharedInvoiceHTML } from './sharedInvoiceTemplate';
 
 export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], services?: any[]) {
   // Read saved business settings (from SettingsPage)
@@ -68,135 +65,174 @@ export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], servic
     allServicesCount: servicesData.length
   });
 
-  const servicesRows = (invoiceServices || ([] as Service[]))
-    .map(
-      (s) => `
-        <tr>
-          <td>${new Date(s.date).toLocaleDateString('fr-FR')}</td>
-          <td>${s.description || ''}</td>
-          <td class="right">${s.hours}</td>
-          <td class="right">${s.hourly_rate.toFixed(2)}€</td>
-          <td class="right">${(s.hours * s.hourly_rate).toFixed(2)}€</td>
-        </tr>`
-    )
-    .join('');
+  // Utiliser le template partagé
+  const html = generateSharedInvoiceHTML(invoice, client, invoiceServices, settings);
 
-  const html = `<!doctype html>
-  <html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <title>Facture ${invoice.invoice_number}</title>
-    <style>
-      @page { size: A4 portrait; margin: 16mm; }
-      html, body { height: 100%; }
-      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; padding: 0; color: #111827; background: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; line-height: 1.5; }
-      .container { padding: 48px 28px 28px 28px; }
-      .brand { color: #1d4ed8; }
-      .brand-bg { background: #1d4ed8; }
-      .brand-weak-bg { background: #eff6ff; }
-      .brand-border { border-color: #1d4ed8; }
-      .chip { display:inline-block; padding: 4px 10px; border-radius: 9999px; background: #1d4ed8; color: #ffffff; font-weight: 600; font-size: 12px; letter-spacing: 0.4px; }
-      .divider { height: 0; background: transparent; margin: 0; }
-      h1 { font-size: 22px; margin: 0 0 10px; }
-      h2 { font-size: 16px; margin: 20px 0 10px; }
-      table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-      th, td { border-bottom: none; padding: 10px; font-size: 12px; }
-      thead th:not(:last-child), tbody td:not(:last-child) { border-right: 1px solid #e5e7eb; }
-      th { text-align: left; color: #1d4ed8; background: #eff6ff; }
-      .table-card { border:1px solid #e5e7eb; border-radius: 10px; overflow: hidden; background:#ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-      .table-card table { margin: 0; }
-      .table-card thead th { border-bottom: 1px solid #dbe2ea; }
-      .table-card tbody tr:nth-child(even) { background: #f8fafc; }
-      .table-card tbody td { border-bottom: 1px solid #eef2f7; }
-      .totals { margin-top: 16px; width: auto; margin-left: auto; }
-      .totals td { padding: 2px 0; font-size: 14px; border: none !important; }
-      .totals td:first-child { padding-right: 4px; white-space: nowrap; }
-      .right { text-align: right; }
-      .muted { color: #6b7280; font-size: 12px; }
-      .row { display:flex; justify-content: space-between; gap: 28px; }
-      .card { border:1px solid #e5e7eb; border-radius:8px; padding:14px; background: #ffffff; }
-      .header-bar { height: 8px; width: 100%; margin-bottom: 32px; }
-      @media print { .no-print { display:none; } .container { padding: 0; } }
-    </style>
-  </head>
-  <body>
-    <div class="header-bar brand-bg"></div>
-    <div class="container">
-    <header class="row" style="align-items:flex-start">
-      <div style="flex:1">
-        <div style="display:flex; align-items:center; gap:12px">
-          ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="logo" style="height:56px; width:auto; object-fit:contain;" />` : ''}
-          <div>
-            <h1 class="brand" style="margin:0">${settings?.companyName || 'ProFlow'}</h1>
-            <div class="muted" style="margin-top:4px">${settings?.ownerName || 'Votre flux professionnel simplifié'}</div>
-          </div>
-        </div>
-        <div class="divider"></div>
-        <div style="margin-top:10px">
-          <div class="muted">${settings?.address || ''}</div>
-          <div class="muted">${settings?.email || ''} ${settings?.phone ? ' • ' + settings.phone : ''}</div>
-          ${settings?.siret ? `<div class="muted">SIRET: ${settings.siret}</div>` : ''}
-        </div>
-      </div>
-      <div class="card brand-border" style="min-width:280px; border-width:2px">
-        <div style="font-size:18px; margin-bottom:8px; font-weight:700" class="brand">Facture N° : ${invoice.invoice_number}</div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span class="muted">Date d'émission</span><span>${new Date(invoice.date).toLocaleDateString('fr-FR')}</span></div>
-        <div style="display:flex; justify-content:space-between"><span class="muted">Date d'échéance</span><span>${new Date(invoice.due_date).toLocaleDateString('fr-FR')}</span></div>
-      </div>
-    </header>
-
-    <section class="row" style="margin-top:24px">
-      <div class="card" style="flex:1;">
-        <div style="font-weight:600; margin-bottom:8px" class="brand">Facturer à</div>
-        <div style="font-weight:600; margin-bottom:4px">${client?.name || 'Client inconnu'}</div>
-        <div class="muted" style="margin-bottom:2px">${client?.email || ''}</div>
-        <div class="muted" style="margin-bottom:2px">${client?.phone || ''}</div>
-        <div class="muted">${client?.address || ''}</div>
-      </div>
-    </section>
-    <main>
-      <h2 class="brand" style="margin-top:24px">Détails des prestations</h2>
-      <div class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Description</th>
-            <th class="right">Heures</th>
-            <th class="right">Tarif</th>
-            <th class="right">Montant</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${servicesRows || '<tr><td colspan="5" class="text-center muted">Aucune prestation trouvée</td></tr>'}
-        </tbody>
-      </table>
-      </div>
-
-      <table class="totals">
-        <tr>
-          <td class="right muted">Total à payer&nbsp;:</td>
-          <td class="right">${euro(invoice.subtotal)}</td>
-        </tr>
-        <tr>
-          <td colspan="2" class="right muted" style="font-size:11px; padding-top:8px;">TVA non applicable, art.293 B du CGI</td>
-        </tr>
-      </table>
-    </main>
-    <footer style="margin-top:24px" class="muted">
-      ${settings?.invoiceTerms || `Conditions de paiement: ${settings?.paymentTerms || 30} jours. Aucune TVA applicable (franchise de base).`}
-      ${invoice.payment_method ? `<br><br><strong>Mode de paiement :</strong> ${invoice.payment_method}` : ''}
-    </footer>
-    <script>window.onload = () => { window.print(); };</script>
-    </div>
-  </body>
-  </html>`;
-
-  const win = window.open('', '_blank');
-  if (!win) return;
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
+  // Check if we're on mobile or if window.open is blocked
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  console.log('Print function called:', { isMobile, userAgent: navigator.userAgent });
+  
+  if (isMobile) {
+    // For mobile devices, use a simpler approach
+    console.log('Mobile detected, attempting to open window...');
+    try {
+      // Try to open in new window first
+      const win = window.open('', '_blank');
+      console.log('Window opened:', !!win);
+      if (win) {
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+        console.log('HTML written to window');
+      } else {
+        console.log('Window.open failed, trying alternative methods...');
+        // Method 1: Try to create a blob and download directly
+        try {
+          // Try with application/octet-stream to force download
+          const blob = new Blob([html], { type: 'application/octet-stream' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `facture-${invoice.invoice_number}.html`;
+          link.style.display = 'none';
+          // Force download instead of opening
+          link.setAttribute('target', '_blank');
+          link.setAttribute('rel', 'noopener noreferrer');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          console.log('Blob download attempted with octet-stream');
+        } catch (blobError) {
+          console.log('Octet-stream failed, trying text/html...');
+          // Fallback to text/html
+          try {
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `facture-${invoice.invoice_number}.html`;
+            link.style.display = 'none';
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            console.log('Blob download attempted with text/html');
+          } catch (blobError2) {
+            console.log('Blob download failed, trying data URL...');
+            // Method 2: Try data URL with forced download
+            try {
+              const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+              const link = document.createElement('a');
+              link.href = dataUrl;
+              link.download = `facture-${invoice.invoice_number}.html`;
+              link.style.display = 'none';
+              // Force download instead of opening
+              link.setAttribute('target', '_blank');
+              link.setAttribute('rel', 'noopener noreferrer');
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              console.log('Data URL download attempted');
+            } catch (dataError) {
+              console.log('Data URL failed, showing content in current window...');
+              // Method 3: Show content in current window with print button
+            const printWindow = document.createElement('div');
+            printWindow.innerHTML = html;
+            printWindow.style.cssText = `
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background: white;
+              z-index: 9999;
+              overflow: auto;
+            `;
+            
+            // Add print button
+            const printBtn = document.createElement('button');
+            printBtn.innerHTML = '🖨️ Imprimer/PDF';
+            printBtn.style.cssText = `
+              position: fixed;
+              top: 10px;
+              right: 10px;
+              z-index: 10000;
+              background: #1d4ed8;
+              color: white;
+              border: none;
+              padding: 15px 20px;
+              border-radius: 8px;
+              font-weight: bold;
+              font-size: 16px;
+              cursor: pointer;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            `;
+            printBtn.onclick = () => {
+              window.print();
+              document.body.removeChild(printWindow);
+            };
+            
+            // Add close button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '✕ Fermer';
+            closeBtn.style.cssText = `
+              position: fixed;
+              top: 10px;
+              left: 10px;
+              z-index: 10000;
+              background: #dc2626;
+              color: white;
+              border: none;
+              padding: 15px 20px;
+              border-radius: 8px;
+              font-weight: bold;
+              font-size: 16px;
+              cursor: pointer;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            `;
+            closeBtn.onclick = () => {
+              document.body.removeChild(printWindow);
+            };
+            
+            printWindow.appendChild(printBtn);
+            printWindow.appendChild(closeBtn);
+            document.body.appendChild(printWindow);
+            console.log('Content displayed in current window');
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Mobile download failed:', error);
+      // Show a simple alert
+      alert('Impossible d\'ouvrir la facture. Veuillez réessayer.');
+    }
+  } else {
+    // For desktop, use the original method
+    console.log('Desktop detected, opening window...');
+    const win = window.open('', '_blank');
+    if (!win) {
+      console.log('Window.open failed on desktop, trying fallback...');
+      // Fallback for desktop too
+      const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `facture-${invoice.invoice_number}.html`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    console.log('HTML written to desktop window');
+  }
 }
 
 

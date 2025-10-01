@@ -134,55 +134,55 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="relative rounded-2xl p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
-        {/* Traits qui traversent tout le header */}
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header amélioré et responsive */}
+      <div className="relative rounded-xl sm:rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+        {/* Traits décoratifs - Version responsive */}
         <div className="absolute inset-0 opacity-20">
-          {/* Traits horizontaux qui traversent */}
-          <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
-          <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
-          <div className="absolute top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
-          <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
-          <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
+          {/* Traits horizontaux */}
+          <div className="absolute top-6 sm:top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
+          <div className="absolute top-12 sm:top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
+          <div className="absolute top-18 sm:top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
+          <div className="absolute bottom-16 sm:bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
+          <div className="absolute bottom-8 sm:bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
           
-          {/* Traits verticaux qui traversent */}
-          <div className="absolute top-0 bottom-0 left-12 w-0.5 h-full bg-white/20 transform rotate-12"></div>
-          <div className="absolute top-0 bottom-0 left-24 w-0.5 h-full bg-white/15 transform -rotate-6"></div>
-          <div className="absolute top-0 bottom-0 right-12 w-0.5 h-full bg-white/20 transform rotate-45"></div>
-          <div className="absolute top-0 bottom-0 right-24 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
+          {/* Traits verticaux */}
+          <div className="absolute top-0 bottom-0 left-8 sm:left-12 w-0.5 h-full bg-white/20 transform rotate-12"></div>
+          <div className="absolute top-0 bottom-0 left-16 sm:left-24 w-0.5 h-full bg-white/15 transform -rotate-6"></div>
+          <div className="absolute top-0 bottom-0 right-8 sm:right-12 w-0.5 h-full bg-white/20 transform rotate-45"></div>
+          <div className="absolute top-0 bottom-0 right-16 sm:right-24 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
         </div>
         
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
-            <h1 className="text-2xl font-bold">Profil entreprise</h1>
-            <p className="text-white/80 mt-1">Informations légales et données entreprise</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Profil entreprise</h1>
+            <p className="text-white/80 mt-1 text-sm sm:text-base">Informations légales et données entreprise</p>
           </div>
-          <div className="mt-4 sm:mt-0">
+          <div className="flex justify-end sm:justify-start">
             <button 
               type="submit" 
               form="profile-form"
-              className="inline-flex items-center px-6 py-3 rounded-full text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 rounded-full text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
             >
-              <Save className="w-5 h-5 mr-2" />
-              Sauvegarder
+              <Save className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              <span className="text-sm font-medium">Sauvegarder</span>
             </button>
           </div>
         </div>
       </div>
 
-      <form id="profile-form" onSubmit={handleSave} className="space-y-6">
-        {/* Company Logo Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+      <form id="profile-form" onSubmit={handleSave} className="space-y-4 sm:space-y-6">
+        {/* Company Logo Section - Version améliorée et responsive */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+          <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
             {/* Logo et informations */}
             <div className="flex items-center space-x-3 sm:space-x-4">
               {/* Logo */}
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 flex-shrink-0">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 flex-shrink-0">
                 {settings.logoUrl ? (
                   <img src={settings.logoUrl} alt="Logo entreprise" className="w-full h-full object-cover" />
                 ) : (
-                  <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 )}
@@ -203,24 +203,24 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-wrap gap-2 sm:gap-2">
+            {/* Actions - Version responsive améliorée */}
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               {settings.logoUrl ? (
                 <>
                   <button
                     type="button"
                     onClick={handleLogoEdit}
-                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full transition-all duration-200 font-medium text-xs sm:text-sm opacity-70 hover:opacity-100"
+                    className="flex items-center space-x-1 sm:space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-all duration-200 font-medium text-xs sm:text-sm"
                   >
-                    <Edit3 className="w-3 h-3" />
+                    <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">Modifier</span>
                   </button>
                   <button
                     type="button"
                     onClick={handleLogoDelete}
-                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 hover:bg-red-50 dark:bg-gray-700 dark:hover:bg-red-900/20 text-gray-600 hover:text-red-600 dark:text-gray-300 dark:hover:text-red-400 rounded-full transition-all duration-200 font-medium text-xs sm:text-sm opacity-70 hover:opacity-100"
+                    className="flex items-center space-x-1 sm:space-x-2 px-3 py-2 bg-gray-100 hover:bg-red-50 dark:bg-gray-700 dark:hover:bg-red-900/20 text-gray-600 hover:text-red-600 dark:text-gray-300 dark:hover:text-red-400 rounded-lg transition-all duration-200 font-medium text-xs sm:text-sm"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">Supprimer</span>
                   </button>
                 </>
@@ -228,26 +228,27 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={handleLogoEdit}
-                  className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-1 sm:py-1.5 bg-gray-100 hover:bg-indigo-50 dark:bg-gray-700 dark:hover:bg-indigo-900/20 text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 rounded-full transition-all duration-200 font-medium text-xs sm:text-sm opacity-70 hover:opacity-100"
+                  className="flex items-center space-x-1 sm:space-x-2 px-4 py-2 bg-gray-100 hover:bg-indigo-50 dark:bg-gray-700 dark:hover:bg-indigo-900/20 text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 rounded-lg transition-all duration-200 font-medium text-xs sm:text-sm"
                 >
-                  <Upload className="w-3 h-3" />
-                  <span className="hidden sm:inline">Ajouter</span>
+                  <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Ajouter un logo</span>
+                  <span className="sm:hidden">Ajouter</span>
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        {/* Company Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+        {/* Company Information - Version améliorée et responsive */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center">
             <Building2 className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
             Informations de l'entreprise
           </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                 <Building2 className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
                 Nom de l'entreprise
               </label>
@@ -260,9 +261,9 @@ export default function ProfilePage() {
               />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                   <User className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
                   Prénom
                 </label>
@@ -274,8 +275,8 @@ export default function ProfilePage() {
                   placeholder="Votre prénom"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                   <User className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
                   Nom
                 </label>
@@ -291,16 +292,16 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Contact Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+        {/* Contact Information - Version améliorée et responsive */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center">
             <Mail className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
             Coordonnées de contact
           </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                 <Mail className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
                 Email
               </label>
@@ -313,8 +314,8 @@ export default function ProfilePage() {
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                 <Phone className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
                 Téléphone
               </label>
@@ -327,8 +328,8 @@ export default function ProfilePage() {
               />
             </div>
             
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+            <div className="lg:col-span-2 space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                 <MapPin className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
                 Adresse complète
               </label>
@@ -343,16 +344,16 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Legal Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+        {/* Legal Information - Version améliorée et responsive */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center">
             <Hash className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
             Informations légales
           </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                 <Hash className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
                 Numéro SIRET
               </label>
@@ -363,7 +364,7 @@ export default function ProfilePage() {
                 onChange={(e) => handleInputChange('siret', e.target.value)}
                 placeholder="12345678901234"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">14 chiffres sans espaces</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">14 chiffres sans espaces</p>
             </div>
           </div>
         </div>
