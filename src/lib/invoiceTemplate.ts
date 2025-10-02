@@ -7,7 +7,6 @@ export interface InvoiceData {
   date: string;
   due_date: string;
   subtotal: number;
-  urssaf_deduction: number;
   net_amount: number;
   client: {
     name: string;

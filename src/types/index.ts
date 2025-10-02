@@ -30,7 +30,6 @@ export interface Invoice {
   date: string;
   due_date: string;
   subtotal: number;
-  urssaf_deduction: number;
   net_amount: number;
   payment_method?: string;
   status: 'draft' | 'sent' | 'paid';
@@ -56,7 +55,6 @@ export interface Settings {
   address: string;
   siret: string;
   defaultHourlyRate: number;
-  urssafRate: number;
   invoicePrefix: string;
   paymentTerms: number;
   logoUrl: string;

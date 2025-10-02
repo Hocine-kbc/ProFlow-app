@@ -126,3 +126,13 @@ input[type="checkbox"]:checked::after {
   background-color: #3b82f6 !important;
   border-color: #3b82f6 !important;
 }
+
+/* Hide scrollbars but keep functionality */
+.scrollbar-none {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* WebKit browsers (Chrome, Safari, Edge) */
+}

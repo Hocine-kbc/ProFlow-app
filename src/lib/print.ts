@@ -56,17 +56,33 @@ export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], servic
     }
   }
 
+  // Recalculer le montant total à partir des services
+  const calculatedAmount = invoiceServices.reduce((acc: number, service: any) => {
+    const hours = Number(service.hours) || 0;
+    const rate = Number(service.hourly_rate) || 0;
+    return acc + (hours * rate);
+  }, 0);
+
+  // Créer une copie de la facture avec le montant recalculé
+  const invoiceWithCalculatedAmount = {
+    ...invoice,
+    subtotal: calculatedAmount,
+    net_amount: calculatedAmount
+  };
+
   // Debug: Log invoice data
   console.log('Print invoice data:', {
-    invoice: invoice,
+    invoice: invoiceWithCalculatedAmount,
     client: client,
     services: invoiceServices,
     servicesCount: invoiceServices?.length || 0,
-    allServicesCount: servicesData.length
+    allServicesCount: servicesData.length,
+    calculatedAmount: calculatedAmount,
+    originalAmount: invoice.subtotal
   });
 
-  // Utiliser le template partagé
-  const html = generateSharedInvoiceHTML(invoice, client, invoiceServices, settings);
+  // Utiliser le template partagé avec le montant recalculé
+  const html = generateSharedInvoiceHTML(invoiceWithCalculatedAmount, client, invoiceServices, settings);
 
   // Check if we're on mobile or if window.open is blocked
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);

@@ -470,18 +470,11 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
                   <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                 </div>
                 <h4 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-2">Aucune prestation</h4>
-                <p className="text-gray-500 dark:text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4">
+                <p className="text-gray-500 dark:text-gray-300 text-xs sm:text-sm">
                   Vous n'avez pas encore enregistré de prestations. 
                   <br />
                   Enregistrez votre première prestation pour commencer.
                 </p>
-                <button
-                  onClick={() => onNavigate?.('services')}
-                  className="inline-flex items-center px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
-                >
-                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                  Enregistrer une prestation
-                </button>
               </div>
             ) : (
               <>
@@ -545,18 +538,11 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
                   <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                 </div>
                 <h4 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-2">Aucune facture</h4>
-                <p className="text-gray-500 dark:text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4">
+                <p className="text-gray-500 dark:text-gray-300 text-xs sm:text-sm">
                   Vous n'avez pas encore créé de factures. 
                   <br />
                   Créez votre première facture pour commencer.
                 </p>
-                <button
-                  onClick={() => onNavigate?.('invoices')}
-                  className="inline-flex items-center px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
-                >
-                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                  Créer une facture
-                </button>
               </div>
             ) : (
               <>

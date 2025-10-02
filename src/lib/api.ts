@@ -162,10 +162,24 @@ export async function fetchInvoices(): Promise<Invoice[]> {
         }
       }
       
+      // Get services from localStorage if not in database
+      let invoiceServices = invoice.services || [];
+      if (invoiceServices.length === 0) {
+        try {
+          const storedServices = JSON.parse(localStorage.getItem('invoice-services') || '{}');
+          invoiceServices = storedServices[invoice.id] || [];
+          if (invoiceServices.length > 0) {
+            console.log(`📋 Services chargés pour la facture ${invoice.id}:`, invoiceServices.length, 'services');
+          }
+        } catch (e) {
+          console.warn('Could not load services from localStorage:', e);
+        }
+      }
+      
       return {
         ...invoice,
-        // Ensure services array is properly handled
-        services: invoice.services || [],
+        // Use services from localStorage if available
+        services: invoiceServices,
         // Client will be fetched separately if needed
         client: null,
         // Add payment_method from localStorage if not in database
@@ -199,9 +213,10 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
   // Note: payment_method column might not exist in database yet
   // if (invoiceData.payment_method !== undefined) toInsert.payment_method = invoiceData.payment_method;
   if (invoiceData.subtotal !== undefined) toInsert.subtotal = invoiceData.subtotal;
-  if (invoiceData.urssaf_deduction !== undefined) toInsert.urssaf_deduction = invoiceData.urssaf_deduction;
   if (invoiceData.net_amount !== undefined) toInsert.net_amount = invoiceData.net_amount;
   if (invoiceData.status !== undefined) toInsert.status = invoiceData.status;
+  // Ajouter urssaf_deduction avec 0 pour satisfaire la contrainte NOT NULL de la DB
+  toInsert.urssaf_deduction = 0;
   
   console.log('Creating invoice with data:', toInsert);
   
@@ -250,6 +265,18 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
     }
   }
   
+  // Store services in localStorage for persistence across page reloads
+  if (services && services.length > 0) {
+    try {
+      const existingData = JSON.parse(localStorage.getItem('invoice-services') || '{}');
+      existingData[data.id] = services;
+      localStorage.setItem('invoice-services', JSON.stringify(existingData));
+      console.log(`💾 Services stockés pour la facture ${data.id}:`, services.length, 'services');
+    } catch (e) {
+      console.warn('Could not store services in localStorage:', e);
+    }
+  }
+  
   // Return the invoice with services array
   return { ...data, services: services || [] } as Invoice;
 }
@@ -271,9 +298,12 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
   // Note: payment_method column might not exist in database yet
   // if (updateData.payment_method !== undefined) dbUpdateData.payment_method = updateData.payment_method;
   if (updateData.subtotal !== undefined) dbUpdateData.subtotal = updateData.subtotal;
-  if (updateData.urssaf_deduction !== undefined) dbUpdateData.urssaf_deduction = updateData.urssaf_deduction;
   if (updateData.net_amount !== undefined) dbUpdateData.net_amount = updateData.net_amount;
   if (updateData.status !== undefined) dbUpdateData.status = updateData.status;
+  // Toujours définir urssaf_deduction à 0 pour éviter les erreurs de contrainte
+  if (updateData.subtotal !== undefined || updateData.net_amount !== undefined) {
+    dbUpdateData.urssaf_deduction = 0;
+  }
   
   console.log('Updating invoice with data:', dbUpdateData);
   
@@ -321,6 +351,18 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
       localStorage.setItem('invoice-payment-methods', JSON.stringify(existingData));
     } catch (e) {
       console.warn('Could not store payment method in localStorage:', e);
+    }
+  }
+  
+  // Store services in localStorage if provided
+  if (services && services.length > 0) {
+    try {
+      const existingData = JSON.parse(localStorage.getItem('invoice-services') || '{}');
+      existingData[id] = services;
+      localStorage.setItem('invoice-services', JSON.stringify(existingData));
+      console.log(`💾 Services mis à jour pour la facture ${id}:`, services.length, 'services');
+    } catch (e) {
+      console.warn('Could not store services in localStorage:', e);
     }
   }
   
@@ -378,7 +420,6 @@ export async function fetchSettings(): Promise<Settings | null> {
     address: (data as any).address ?? '',
     siret: (data as any).siret ?? '',
     defaultHourlyRate: (data as any).defaulthourlyrate ?? 0,
-    urssafRate: (data as any).urssafrate ?? 0,
     invoicePrefix: (data as any).invoiceprefix ?? '',
     paymentTerms: (data as any).paymentterms ?? 0,
     logoUrl: (data as any).logourl ?? '',
@@ -401,7 +442,6 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
     address: (payload as any).address,
     siret: (payload as any).siret,
     defaulthourlyrate: (payload as any).defaultHourlyRate,
-    urssafrate: (payload as any).urssafRate,
     invoiceprefix: (payload as any).invoicePrefix,
     paymentterms: (payload as any).paymentTerms,
     logourl: (payload as any).logoUrl,
@@ -425,7 +465,6 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
     address: (data as any).address ?? '',
     siret: (data as any).siret ?? '',
     defaultHourlyRate: (data as any).defaulthourlyrate ?? 0,
-    urssafRate: (data as any).urssafrate ?? 0,
     invoicePrefix: (data as any).invoiceprefix ?? '',
     paymentTerms: (data as any).paymentterms ?? 0,
     logoUrl: (data as any).logourl ?? '',

@@ -10,6 +10,42 @@ import AlertModal from './AlertModal';
 export default function InvoicesPage() {
   const { state, dispatch, showNotification } = useApp();
   const { invoices, clients, services } = state;
+
+  // Fonction utilitaire pour calculer le montant d'une facture à partir de ses prestations
+  const calculateInvoiceAmount = (invoice: any): number => {
+    // 1. Essayer d'utiliser les services stockés dans la facture
+    if (invoice.services && invoice.services.length > 0) {
+      return invoice.services.reduce((acc: number, service: any) => {
+        const hours = Number(service.hours) || 0;
+        const rate = Number(service.hourly_rate) || 0;
+        return acc + (hours * rate);
+      }, 0);
+    }
+    
+    // 2. PRIORITÉ AU MONTANT STOCKÉ EN BASE (corrigé après suppression URSSAF)
+    const storedSubtotal = Number(invoice.subtotal || 0);
+    const storedNetAmount = Number(invoice.net_amount || 0);
+    
+    if (storedSubtotal > 0) {
+      return storedSubtotal;
+    }
+    
+    if (storedNetAmount > 0) {
+      return storedNetAmount;
+    }
+    
+    // 3. En dernier recours, chercher les services dans le state global
+    const invoiceServices = services.filter(s => s.client_id === invoice.client_id);
+    if (invoiceServices.length > 0) {
+      return invoiceServices.reduce((acc: number, service: any) => {
+        const hours = Number(service.hours) || 0;
+        const rate = Number(service.hourly_rate) || 0;
+        return acc + (hours * rate);
+      }, 0);
+    }
+    
+    return 0;
+  };
   
 
   const [showModal, setShowModal] = useState(false);
@@ -49,19 +85,25 @@ export default function InvoicesPage() {
       const client = clients.find(c => c.id === preselectedClientId);
       if (client) {
         setPreselectedClient({ id: client.id, name: client.name });
-        // Pré-remplir le formulaire avec le client sélectionné
+        // Pré-remplir le formulaire avec le client sélectionné et la date du jour
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Calculer la date d'échéance automatiquement
+        const dueDateString = calculateDueDate(today);
+        
         setFormData(prev => ({
           ...prev,
-          client_id: preselectedClientId
+          client_id: preselectedClientId,
+          date: today,
+          due_date: dueDateString
         }));
         // Ouvrir automatiquement le modal de création de facture
-        setShowModal(true);
-        showNotification('success', 'Client pré-sélectionné', `Le client "${client.name}" a été pré-sélectionné pour la nouvelle facture.`);
+              setShowModal(true);
       }
       // Nettoyer le localStorage
       localStorage.removeItem('preselectedClientId');
     }
-  }, [clients, showNotification]);
+  }, [clients]);
   
   const [formData, setFormData] = useState({
     client_id: '',
@@ -117,17 +159,33 @@ export default function InvoicesPage() {
     return `FAC-${year}${month}-${String(count).padStart(3, '0')}`;
   };
 
+  // Fonction utilitaire pour calculer la date d'échéance
+  const calculateDueDate = (invoiceDate: string): string => {
+    let paymentTerms = 30; // valeur par défaut
+    try {
+      const raw = localStorage.getItem('business-settings');
+      const settings = raw ? JSON.parse(raw) : null;
+      if (settings && settings.paymentTerms) {
+        paymentTerms = settings.paymentTerms;
+      }
+    } catch (error) {
+      console.warn('Impossible de récupérer les paramètres d\'échéance:', error);
+    }
+    
+    const dueDate = new Date(invoiceDate);
+    dueDate.setDate(dueDate.getDate() + paymentTerms);
+    return dueDate.toISOString().split('T')[0];
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const client = clients.find(c => c.id === formData.client_id);
     const invoiceServices = selectableServices.filter(s => selectedServices.includes(s.id));
     
-    const subtotal = invoiceServices.reduce((acc, service) => 
+    const totalAmount = invoiceServices.reduce((acc, service) => 
       acc + (service.hours * service.hourly_rate), 0
     );
-    const urssafDeduction = subtotal * 0.22;
-    const netAmount = subtotal - urssafDeduction;
     
     try {
       if (editingInvoice) {
@@ -138,9 +196,8 @@ export default function InvoicesPage() {
           date: formData.date,
           due_date: formData.due_date,
           payment_method: formData.payment_method,
-          subtotal,
-          urssaf_deduction: urssafDeduction,
-          net_amount: netAmount,
+          subtotal: totalAmount,
+          net_amount: totalAmount,
           status: 'draft',
         } as any);
         dispatch({ type: 'UPDATE_INVOICE', payload: { ...editingInvoice, ...saved, client, services: invoiceServices } as Invoice });
@@ -153,9 +210,8 @@ export default function InvoicesPage() {
           date: formData.date,
           due_date: formData.due_date,
           payment_method: formData.payment_method,
-          subtotal,
-          urssaf_deduction: urssafDeduction,
-          net_amount: netAmount,
+          subtotal: totalAmount,
+          net_amount: totalAmount,
           status: 'draft',
         } as any);
         dispatch({ type: 'ADD_INVOICE', payload: { ...saved, client, services: invoiceServices } as Invoice });
@@ -375,7 +431,7 @@ export default function InvoicesPage() {
         invoice_number: emailModal.invoice_number,
         invoice_date: new Date(emailModal.date).toLocaleDateString('fr-FR'),
         invoice_due_date: new Date(emailModal.due_date).toLocaleDateString('fr-FR'),
-        invoice_amount: emailModal.net_amount.toFixed(2),
+        invoice_amount: calculateInvoiceAmount(emailModal).toFixed(2),
         payment_method: emailModal.payment_method,
         company_name: settings?.companyName || 'ProFlow',
         company_email: settings?.email || 'contact@proflow.com',
@@ -412,8 +468,8 @@ export default function InvoicesPage() {
 
   // kept via selectableServices in edit/new flows
 
-  const totalHT = invoices.reduce((acc, inv) => acc + inv.subtotal, 0);
-  const totalPayees = invoices.filter(i => i.status === 'paid').reduce((acc, inv) => acc + inv.subtotal, 0);
+  const totalHT = invoices.reduce((acc, inv) => acc + calculateInvoiceAmount(inv), 0);
+  const totalPayees = invoices.filter(i => i.status === 'paid').reduce((acc, inv) => acc + calculateInvoiceAmount(inv), 0);
   const totalEnvoyees = invoices.filter(i => i.status === 'sent').length;
 
   return (
@@ -442,7 +498,20 @@ export default function InvoicesPage() {
           </div>
           <div className="mt-4 sm:mt-0 flex justify-end">
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                // Pré-remplir la date du jour et calculer l'échéance automatiquement
+                const today = new Date().toISOString().split('T')[0];
+                
+                // Calculer la date d'échéance automatiquement
+                const dueDateString = calculateDueDate(today);
+                
+                setFormData(prev => ({
+                  ...prev,
+                  date: today,
+                  due_date: dueDateString
+                }));
+                setShowModal(true);
+              }}
               className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -456,7 +525,7 @@ export default function InvoicesPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-          <div className="text-xs text-gray-500 dark:text-gray-300">Total HT</div>
+          <div className="text-xs text-gray-500 dark:text-gray-300">Total facturé</div>
           <div className="text-xl font-bold text-gray-900 dark:text-white">{totalHT.toFixed(2)}€</div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
@@ -477,21 +546,21 @@ export default function InvoicesPage() {
             { 
               label: 'Payées', 
               count: invoices.filter(i => i.status === 'paid').length,
-              amount: invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + (inv.net_amount || inv.subtotal || 0), 0),
+              amount: invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
               color: 'bg-green-500',
               textColor: 'text-green-600 dark:text-green-400'
             },
             { 
               label: 'Envoyées', 
               count: invoices.filter(i => i.status === 'sent').length,
-              amount: invoices.filter(i => i.status === 'sent').reduce((sum, inv) => sum + (inv.net_amount || inv.subtotal || 0), 0),
+              amount: invoices.filter(i => i.status === 'sent').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
               color: 'bg-yellow-500',
               textColor: 'text-yellow-600 dark:text-yellow-400'
             },
             { 
               label: 'Brouillons', 
               count: invoices.filter(i => i.status === 'draft').length,
-              amount: invoices.filter(i => i.status === 'draft').reduce((sum, inv) => sum + (inv.net_amount || inv.subtotal || 0), 0),
+              amount: invoices.filter(i => i.status === 'draft').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
               color: 'bg-gray-500',
               textColor: 'text-gray-600 dark:text-gray-400'
             }
@@ -615,20 +684,14 @@ export default function InvoicesPage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Montant HT</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Montant total</p>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {invoice.subtotal.toFixed(2)}€
+                        {calculateInvoiceAmount(invoice).toFixed(2)}€
                       </p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Montant Net</p>
-                      <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                        {invoice.net_amount.toFixed(2)}€
-                      </p>
-                    </div>
+                  <div className="flex items-center justify-end">
                     <div className="flex items-center space-x-1">
                       <button
                         onClick={() => setPreviewInvoice(invoice)}
@@ -733,13 +796,16 @@ export default function InvoicesPage() {
                   Date
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Montant HT
+                  Montant à payer
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Montant Net
+                  Date d'échéance
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Statut
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Date de paiement
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
@@ -749,7 +815,7 @@ export default function InvoicesPage() {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
               {invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={isSelectionMode ? 8 : 7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={isSelectionMode ? 9 : 8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     <div className="flex flex-col items-center space-y-2">
                       <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600" />
                       <p className="text-lg font-medium">Aucune facture trouvée</p>
@@ -784,10 +850,10 @@ export default function InvoicesPage() {
                     {new Date(invoice.date).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
-                    {invoice.subtotal.toFixed(2)}€
+                    {calculateInvoiceAmount(invoice).toFixed(2)}€
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 dark:text-green-400 font-medium">
-                    {invoice.net_amount.toFixed(2)}€
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {new Date(invoice.due_date).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
@@ -800,6 +866,11 @@ export default function InvoicesPage() {
                       {invoice.status === 'paid' ? 'Payée' : 
                        invoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {invoice.status === 'paid' && (invoice as any).updated_at 
+                      ? new Date((invoice as any).updated_at).toLocaleDateString('fr-FR')
+                      : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
@@ -926,8 +997,8 @@ export default function InvoicesPage() {
                 {/* Client and Invoice Number Section */}
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 sm:p-6">
                   <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 dark:bg-blue-900/30 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
@@ -987,7 +1058,19 @@ export default function InvoicesPage() {
                         type="date"
                         required
                         value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        onChange={(e) => {
+                          const newDate = e.target.value;
+                          setFormData({ ...formData, date: newDate });
+                          
+                          // Calculer automatiquement la date d'échéance si une date de facture est sélectionnée
+                          if (newDate && !editingInvoice) {
+                            // Calculer la date d'échéance
+                            const dueDateString = calculateDueDate(newDate);
+                            
+                            // Mettre à jour la date d'échéance seulement si elle n'a pas été modifiée manuellement
+                            setFormData(prev => ({ ...prev, date: newDate, due_date: dueDateString }));
+                          }
+                        }}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
@@ -1002,6 +1085,7 @@ export default function InvoicesPage() {
                         value={formData.due_date}
                         onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="Sélectionnez d'abord une date de facture"
                       />
                     </div>
                     
@@ -1030,8 +1114,8 @@ export default function InvoicesPage() {
                 {(formData.client_id || editingInvoice) && (
                   <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3">
-                        <svg className="w-4 h-4 text-purple-600 dark:text-purple-400 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3">
+                        <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
@@ -1096,8 +1180,8 @@ export default function InvoicesPage() {
               
                 {/* Total preview */}
                 {selectedServices.length > 0 && (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-700">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                       <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
                         <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -1106,30 +1190,12 @@ export default function InvoicesPage() {
                       Récapitulatif
                     </h4>
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-gray-700 font-medium">Sous-total HT:</span>
-                        <span className="text-lg font-bold text-gray-900">
+                      <div className="flex justify-between items-center py-3 bg-white dark:bg-gray-800 rounded-lg px-4 border-t-2 border-blue-200 dark:border-blue-600">
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">Total:</span>
+                        <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                           {services
                             .filter(s => selectedServices.includes(s.id))
                             .reduce((acc, s) => acc + (s.hours * s.hourly_rate), 0)
-                            .toFixed(2)}€
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 text-red-600">
-                        <span className="font-medium">Déduction URSSAF (22%):</span>
-                        <span className="text-lg font-bold">
-                          -{(services
-                            .filter(s => selectedServices.includes(s.id))
-                            .reduce((acc, s) => acc + (s.hours * s.hourly_rate), 0) * 0.22)
-                            .toFixed(2)}€
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center py-3 bg-white rounded-lg px-4 border-t-2 border-blue-200">
-                        <span className="text-lg font-bold text-gray-900">Total net:</span>
-                        <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {(services
-                            .filter(s => selectedServices.includes(s.id))
-                            .reduce((acc, s) => acc + (s.hours * s.hourly_rate), 0) * 0.78)
                             .toFixed(2)}€
                         </span>
                       </div>
@@ -1202,7 +1268,7 @@ export default function InvoicesPage() {
                          previewInvoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
                       </span>
                       <span className="text-white/60 text-xs">
-                        {previewInvoice.net_amount.toFixed(2)}€
+                        {calculateInvoiceAmount(previewInvoice).toFixed(2)}€
                       </span>
                     </div>
                   </div>
@@ -1374,29 +1440,15 @@ export default function InvoicesPage() {
                     </h3>
                   {(() => {
                     // Get services for this invoice - try from invoice.services first, then from global services
+                    // Utiliser les services stockés dans la facture si disponibles
                     let invoiceServices = previewInvoice.services || [];
                     
-                    
-                    // If no services in invoice, try to find them from global services
-                    if (invoiceServices.length === 0 && services.length > 0) {
-                      
-                      // Find services that are marked as 'invoiced' and belong to the same client
-                      const clientServices = services.filter(s => 
-                        s.client_id === previewInvoice.client_id && s.status === 'invoiced'
-                      );
-                      
-                      if (clientServices.length > 0) {
-                        invoiceServices = clientServices;
-                      } else {
-                        // If no invoiced services found, try to find completed services for this client
-                        const completedServices = services.filter(s => 
-                          s.client_id === previewInvoice.client_id && s.status === 'completed'
-                        );
-                        
-                        if (completedServices.length > 0) {
-                          invoiceServices = completedServices;
-                        }
-                      }
+                    // Si pas de services stockés dans la facture, ne pas afficher tous les services du client
+                    // car cela fausse l'aperçu. L'aperçu doit montrer seulement les services de cette facture.
+                    if (invoiceServices.length === 0) {
+                      console.log('⚠️ Aucun service stocké dans la facture pour l\'aperçu');
+                      // Ne pas utiliser tous les services du client pour l'aperçu
+                      // car cela afficherait toutes les prestations au lieu de celles de la facture
                     }
                     
                     return (
@@ -1458,12 +1510,12 @@ export default function InvoicesPage() {
                         </h4>
                           <div className="space-y-4">
                             <div className="flex justify-between items-center py-2 sm:py-3 border-b border-blue-200 dark:border-blue-700">
-                              <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">Sous-total HT :</span>
-                              <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{previewInvoice.subtotal.toFixed(2)}€</span>
+                              <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">Sous-total :</span>
+                              <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{calculateInvoiceAmount(previewInvoice).toFixed(2)}€</span>
                             </div>
                             <div className="flex justify-between items-center py-3 sm:py-4 bg-white dark:bg-gray-800 rounded-lg px-3 sm:px-4 border-2 border-blue-200 dark:border-blue-700">
                               <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Total à payer :</span>
-                              <span className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{previewInvoice.net_amount.toFixed(2)}€</span>
+                              <span className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{calculateInvoiceAmount(previewInvoice).toFixed(2)}€</span>
                             </div>
                           </div>
                       </div>
@@ -1591,7 +1643,7 @@ export default function InvoicesPage() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600 dark:text-gray-400">Montant total :</span>
-                      <span className="font-bold text-gray-900 dark:text-white ml-2">{emailModal.net_amount.toFixed(2)}€</span>
+                      <span className="font-bold text-gray-900 dark:text-white ml-2">{calculateInvoiceAmount(emailModal).toFixed(2)}€</span>
                     </div>
                     <div>
                       <span className="text-gray-600 dark:text-gray-400">Échéance :</span>

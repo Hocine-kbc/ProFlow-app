@@ -45,30 +45,30 @@ const Notification: React.FC<NotificationProps> = ({ notification, onClose }) =>
   const getBackgroundColor = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700';
+        return 'bg-green-50 dark:bg-green-800 border-green-200 dark:border-green-600';
       case 'error':
-        return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700';
+        return 'bg-red-50 dark:bg-red-800 border-red-200 dark:border-red-600';
       case 'warning':
-        return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700';
+        return 'bg-yellow-50 dark:bg-yellow-800 border-yellow-200 dark:border-yellow-600';
       case 'info':
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700';
+        return 'bg-blue-50 dark:bg-blue-800 border-blue-200 dark:border-blue-600';
       default:
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700';
+        return 'bg-blue-50 dark:bg-blue-800 border-blue-200 dark:border-blue-600';
     }
   };
 
   const getTextColor = () => {
     switch (type) {
       case 'success':
-        return 'text-green-800 dark:text-green-200';
+        return 'text-green-800 dark:text-green-100';
       case 'error':
-        return 'text-red-800 dark:text-red-200';
+        return 'text-red-800 dark:text-red-100';
       case 'warning':
-        return 'text-yellow-800 dark:text-yellow-200';
+        return 'text-yellow-800 dark:text-yellow-100';
       case 'info':
-        return 'text-blue-800 dark:text-blue-200';
+        return 'text-blue-800 dark:text-blue-100';
       default:
-        return 'text-blue-800 dark:text-blue-200';
+        return 'text-blue-800 dark:text-blue-100';
     }
   };
 
@@ -84,7 +84,7 @@ const Notification: React.FC<NotificationProps> = ({ notification, onClose }) =>
               {title}
             </h4>
             {message && (
-              <p className={`text-sm mt-1 ${getTextColor()} opacity-90`}>
+              <p className={`text-sm mt-1 ${getTextColor()}`}>
                 {message}
               </p>
             )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Clock, CheckCircle, Circle, Trash, ChevronLeft, ChevronRight, Search, Filter, X, User, Euro, Clock as ClockIcon } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { createService, updateService as updateServiceApi, deleteService as deleteServiceApi } from '../lib/api';
@@ -41,6 +41,7 @@ export default function ServicesPage() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
+  const [preselectedClient, setPreselectedClient] = useState<{ id: string; name: string } | null>(null);
   const [formData, setFormData] = useState({
     client_id: '',
     date: '',
@@ -49,6 +50,30 @@ export default function ServicesPage() {
     description: '',
     status: 'pending' as 'pending' | 'completed' | 'invoiced',
   });
+
+  // Détecter le client pré-sélectionné depuis la vue détaillée client
+  useEffect(() => {
+    const preselectedClientId = localStorage.getItem('preselectedClientId');
+    if (preselectedClientId) {
+      // Trouver le client dans la liste
+      const client = clients.find(c => c.id === preselectedClientId);
+      if (client) {
+        setPreselectedClient({ id: client.id, name: client.name });
+        // Pré-remplir le formulaire avec le client sélectionné et la date du jour
+        const today = new Date().toISOString().split('T')[0];
+        
+        setFormData(prev => ({
+          ...prev,
+          client_id: preselectedClientId,
+          date: today
+        }));
+        // Ouvrir automatiquement le modal de création de prestation
+        setShowModal(true);
+      }
+      // Nettoyer le localStorage
+      localStorage.removeItem('preselectedClientId');
+    }
+  }, [clients]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -567,12 +592,12 @@ export default function ServicesPage() {
         </div>
 
         {/* Vue desktop - Table */}
-        <div className="hidden sm:block overflow-x-auto">
-          <table className="w-full">
+        <div className="hidden sm:block overflow-hidden">
+          <table className="w-full table-fixed">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 {isSelectionMode && (
-                  <th className="px-6 py-4 text-left">
+                  <th className="w-16 px-6 py-4 text-left">
                     <button
                       onClick={() => {
                         const allSelected = currentServices.every(service => selectedServices.has(service.id));
@@ -603,28 +628,28 @@ export default function ServicesPage() {
                     </button>
                   </th>
                 )}
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-48 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Client
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-28 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Date
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Description
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-20 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Heures
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-24 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Tarif/h
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-28 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Montant
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-28 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Statut
                 </th>
-                <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-40 px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -637,7 +662,7 @@ export default function ServicesPage() {
                 return (
                   <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     {isSelectionMode && (
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="w-16 px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => toggleServiceSelection(service.id)}
                           className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
@@ -650,7 +675,7 @@ export default function ServicesPage() {
                         </button>
                       </td>
                     )}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="w-48 px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {(() => {
                           if (!client) {
@@ -705,24 +730,24 @@ export default function ServicesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="w-28 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {new Date(service.date).toLocaleDateString('fr-FR')}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs">
-                      <div className="truncate" title={service.description || 'Aucune description'}>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      <div className="break-words">
                         {service.description || 'Aucune description'}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="w-20 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {service.hours}h
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="w-24 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {service.hourly_rate}€
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                    <td className="w-28 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
                       {amount.toFixed(2)}€
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="w-28 px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                         service.status === 'completed'
                           ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
@@ -733,7 +758,7 @@ export default function ServicesPage() {
                         {service.status === 'completed' ? 'Terminée' : service.status === 'invoiced' ? 'Facturée' : 'En attente'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="w-40 px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           onClick={() => handleEdit(service)}
@@ -800,106 +825,65 @@ export default function ServicesPage() {
       )}
 
       {showModal && (
-        <div 
-          className="fixed bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50" 
-          style={{ 
-            top: 0, 
-            left: 0, 
-            right: 0, 
-            bottom: 0, 
-            width: '100vw', 
-            height: '100vh',
-            margin: 0
-          }}
-        >
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-xs w-full max-h-[95vh] flex flex-col overflow-hidden">
-            <div className="p-4 sm:p-6 border-b flex-shrink-0 rounded-t-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white">
-              <h3 className="text-lg font-semibold">
-                {editingService ? 'Modifier la prestation' : 'Nouvelle prestation'}
-              </h3>
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header with gradient */}
+            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 sm:p-6 text-white relative overflow-hidden">
+              {/* Decorative lines - consistent with other page headers */}
+              <div className="absolute inset-0 opacity-20">
+                {/* Traits horizontaux qui traversent */}
+                <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
+                <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
+                <div className="absolute top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
+                <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
+                <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
+              </div>
+              
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg sm:text-xl font-bold truncate">
+                      {editingService ? 'Modifier la prestation' : 'Nouvelle prestation'}
+                    </h3>
+                    <p className="text-white/80 text-xs sm:text-sm truncate">
+                      {editingService ? 'Mettre à jour les informations' : 'Enregistrer une nouvelle prestation'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="text-white/80 hover:text-white hover:bg-white/20 rounded-xl p-2 transition-colors flex-shrink-0 ml-2"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-              <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-auto">
-                <div>
+            {/* Scrollable content area - No visible scrollbar */}
+            <div className="overflow-y-auto scrollbar-none max-h-[calc(95vh-120px)]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="lg:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Client *
                   </label>
-                  <div className="relative">
-                    <select
-                      required
-                      value={formData.client_id}
-                      onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white appearance-none cursor-pointer"
-                    >
-                      <option value="">Sélectionner un client</option>
-                      {clients.map(client => (
-                        <option key={client.id} value={client.id}>
-                          {client.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                  
-                  {/* Aperçu du client sélectionné */}
-                  {formData.client_id && (() => {
-                    const selectedClient = clients.find(c => c.id === formData.client_id);
-                    if (!selectedClient) return null;
-                    
-                    const colors = [
-                      'from-blue-500 to-indigo-600',
-                      'from-green-500 to-emerald-600',
-                      'from-purple-500 to-violet-600',
-                      'from-pink-500 to-rose-600',
-                      'from-orange-500 to-red-600',
-                      'from-teal-500 to-cyan-600',
-                      'from-yellow-500 to-amber-600',
-                      'from-red-500 to-pink-600',
-                      'from-indigo-500 to-blue-600',
-                      'from-emerald-500 to-green-600',
-                      'from-violet-500 to-purple-600',
-                      'from-rose-500 to-pink-600',
-                      'from-amber-500 to-yellow-600',
-                      'from-cyan-500 to-teal-600',
-                      'from-lime-500 to-green-600',
-                      'from-sky-500 to-blue-600',
-                      'from-fuchsia-500 to-purple-600',
-                      'from-stone-500 to-gray-600',
-                      'from-slate-500 to-gray-600',
-                      'from-zinc-500 to-gray-600',
-                      'from-neutral-500 to-gray-600',
-                      'from-gray-500 to-slate-600',
-                      'from-red-500 to-orange-600',
-                      'from-orange-500 to-amber-600',
-                      'from-yellow-500 to-lime-600',
-                      'from-lime-500 to-green-600'
-                    ];
-                    const colorIndex = selectedClient.name.charAt(0).toUpperCase().charCodeAt(0) % colors.length;
-                    const gradientClass = colors[colorIndex];
-                    
-                    return (
-                      <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-8 h-8 bg-gradient-to-br ${gradientClass} rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md`}>
-                            {selectedClient.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
-                              {selectedClient.name}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {selectedClient.email}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
+                  <select
+                    required
+                    value={formData.client_id}
+                    onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="">Sélectionner un client</option>
+                    {clients.map(client => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div>
@@ -915,47 +899,34 @@ export default function ServicesPage() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Heures *
-                    </label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      required
-                      value={formData.hours}
-                      onChange={(e) => setFormData({ ...formData, hours: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Tarif/h (€) *
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      required
-                      value={formData.hourly_rate}
-                      onChange={(e) => setFormData({ ...formData, hourly_rate: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description
+                    Heures *
                   </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    required
+                    value={formData.hours}
+                    onChange={(e) => setFormData({ ...formData, hours: parseFloat(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Détails de la prestation..."
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Tarif/h (€) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={formData.hourly_rate}
+                    onChange={(e) => setFormData({ ...formData, hourly_rate: parseFloat(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
                 
@@ -973,22 +944,34 @@ export default function ServicesPage() {
                     <option value="invoiced">Facturée</option>
                   </select>
                 </div>
-                
-                {/* Preview calculation */}
-                {formData.hours > 0 && formData.hourly_rate > 0 && (
-                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                    <div className="flex justify-between text-sm font-semibold text-green-600 dark:text-green-400">
-                      <span>Montant total:</span>
-                      <span>
-                        {calculateAmount(formData.hours, formData.hourly_rate).toFixed(2)}€
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
               
-              <div className="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Détails de la prestation..."
+                />
+              </div>
+                
+              {/* Preview calculation */}
+              {formData.hours > 0 && formData.hourly_rate > 0 && (
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <div className="flex justify-between text-sm font-semibold text-green-600 dark:text-green-400">
+                    <span>Montant total:</span>
+                    <span>
+                      {calculateAmount(formData.hours, formData.hourly_rate).toFixed(2)}€
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
                   <button
                     type="button"
                     onClick={resetForm}
@@ -1003,8 +986,8 @@ export default function ServicesPage() {
                     {editingService ? 'Modifier' : 'Ajouter'}
                   </button>
                 </div>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       )}
