@@ -1,7 +1,5 @@
-/// <reference types="./types.d.ts" />
-
-import { serve } from "std/http/server.ts"
-import { createClient } from 'supabase'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,7 +40,7 @@ serve(async (req) => {
     // Create admin client to delete user
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SERVICE_ROLE_KEY') ?? ''
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkZmhxa2d2Y2dxZ2tyeGFybXVpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODY5NjgwOCwiZXhwIjoyMDc0MjcyODA4fQ.nnvJgG74iXWLV_g7t_tiy975uGd3w3axMwAB5B92i3Y'
     )
 
     // Delete all user data first (in correct order to respect foreign key constraints)

@@ -29,7 +29,7 @@ import { supabase } from '../lib/supabase';
 import { openInvoicePrintWindow } from '../lib/print';
 import { sendInvoiceEmail, EmailData } from '../lib/emailService';
 import { useSettings } from '../hooks/useSettings';
-import { updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi } from '../lib/api';
+import { updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi, fetchClientNotes, createClientNote, deleteClientNote, ClientNote } from '../lib/api';
 import { useApp } from '../contexts/AppContext';
 import AlertModal from './AlertModal';
 
@@ -92,6 +92,99 @@ export default function ClientDetailView({
   const [activeTab, setActiveTab] = useState<'overview' | 'invoices' | 'services' | 'payments' | 'notes'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  
+  // États pour les notes
+  const [notes, setNotes] = useState<ClientNote[]>([]);
+  const [newNote, setNewNote] = useState('');
+  const [noteType, setNoteType] = useState<'general' | 'call' | 'email' | 'meeting'>('general');
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [notesLoading, setNotesLoading] = useState(false);
+  
+  // Fonctions pour gérer les notes
+  const addNote = async () => {
+    if (!newNote.trim() || !client) return;
+    
+    setNotesLoading(true);
+    try {
+      const newNoteData = await createClientNote({
+        client_id: clientId,
+        type: noteType,
+        content: newNote.trim()
+      });
+      
+      setNotes(prev => [newNoteData, ...prev]);
+      setNewNote('');
+      setNoteType('general');
+      setIsAddingNote(false);
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la note:', error);
+      // Fallback vers localStorage en cas d'erreur
+      const note = {
+        id: Date.now().toString(),
+        client_id: clientId,
+        content: newNote.trim(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        type: noteType
+      };
+      
+      setNotes(prev => [note, ...prev]);
+      setNewNote('');
+      setNoteType('general');
+      setIsAddingNote(false);
+      
+      // Sauvegarder dans localStorage comme fallback
+      const existingNotes = JSON.parse(localStorage.getItem(`client-notes-${clientId}`) || '[]');
+      existingNotes.unshift(note);
+      localStorage.setItem(`client-notes-${clientId}`, JSON.stringify(existingNotes));
+    } finally {
+      setNotesLoading(false);
+    }
+  };
+  
+  const deleteNote = async (noteId: string) => {
+    try {
+      await deleteClientNote(noteId);
+      setNotes(prev => prev.filter(note => note.id !== noteId));
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la note:', error);
+      // Fallback vers localStorage
+      setNotes(prev => prev.filter(note => note.id !== noteId));
+      const existingNotes = JSON.parse(localStorage.getItem(`client-notes-${clientId}`) || '[]');
+      const updatedNotes = existingNotes.filter((note: any) => note.id !== noteId);
+      localStorage.setItem(`client-notes-${clientId}`, JSON.stringify(updatedNotes));
+    }
+  };
+  
+  // Charger les notes au montage du composant
+  useEffect(() => {
+    const loadNotes = async () => {
+      if (!clientId) return;
+      
+      setNotesLoading(true);
+      try {
+        // Essayer de charger depuis la base de données
+        const dbNotes = await fetchClientNotes(clientId);
+        if (dbNotes.length > 0) {
+          setNotes(dbNotes);
+        } else {
+          // Fallback vers localStorage si pas de notes en DB
+          const savedNotes = JSON.parse(localStorage.getItem(`client-notes-${clientId}`) || '[]');
+          setNotes(savedNotes);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des notes:', error);
+        // Fallback vers localStorage
+        const savedNotes = JSON.parse(localStorage.getItem(`client-notes-${clientId}`) || '[]');
+        setNotes(savedNotes);
+      } finally {
+        setNotesLoading(false);
+      }
+    };
+    
+    loadNotes();
+  }, [clientId]);
   
   // États pour les modals
   const [previewInvoice, setPreviewInvoice] = useState<any>(null);
@@ -1358,12 +1451,74 @@ export default function ClientDetailView({
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Dernières activités
               </h3>
-              <div className="text-center py-8">
-                <Clock className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
-                  Aucune activité récente à afficher
-                </p>
-              </div>
+              {(() => {
+                // Récupérer les activités récentes du client
+                const clientServices = services.filter(s => s.client_id === clientId);
+                const clientInvoices = state.invoices.filter(i => i.client_id === clientId);
+                
+                // Combiner et trier par date
+                const activities = [
+                  ...clientServices.map(service => ({
+                    type: 'service',
+                    date: service.date,
+                    title: `Prestation: ${service.description}`,
+                    description: `${service.hours}h à ${service.hourly_rate}€/h`,
+                    amount: service.hours * service.hourly_rate,
+                    icon: Clock,
+                    color: 'blue'
+                  })),
+                  ...clientInvoices.map(invoice => ({
+                    type: 'invoice',
+                    date: invoice.date,
+                    title: `Facture ${invoice.invoice_number}`,
+                    description: invoice.status === 'paid' ? 'Payée' : invoice.status === 'sent' ? 'Envoyée' : 'Brouillon',
+                    amount: calculateInvoiceAmount(invoice),
+                    icon: FileText,
+                    color: invoice.status === 'paid' ? 'green' : invoice.status === 'sent' ? 'yellow' : 'gray'
+                  }))
+                ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+
+                if (activities.length === 0) {
+                  return (
+                    <div className="text-center py-8">
+                      <Clock className="w-8 h-8 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
+                        Aucune activité récente à afficher
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {activities.map((activity, index) => (
+                      <div key={`${activity.type}-${activity.date}-${index}`} className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <div className={`p-2 rounded-full ${
+                          activity.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                          activity.color === 'green' ? 'bg-green-100 text-green-600' :
+                          activity.color === 'yellow' ? 'bg-yellow-100 text-yellow-600' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          <activity.icon className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {activity.title}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {activity.description} • {new Date(activity.date).toLocaleDateString('fr-FR')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {activity.amount.toFixed(2)}€
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -1709,18 +1864,179 @@ export default function ClientDetailView({
         )}
 
         {activeTab === 'notes' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Notes et historique des contacts
-            </h3>
-            <div className="text-center py-12">
-              <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Fonctionnalité en développement
-              </h4>
-              <p className="text-gray-500 dark:text-gray-400">
-                L'historique des contacts et notes sera bientôt disponible.
-              </p>
+          <div className="space-y-6">
+            {/* Formulaire d'ajout de note */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Ajouter une note
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingNote(!isAddingNote)}
+                  className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-full shadow-sm hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Nouvelle note</span>
+                </button>
+              </div>
+              
+              {isAddingNote && (
+                <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Type de note
+                    </label>
+                    <div className="flex flex-wrap gap-3">
+                      {[
+                        { value: 'general', label: 'Générale', icon: '📝', activeColor: 'bg-slate-500', textColor: 'text-white' },
+                        { value: 'call', label: 'Appel', icon: '📞', activeColor: 'bg-emerald-500', textColor: 'text-white' },
+                        { value: 'email', label: 'Email', icon: '📧', activeColor: 'bg-cyan-500', textColor: 'text-white' },
+                        { value: 'meeting', label: 'Rendez-vous', icon: '🤝', activeColor: 'bg-violet-500', textColor: 'text-white' }
+                      ].map((type) => (
+                        <button
+                          type="button"
+                          key={type.value}
+                          onClick={() => setNoteType(type.value as 'general' | 'call' | 'email' | 'meeting')}
+                          className={`inline-flex items-center space-x-2 px-4 py-1.5 text-sm font-medium rounded-full border-2 transition-all duration-200 hover:scale-105 ${
+                            noteType === type.value
+                              ? `${type.activeColor} ${type.textColor} border-transparent shadow-lg`
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          <span className="text-lg">{type.icon}</span>
+                          <span>{type.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Contenu de la note
+                    </label>
+                    <textarea
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      placeholder="Saisissez votre note..."
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                    />
+                  </div>
+                  
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={addNote}
+                      disabled={!newNote.trim() || notesLoading}
+                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-medium rounded-full shadow-sm hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 disabled:transform-none"
+                    >
+                      {notesLoading ? (
+                        <>
+                          <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Ajout...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Ajouter
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingNote(false);
+                        setNewNote('');
+                      }}
+                      className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Liste des notes */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Historique des notes
+                </h3>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  {notes.length} note{notes.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              
+              {notesLoading ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Chargement des notes...
+                  </h4>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    Récupération des notes depuis la base de données.
+                  </p>
+                </div>
+              ) : notes.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MessageSquare className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Aucune note
+                  </h4>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    Commencez par ajouter une note pour ce client.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {notes.map((note) => (
+                    <div key={note.id} className="group relative bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-3 mb-3">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                              note.type === 'general' ? 'bg-gray-100 text-gray-800' :
+                              note.type === 'call' ? 'bg-green-100 text-green-800' :
+                              note.type === 'email' ? 'bg-blue-100 text-blue-800' :
+                              'bg-purple-100 text-purple-800'
+                            }`}>
+                              {note.type === 'general' && '📝 Générale'}
+                              {note.type === 'call' && '📞 Appel'}
+                              {note.type === 'email' && '📧 Email'}
+                              {note.type === 'meeting' && '🤝 Rendez-vous'}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                              {new Date(note.created_at).toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-gray-900 dark:text-white text-sm leading-relaxed">
+                            {note.content}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => deleteNote(note.id)}
+                          className="opacity-0 group-hover:opacity-100 ml-4 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all duration-200"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

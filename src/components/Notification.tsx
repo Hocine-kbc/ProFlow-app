@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
@@ -17,14 +17,42 @@ interface NotificationProps {
 }
 
 const Notification: React.FC<NotificationProps> = ({ notification, onClose }) => {
-  const { id, type, title, message, duration = 4000 } = notification;
+  // Durées différentes selon le type de notification
+  const getDefaultDuration = (type: NotificationType) => {
+    switch (type) {
+      case 'success':
+        return 2000; // 2 secondes pour les succès
+      case 'error':
+        return 4000; // 4 secondes pour les erreurs (plus importantes)
+      case 'warning':
+        return 3500; // 3.5 secondes pour les avertissements
+      case 'info':
+        return 2500; // 2.5 secondes pour les infos
+      default:
+        return 2500;
+    }
+  };
+
+  const { id, type, title, message, duration = getDefaultDuration(type) } = notification;
+  const [progress, setProgress] = useState(100);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose(id);
     }, duration);
 
-    return () => clearTimeout(timer);
+    // Animation de la barre de progression
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        const newProgress = prev - (100 / (duration / 50));
+        return newProgress <= 0 ? 0 : newProgress;
+      });
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(progressInterval);
+    };
   }, [id, duration, onClose]);
 
   const getIcon = () => {
@@ -74,7 +102,13 @@ const Notification: React.FC<NotificationProps> = ({ notification, onClose }) =>
 
   return (
     <div className="animate-in slide-in-from-right duration-300">
-      <div className={`${getBackgroundColor()} border rounded-lg shadow-lg p-4 max-w-sm w-full`}>
+      <div className={`${getBackgroundColor()} border rounded-lg shadow-lg p-4 max-w-sm w-full relative overflow-hidden`}>
+        {/* Barre de progression */}
+        <div 
+          className="absolute bottom-0 left-0 h-1 bg-current opacity-30 transition-all duration-50 ease-linear"
+          style={{ width: `${progress}%` }}
+        />
+        
         <div className="flex items-start space-x-3">
           <div className="flex-shrink-0">
             {getIcon()}

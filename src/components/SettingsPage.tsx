@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Save, Settings, Euro, Percent } from 'lucide-react';
 import { fetchSettings as fetchSettingsApi, upsertSettings } from '../lib/api';
 import { useSettings } from '../hooks/useSettings';
+import { useApp } from '../contexts/AppContext';
 
 export default function SettingsPage() {
+  const { showNotification } = useApp();
   const globalSettings = useSettings();
   const [settings, setSettings] = useState({
     companyName: 'Mon Entreprise de Nettoyage',
@@ -58,11 +60,10 @@ export default function SettingsPage() {
     try {
       const saved = await upsertSettings(settings as any);
       localStorage.setItem('business-settings', JSON.stringify(saved));
-      alert('Paramètres sauvegardés avec succès !');
+      showNotification('success', 'Paramètres sauvegardés', 'Vos paramètres de facturation ont été mis à jour avec succès');
     } catch (err) {
-      // eslint-disable-next-line no-alert
-      alert('Échec de la sauvegarde des paramètres sur Supabase. Vos changements sont gardés en local.');
       localStorage.setItem('business-settings', JSON.stringify(settings));
+      showNotification('warning', 'Sauvegarde locale', 'Paramètres sauvegardés en local (erreur de connexion)');
     }
   };
 

@@ -779,7 +779,17 @@ export default function InvoicesPage() {
                       )}
                       {invoice.status === 'draft' && (
                         <button
-                          onClick={() => setEmailModal(invoice)}
+                          onClick={() => {
+                            // Trouver le client associé à cette facture
+                            const associatedClient = clients.find(c => c.id === invoice.client_id);
+                            // Pré-remplir l'email du client
+                            setEmailData({
+                              to: associatedClient?.email || '',
+                              subject: `Facture N° ${invoice.invoice_number} - ${new Date(invoice.date).toLocaleDateString('fr-FR')}`,
+                              message: 'Veuillez trouver ci-joint votre facture.'
+                            });
+                            setEmailModal(invoice);
+                          }}
                           className="p-2 rounded-full text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
                           title="Envoyer"
                         >
@@ -968,7 +978,17 @@ export default function InvoicesPage() {
                       </button>
                       {invoice.status === 'draft' && (
                         <button
-                          onClick={() => setEmailModal(invoice)}
+                          onClick={() => {
+                            // Trouver le client associé à cette facture
+                            const associatedClient = clients.find(c => c.id === invoice.client_id);
+                            // Pré-remplir l'email du client
+                            setEmailData({
+                              to: associatedClient?.email || '',
+                              subject: `Facture N° ${invoice.invoice_number} - ${new Date(invoice.date).toLocaleDateString('fr-FR')}`,
+                              message: 'Veuillez trouver ci-joint votre facture.'
+                            });
+                            setEmailModal(invoice);
+                          }}
                           className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:text-blue-100"
                           title="Envoyer par email"
                         >

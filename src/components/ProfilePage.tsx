@@ -88,8 +88,7 @@ export default function ProfilePage() {
       setSettings(next);
       localStorage.setItem('business-settings', JSON.stringify(next));
     } catch (err) {
-      // eslint-disable-next-line no-alert
-      alert("Échec du téléversement du logo. Vérifiez Supabase (bucket 'logos').");
+      showNotification('error', 'Échec du téléversement', 'Impossible de téléverser le logo. Vérifiez votre connexion.');
     } finally {
       setUploadingLogo(false);
     }
@@ -106,8 +105,7 @@ export default function ProfilePage() {
       // Optionnel : supprimer le fichier du bucket Supabase
       // await deleteLogo(settings.logoUrl);
     } catch (err) {
-      // eslint-disable-next-line no-alert
-      alert("Erreur lors de la suppression du logo.");
+      showNotification('error', 'Erreur de suppression', 'Impossible de supprimer le logo.');
     }
   };
 

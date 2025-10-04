@@ -80,27 +80,27 @@ export async function deleteUserAccount(): Promise<void> {
     await deleteAllUserData();
     console.log('✅ Données supprimées');
     
-    // 2. Marquer le compte comme supprimé (alternative à la suppression Auth)
+    // 2. Essayer de supprimer le compte Auth via l'API REST
     const { data: { user } } = await supabase.auth.getUser();
-    
     if (user) {
       try {
-        // Mettre à jour les métadonnées pour marquer le compte comme supprimé
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: { 
-            account_deleted: true,
-            deleted_at: new Date().toISOString(),
-            deletion_reason: 'user_requested'
+        // Utiliser l'API REST pour supprimer l'utilisateur
+        const response = await fetch(`https://tdfhqkgvcgqgkrxarmui.supabase.co/auth/v1/admin/users/${user.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkZmhxa2d2Y2dxZ2tyeGFybXVpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODY5NjgwOCwiZXhwIjoyMDc0MjcyODA4fQ.nnvJgG74iXWLV_g7t_tiy975uGd3w3axMwAB5B92i3Y`,
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkZmhxa2d2Y2dxZ2tyeGFybXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTY4MDgsImV4cCI6MjA3NDI3MjgwOH0.Kica2Zbn6aK6opqnGigAJuSNnibxWolJEBOZehD7GZo'
           }
         });
         
-        if (updateError) {
-          console.error('Error updating user metadata:', updateError);
+        if (response.ok) {
+          console.log('✅ Compte Auth supprimé avec succès');
         } else {
-          console.log('✅ Compte marqué comme supprimé');
+          console.log('⚠️ Impossible de supprimer le compte Auth, déconnexion seulement');
         }
       } catch (authError) {
-        console.log('⚠️ Erreur lors de la mise à jour des métadonnées:', authError);
+        console.log('⚠️ Erreur lors de la suppression Auth:', authError);
       }
     }
     
@@ -625,7 +625,9 @@ export async function fetchSettings(): Promise<Settings | null> {
 }
 
 export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at' | 'updated_at'>): Promise<Settings> {
+  console.log('🔍 upsertSettings: Début de la fonction avec payload:', payload);
   const { data: { user } } = await supabase.auth.getUser();
+  console.log('🔍 upsertSettings: Utilisateur authentifié:', user?.id);
   if (!user) throw new Error('User not authenticated');
   
   const now = new Date().toISOString();
@@ -671,19 +673,18 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
     // Puis insérer les nouveaux paramètres
     console.log('➕ upsertSettings: Insertion des nouveaux paramètres...');
     const insertData = {
-      id: user.id, // Utiliser l'ID de l'utilisateur comme clé primaire
       user_id: user.id,
-      companyname: payload.companyName,
-      ownername: payload.ownerName,
-      email: payload.email,
-      phone: payload.phone,
-      address: payload.address,
-      siret: payload.siret,
-      defaulthourlyrate: payload.defaultHourlyRate,
-      invoiceprefix: payload.invoicePrefix,
-      paymentterms: payload.paymentTerms,
-      logourl: payload.logoUrl,
-      invoiceterms: payload.invoiceTerms,
+      companyname: payload.companyName || '',
+      ownername: payload.ownerName || '',
+      email: payload.email || '',
+      phone: payload.phone || '',
+      address: payload.address || '',
+      siret: payload.siret || '',
+      defaulthourlyrate: payload.defaultHourlyRate || 0,
+      invoiceprefix: payload.invoicePrefix || 'FAC',
+      paymentterms: payload.paymentTerms || 30,
+      logourl: payload.logoUrl || '',
+      invoiceterms: payload.invoiceTerms || '',
       updated_at: now,
       created_at: now,
     };
@@ -698,6 +699,12 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
     
     if (error) {
       console.error('❌ upsertSettings: Erreur lors de l\'insertion:', error);
+      console.error('❌ upsertSettings: Détails de l\'erreur:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       throw error;
     }
     
@@ -740,5 +747,108 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
       created_at: now,
       updated_at: now,
     };
+  }
+}
+
+// ===== FONCTIONS POUR LES NOTES =====
+
+export interface ClientNote {
+  id: string;
+  client_id: string;
+  type: 'general' | 'call' | 'email' | 'meeting';
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchClientNotes(clientId: string): Promise<ClientNote[]> {
+  try {
+    const { data, error } = await supabase
+      .from('client_contacts')
+      .select('*')
+      .eq('client_id', clientId)
+      .eq('type', 'note')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching client notes:', error);
+      throw error;
+    }
+    
+    // Mapper les données de la base vers notre interface
+    return (data || []).map((note: any) => ({
+      id: note.id,
+      client_id: note.client_id,
+      type: note.type as 'general' | 'call' | 'email' | 'meeting',
+      content: note.description || note.subject,
+      created_at: note.created_at,
+      updated_at: note.updated_at
+    }));
+  } catch (error) {
+    console.error('Failed to fetch client notes:', error);
+    return [];
+  }
+}
+
+export async function createClientNote(payload: {
+  client_id: string;
+  type: 'general' | 'call' | 'email' | 'meeting';
+  content: string;
+}): Promise<ClientNote> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    const now = new Date().toISOString();
+    const toInsert = {
+      client_id: payload.client_id,
+      type: 'note', // Toujours 'note' pour les notes
+      subject: payload.type === 'general' ? 'Note générale' : 
+               payload.type === 'call' ? 'Appel téléphonique' :
+               payload.type === 'email' ? 'Email' : 'Rendez-vous',
+      description: payload.content,
+      created_at: now,
+      updated_at: now
+    };
+    
+    const { data, error } = await supabase
+      .from('client_contacts')
+      .insert(toInsert)
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('Error creating client note:', error);
+      throw error;
+    }
+    
+    return {
+      id: data.id,
+      client_id: data.client_id,
+      type: payload.type,
+      content: data.description,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  } catch (error) {
+    console.error('Failed to create client note:', error);
+    throw error;
+  }
+}
+
+export async function deleteClientNote(noteId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('client_contacts')
+      .delete()
+      .eq('id', noteId);
+    
+    if (error) {
+      console.error('Error deleting client note:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Failed to delete client note:', error);
+    throw error;
   }
 }

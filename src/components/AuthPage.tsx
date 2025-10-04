@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { upsertSettings } from '../lib/api';
+import { Building2, User, Mail, Phone, MapPin, Hash, Lock, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -8,18 +9,74 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
+  
+  // Réinitialiser l'état du mot de passe lors du changement de mode
+  const handleModeChange = (newMode: 'login' | 'signup') => {
+    setMode(newMode);
+    setShowPassword(false);
+    setError(null);
+    setSuccess(null);
+    setValidationErrors({});
+  };
+
+  // Calculer la force du mot de passe
+  const getPasswordStrength = (password: string) => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return strength;
+  };
+
+  const passwordStrength = getPasswordStrength(password);
   
   // Champs du profil pour l'inscription
   const [companyName, setCompanyName] = useState('');
-  const [ownerName, setOwnerName] = useState('');
+  const [ownerFirstName, setOwnerFirstName] = useState('');
+  const [ownerLastName, setOwnerLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [siret, setSiret] = useState('');
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (mode === 'signup') {
+      if (!companyName.trim()) errors.companyName = 'Le nom de l\'entreprise est requis';
+      if (!ownerFirstName.trim()) errors.ownerFirstName = 'Le prénom est requis';
+      if (!ownerLastName.trim()) errors.ownerLastName = 'Le nom est requis';
+      if (phone && !/^[0-9\s\+\-\(\)]+$/.test(phone)) errors.phone = 'Format de téléphone invalide';
+      if (siret && !/^[0-9]{14}$/.test(siret.replace(/\s/g, ''))) errors.siret = 'Le SIRET doit contenir 14 chiffres';
+      
+      // Validation du mot de passe pour l'inscription
+      if (password.length < 8) {
+        errors.password = 'Le mot de passe doit contenir au moins 8 caractères';
+      } else if (passwordStrength < 3) {
+        errors.password = 'Le mot de passe doit être plus fort (majuscules, minuscules, chiffres)';
+      }
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
+    setValidationErrors({});
+    
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       if (mode === 'login') {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });
@@ -34,7 +91,7 @@ export default function AuthPage() {
           try {
             await upsertSettings({
               companyName: companyName || 'Mon Entreprise',
-              ownerName: ownerName || 'Propriétaire',
+              ownerName: `${ownerFirstName || 'Propriétaire'} ${ownerLastName || ''}`.trim(),
               email: email,
               phone: phone || '',
               address: address || '',
@@ -45,14 +102,53 @@ export default function AuthPage() {
               logoUrl: '',
               invoiceTerms: 'Paiement à 30 jours net.'
             });
+            setSuccess('Compte créé avec succès ! Vérifiez votre email pour confirmer votre compte.');
           } catch (profileError) {
             console.error('Erreur lors de la création du profil:', profileError);
+            setSuccess('Compte créé avec succès ! Vérifiez votre email pour confirmer votre compte.');
             // Ne pas bloquer l'inscription si la création du profil échoue
           }
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Erreur');
+      // Traduire les messages d'erreur en français
+      let errorMessage = 'Une erreur est survenue';
+      
+      if (err.message) {
+        const message = err.message.toLowerCase();
+        
+        // Erreurs de connexion
+        if (message.includes('invalid login credentials') || message.includes('invalid credentials')) {
+          errorMessage = 'Email ou mot de passe incorrect';
+        } else if (message.includes('email not confirmed')) {
+          errorMessage = 'Veuillez confirmer votre email avant de vous connecter';
+        } else if (message.includes('too many requests')) {
+          errorMessage = 'Trop de tentatives. Veuillez patienter avant de réessayer';
+        }
+        
+        // Erreurs d'inscription
+        else if (message.includes('user already registered') || message.includes('email already registered')) {
+          errorMessage = 'Cette adresse email est déjà utilisée';
+        } else if (message.includes('password should be at least')) {
+          errorMessage = 'Le mot de passe doit contenir au moins 6 caractères';
+        } else if (message.includes('invalid email')) {
+          errorMessage = 'Adresse email invalide';
+        } else if (message.includes('signup is disabled')) {
+          errorMessage = 'L\'inscription est temporairement désactivée';
+        }
+        
+        // Erreurs réseau
+        else if (message.includes('network') || message.includes('fetch')) {
+          errorMessage = 'Erreur de connexion. Vérifiez votre connexion internet';
+        }
+        
+        // Autres erreurs
+        else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -90,7 +186,8 @@ export default function AuthPage() {
             {/* Mode toggle */}
             <div className="flex bg-white/10 rounded-xl p-1 mb-6">
               <button
-                onClick={() => setMode('login')}
+                type="button"
+                onClick={() => handleModeChange('login')}
                 className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all duration-300 ${
                   mode === 'login'
                     ? 'bg-white text-gray-900 shadow-sm'
@@ -100,7 +197,8 @@ export default function AuthPage() {
                 Connexion
               </button>
               <button
-                onClick={() => setMode('signup')}
+                type="button"
+                onClick={() => handleModeChange('signup')}
                 className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all duration-300 ${
                   mode === 'signup'
                     ? 'bg-white text-gray-900 shadow-sm'
@@ -119,9 +217,7 @@ export default function AuthPage() {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg className="h-5 w-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                      </svg>
+                      <Mail className="h-5 w-5 text-white/40" />
                     </div>
                     <input
                       type="email"
@@ -140,91 +236,223 @@ export default function AuthPage() {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg className="h-5 w-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
+                      <Lock className="h-5 w-5 text-white/40" />
                     </div>
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300"
+                      className="w-full pl-10 pr-12 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300"
                       placeholder="••••••••"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/40 hover:text-white/70 transition-colors duration-200"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
                   </div>
+                  {/* Indicateur de force du mot de passe pour l'inscription */}
+                  {mode === 'signup' && password && (
+                    <div className="mt-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex space-x-1">
+                          {[1, 2, 3, 4, 5].map((level) => (
+                            <div
+                              key={level}
+                              className={`h-1 w-6 rounded-full transition-all duration-300 ${
+                                level <= passwordStrength
+                                  ? passwordStrength <= 2
+                                    ? 'bg-red-400'
+                                    : passwordStrength <= 3
+                                    ? 'bg-yellow-400'
+                                    : 'bg-green-400'
+                                  : 'bg-white/20'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-white/60">
+                          {passwordStrength <= 2
+                            ? 'Faible'
+                            : passwordStrength <= 3
+                            ? 'Moyen'
+                            : 'Fort'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {/* Message d'erreur de validation du mot de passe */}
+                  {validationErrors.password && (
+                    <p className="mt-1 text-sm text-red-300">{validationErrors.password}</p>
+                  )}
                 </div>
 
                 {/* Champs du profil pour l'inscription */}
                 {mode === 'signup' && (
                   <>
                     <div className="border-t border-white/20 pt-4 mt-4">
-                      <h3 className="text-lg font-semibold text-white mb-4">Informations de votre entreprise</h3>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-white">Informations de votre entreprise</h3>
+                        <div className="flex items-center space-x-2 text-sm text-white/60">
+                          <div className="w-2 h-2 bg-white/30 rounded-full"></div>
+                          <div className="w-2 h-2 bg-white/30 rounded-full"></div>
+                          <div className="w-2 h-2 bg-white/30 rounded-full"></div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-white/70 mb-6">
+                        Ces informations seront utilisées pour personnaliser vos factures et documents.
+                      </p>
                       
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-white/90 mb-2">
                             Nom de l'entreprise
                           </label>
-                          <input
-                            type="text"
-                            value={companyName}
-                            onChange={(e) => setCompanyName(e.target.value)}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300"
-                            placeholder="Mon Entreprise"
-                          />
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <Building2 className="h-5 w-5 text-white/40" />
+                            </div>
+                            <input
+                              type="text"
+                              value={companyName}
+                              onChange={(e) => setCompanyName(e.target.value)}
+                              className={`w-full pl-10 pr-4 py-3 bg-white/10 border rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 ${
+                                validationErrors.companyName 
+                                  ? 'border-red-400 focus:ring-red-400/30' 
+                                  : 'border-white/20 focus:ring-white/30'
+                              }`}
+                              placeholder="Mon Entreprise"
+                            />
+                            {validationErrors.companyName && (
+                              <p className="mt-1 text-sm text-red-300">{validationErrors.companyName}</p>
+                            )}
+                          </div>
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-white/90 mb-2">
-                            Nom du propriétaire
-                          </label>
-                          <input
-                            type="text"
-                            value={ownerName}
-                            onChange={(e) => setOwnerName(e.target.value)}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300"
-                            placeholder="Jean Dupont"
-                          />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-white/90 mb-2">
+                              Prénom
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <User className="h-5 w-5 text-white/40" />
+                              </div>
+                              <input
+                                type="text"
+                                value={ownerFirstName}
+                                onChange={(e) => setOwnerFirstName(e.target.value)}
+                                className={`w-full pl-10 pr-4 py-3 bg-white/10 border rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 ${
+                                  validationErrors.ownerFirstName 
+                                    ? 'border-red-400 focus:ring-red-400/30' 
+                                    : 'border-white/20 focus:ring-white/30'
+                                }`}
+                                placeholder="Jean"
+                              />
+                              {validationErrors.ownerFirstName && (
+                                <p className="mt-1 text-sm text-red-300">{validationErrors.ownerFirstName}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-white/90 mb-2">
+                              Nom
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <User className="h-5 w-5 text-white/40" />
+                              </div>
+                              <input
+                                type="text"
+                                value={ownerLastName}
+                                onChange={(e) => setOwnerLastName(e.target.value)}
+                                className={`w-full pl-10 pr-4 py-3 bg-white/10 border rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 ${
+                                  validationErrors.ownerLastName 
+                                    ? 'border-red-400 focus:ring-red-400/30' 
+                                    : 'border-white/20 focus:ring-white/30'
+                                }`}
+                                placeholder="Dupont"
+                              />
+                              {validationErrors.ownerLastName && (
+                                <p className="mt-1 text-sm text-red-300">{validationErrors.ownerLastName}</p>
+                              )}
+                            </div>
+                          </div>
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-white/90 mb-2">
                             Téléphone
                           </label>
-                          <input
-                            type="tel"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300"
-                            placeholder="01 23 45 67 89"
-                          />
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <Phone className="h-5 w-5 text-white/40" />
+                            </div>
+                            <input
+                              type="tel"
+                              value={phone}
+                              onChange={(e) => setPhone(e.target.value)}
+                              className={`w-full pl-10 pr-4 py-3 bg-white/10 border rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 ${
+                                validationErrors.phone 
+                                  ? 'border-red-400 focus:ring-red-400/30' 
+                                  : 'border-white/20 focus:ring-white/30'
+                              }`}
+                              placeholder="01 23 45 67 89"
+                            />
+                            {validationErrors.phone && (
+                              <p className="mt-1 text-sm text-red-300">{validationErrors.phone}</p>
+                            )}
+                          </div>
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-white/90 mb-2">
                             Adresse
                           </label>
-                          <textarea
-                            value={address}
-                            onChange={(e) => setAddress(e.target.value)}
-                            rows={2}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300 resize-none"
-                            placeholder="123 Rue de la Paix, 75001 Paris"
-                          />
+                          <div className="relative">
+                            <div className="absolute top-3 left-3 flex items-start pointer-events-none">
+                              <MapPin className="h-5 w-5 text-white/40" />
+                            </div>
+                            <textarea
+                              value={address}
+                              onChange={(e) => setAddress(e.target.value)}
+                              rows={2}
+                              className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300 resize-none"
+                              placeholder="123 Rue de la Paix, 75001 Paris"
+                            />
+                          </div>
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-white/90 mb-2">
                             SIRET (optionnel)
                           </label>
-                          <input
-                            type="text"
-                            value={siret}
-                            onChange={(e) => setSiret(e.target.value)}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300"
-                            placeholder="12345678901234"
-                          />
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <Hash className="h-5 w-5 text-white/40" />
+                            </div>
+                            <input
+                              type="text"
+                              value={siret}
+                              onChange={(e) => setSiret(e.target.value)}
+                              className={`w-full pl-10 pr-4 py-3 bg-white/10 border rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 ${
+                                validationErrors.siret 
+                                  ? 'border-red-400 focus:ring-red-400/30' 
+                                  : 'border-white/20 focus:ring-white/30'
+                              }`}
+                              placeholder="12345678901234"
+                            />
+                            {validationErrors.siret && (
+                              <p className="mt-1 text-sm text-red-300">{validationErrors.siret}</p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -233,13 +461,26 @@ export default function AuthPage() {
               </div>
 
               {error && (
-                <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3">
-                  <p className="text-sm text-red-200 flex items-center">
-                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    {error}
-                  </p>
+                <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm text-red-200 font-medium">Erreur d'authentification</p>
+                      <p className="text-sm text-red-300 mt-1">{error}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {success && (
+                <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-4">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm text-green-200 font-medium">Succès</p>
+                      <p className="text-sm text-green-300 mt-1">{success}</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -254,10 +495,22 @@ export default function AuthPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Chargement...
+                    {mode === 'login' ? 'Connexion...' : 'Création du compte...'}
                   </div>
                 ) : (
-                  mode === 'login' ? 'Se connecter' : "S'inscrire"
+                  <div className="flex items-center justify-center">
+                    {mode === 'login' ? (
+                      <>
+                        <Lock className="w-5 h-5 mr-2" />
+                        Se connecter
+                      </>
+                    ) : (
+                      <>
+                        <Building2 className="w-5 h-5 mr-2" />
+                        Créer mon compte
+                      </>
+                    )}
+                  </div>
                 )}
               </button>
             </form>
@@ -268,8 +521,9 @@ export default function AuthPage() {
                   <>
                     Pas encore de compte ?{' '}
                     <button 
+                      type="button"
                       className="text-white font-medium hover:text-white/80 transition-colors duration-200"
-                      onClick={() => setMode('signup')}
+                      onClick={() => handleModeChange('signup')}
                     >
                       Créer un compte
                     </button>
@@ -278,8 +532,9 @@ export default function AuthPage() {
                   <>
                     Déjà inscrit ?{' '}
                     <button 
+                      type="button"
                       className="text-white font-medium hover:text-white/80 transition-colors duration-200"
-                      onClick={() => setMode('login')}
+                      onClick={() => handleModeChange('login')}
                     >
                       Se connecter
                     </button>
