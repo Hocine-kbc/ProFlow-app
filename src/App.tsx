@@ -58,21 +58,21 @@ function AppContent() {
       try {
         const clients = await fetchClients();
         dispatch({ type: 'SET_CLIENTS', payload: clients });
-      } catch (e) {
+      } catch (_e) {
         // Pas de fallback - utiliser un tableau vide
         dispatch({ type: 'SET_CLIENTS', payload: [] });
       }
       try {
         const services = await fetchServices();
         dispatch({ type: 'SET_SERVICES', payload: services });
-      } catch (e) {
+      } catch (_e) {
         // Pas de fallback - utiliser un tableau vide
         dispatch({ type: 'SET_SERVICES', payload: [] });
       }
       try {
         const invoices = await fetchInvoices();
         dispatch({ type: 'SET_INVOICES', payload: invoices });
-      } catch (e) {
+      } catch (_e) {
         // Initialiser avec un tableau vide si la requête échoue
         dispatch({ type: 'SET_INVOICES', payload: [] });
       }
@@ -87,8 +87,8 @@ function AppContent() {
           // Mettre à jour l'état global
           dispatch({ type: 'SET_SETTINGS', payload: settings });
         }
-      } catch (e) {
-        console.log('Erreur lors du chargement des paramètres:', e);
+      } catch (_e) {
+        console.log('Erreur lors du chargement des paramètres:', _e);
       }
     })();
     // Les statistiques seront calculées dynamiquement dans StatsPage
