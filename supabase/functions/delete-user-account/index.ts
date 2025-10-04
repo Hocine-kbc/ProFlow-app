@@ -1,7 +1,7 @@
-/// <reference types="https://esm.sh/@supabase/functions-js/edge-runtime.d.ts" />
+/// <reference types="./types.d.ts" />
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0'
+import { serve } from "std/http/server.ts"
+import { createClient } from 'supabase'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,20 +45,36 @@ serve(async (req) => {
       Deno.env.get('SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Delete all user data first
+    // Delete all user data first (in correct order to respect foreign key constraints)
     console.log('Deleting user data for:', user.id)
     
-    // Delete services
-    await supabaseAdmin.from('services').delete().eq('client_id', user.id)
+    // Delete services first (they reference clients)
+    const { error: servicesError } = await supabaseAdmin.from('services').delete().eq('user_id', user.id)
+    if (servicesError) {
+      console.error('Error deleting services:', servicesError)
+      throw new Error('Failed to delete services')
+    }
     
-    // Delete invoices  
-    await supabaseAdmin.from('invoices').delete().eq('client_id', user.id)
+    // Delete invoices (they reference clients)
+    const { error: invoicesError } = await supabaseAdmin.from('invoices').delete().eq('user_id', user.id)
+    if (invoicesError) {
+      console.error('Error deleting invoices:', invoicesError)
+      throw new Error('Failed to delete invoices')
+    }
     
     // Delete clients
-    await supabaseAdmin.from('clients').delete().eq('id', user.id)
+    const { error: clientsError } = await supabaseAdmin.from('clients').delete().eq('user_id', user.id)
+    if (clientsError) {
+      console.error('Error deleting clients:', clientsError)
+      throw new Error('Failed to delete clients')
+    }
     
     // Delete settings
-    await supabaseAdmin.from('settings').delete().eq('id', user.id)
+    const { error: settingsError } = await supabaseAdmin.from('settings').delete().eq('user_id', user.id)
+    if (settingsError) {
+      console.error('Error deleting settings:', settingsError)
+      throw new Error('Failed to delete settings')
+    }
 
     // Finally delete the user account
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
@@ -87,7 +103,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in delete-user-account function:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

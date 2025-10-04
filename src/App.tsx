@@ -1,80 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import Layout from './components/Layout';
-import Dashboard from './components/Dashboard';
-import ClientsPage from './components/ClientsPage';
-import ServicesPage from './components/ServicesPage';
-import InvoicesPage from './components/InvoicesPage';
-import StatsPage from './components/StatsPage';
-import SettingsPage from './components/SettingsPage';
-import ProfilePage from './components/ProfilePage';
-import ArchivePage from './components/ArchivePage';
-import { AppProvider, useApp } from './contexts/AppContext';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { Client, Service, Invoice } from './types';
-import { fetchClients, fetchServices, fetchInvoices } from './lib/api';
-import AuthPage from './components/AuthPage';
-import { supabase } from './lib/supabase';
+import { useState, useEffect } from 'react';
+import Layout from './components/Layout.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import ClientsPage from './components/ClientsPage.tsx';
+import ServicesPage from './components/ServicesPage.tsx';
+import InvoicesPage from './components/InvoicesPage.tsx';
+import StatsPage from './components/StatsPage.tsx';
+import SettingsPage from './components/SettingsPage.tsx';
+import ProfilePage from './components/ProfilePage.tsx';
+import ArchivePage from './components/ArchivePage.tsx';
+import { AppProvider, useApp } from './contexts/AppContext.tsx';
+import { ThemeProvider } from './contexts/ThemeContext.tsx';
+import { fetchClients, fetchServices, fetchInvoices } from './lib/api.ts';
+import AuthPage from './components/AuthPage.tsx';
+import { supabase } from './lib/supabase.ts';
 
-// Sample data for demonstration
-const sampleClients: Client[] = [
-  {
-    id: '1',
-    name: 'Marie Dubois',
-    email: 'marie.dubois@email.fr',
-    phone: '06 12 34 56 78',
-    address: '15 Rue de la Paix, 75001 Paris',
-    created_at: '2024-01-15T10:30:00Z',
-    updated_at: '2024-01-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    name: 'Jean Martin',
-    email: 'jean.martin@email.fr',
-    phone: '06 87 65 43 21',
-    address: '42 Avenue des Champs, 75008 Paris',
-    created_at: '2024-02-20T14:20:00Z',
-    updated_at: '2024-02-20T14:20:00Z',
-  },
-];
-
-const sampleServices: Service[] = [
-  {
-    id: '1',
-    client_id: '1',
-    client: sampleClients[0],
-    date: '2024-11-01',
-    hours: 3,
-    hourly_rate: 25,
-    description: 'Nettoyage complet appartement 3 pièces',
-    status: 'completed',
-    created_at: '2024-11-01T08:00:00Z',
-    updated_at: '2024-11-01T08:00:00Z',
-  },
-  {
-    id: '2',
-    client_id: '2',
-    client: sampleClients[1],
-    date: '2024-11-05',
-    hours: 4,
-    hourly_rate: 30,
-    description: 'Nettoyage bureau et vitres',
-    status: 'completed',
-    created_at: '2024-11-05T09:00:00Z',
-    updated_at: '2024-11-05T09:00:00Z',
-  },
-  {
-    id: '3',
-    client_id: '1',
-    client: sampleClients[0],
-    date: '2024-11-15',
-    hours: 2.5,
-    hourly_rate: 25,
-    description: 'Entretien bihebdomadaire',
-    status: 'invoiced',
-    created_at: '2024-11-15T10:00:00Z',
-    updated_at: '2024-11-15T10:00:00Z',
-  },
-];
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -140,7 +79,7 @@ function AppContent() {
       
       // Charger les paramètres du profil
       try {
-        const { fetchSettings } = await import('./lib/api');
+        const { fetchSettings } = await import('./lib/api.ts');
         const settings = await fetchSettings();
         if (settings) {
           // Sauvegarder dans localStorage pour l'affichage
