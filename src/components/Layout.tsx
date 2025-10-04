@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Home, Users, Clock, FileText, BarChart3, Settings, User, ChevronLeft, ChevronRight, Moon, Sun, Power } from 'lucide-react';
+import { X, Home, Users, Clock, FileText, BarChart3, Settings, User, ChevronLeft, ChevronRight, Moon, Sun, Power, Archive } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import NotificationContainer from './NotificationContainer';
@@ -17,6 +17,7 @@ const menuItems = [
   { id: 'services', label: 'Prestations', icon: Clock, color: 'orange' },
   { id: 'invoices', label: 'Factures', icon: FileText, color: 'purple' },
   { id: 'stats', label: 'Statistiques', icon: BarChart3, color: 'indigo' },
+  { id: 'archive', label: 'Archive', icon: Archive, color: 'gray' },
   { id: 'settings', label: 'Paramètres', icon: Settings, color: 'gray' },
   { id: 'profile', label: 'Profil', icon: User, color: 'pink' },
 ];
@@ -112,28 +113,28 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                 <img src="/logoPF.png" alt="ProFlow Logo" className="w-full h-full object-cover" />
               </div>
             )}
-            <div className="flex items-center space-x-2 absolute top-2 right-2 h-auto">
+            <div className={`flex items-center space-x-2 absolute top-1 h-auto ${sidebarCollapsed ? 'right-1' : 'right-1'}`}>
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className={`h-full bg-white/20 hover:bg-white/30 text-white transition-colors hidden lg:block z-10 ${
-                  sidebarCollapsed ? 'w-4 rounded-l-lg' : 'w-8 rounded-l-lg'
-                }`}
+                className={`h-5 w-5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all duration-300 hidden lg:block z-10 border border-white/30 hover:border-white/50 hover:scale-110 hover:shadow-lg`}
                 title={sidebarCollapsed ? 'Agrandir le menu' : 'Réduire le menu'}
               >
-                {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={20} />}
+                <div className="flex items-center justify-center h-full">
+                  {sidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+                </div>
               </button>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors lg:hidden z-10"
+                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors lg:hidden z-10"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
           </div>
         </div>
         
         {/* Navigation moderne */}
-        <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
+        <nav className="p-4 space-y-2 flex-1 overflow-y-auto scrollbar-hide">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
@@ -235,7 +236,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       </div>
 
       {/* Main content */}
-      <div className={`${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'}`}>
+      <div className={`transition-all duration-500 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'}`}>
                 {/* Mobile header */}
                 <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-1 flex items-center justify-between" style={{ height: '50px' }}>
                   <button
@@ -266,7 +267,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                 </div>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6 lg:pt-6">
+        <main className="p-4 lg:p-6 lg:pt-6 overflow-y-auto scrollbar-hide max-h-screen">
           {children}
         </main>
       </div>

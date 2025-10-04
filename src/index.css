@@ -2,6 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Elegant scrollbar for desktop - same as menu */
+.scrollbar-hide {
+  scrollbar-width: thin;  /* Firefox */
+  scrollbar-color: rgba(107, 114, 128, 0.4) transparent;  /* Firefox light mode */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  width: 6px;  /* Safari and Chrome - same as menu */
+}
+
+.scrollbar-hide::-webkit-scrollbar-track {
+  background: transparent;  /* Track background - same as menu */
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.8);  /* Light mode thumb - more visible for testing */
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.6);  /* Light mode hover - same as menu */
+}
+
+/* Dark mode scrollbar - same as menu */
+.dark .scrollbar-hide {
+  scrollbar-color: rgba(75, 85, 99, 0.3) transparent;  /* Firefox dark mode */
+}
+
+.dark .scrollbar-hide::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.8);  /* Dark mode thumb - more visible for testing */
+}
+
+.dark .scrollbar-hide::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.5);  /* Dark mode hover - same as menu */
+}
+
 /* Reset body margins for modal overlays */
 html, body {
   margin: 0;

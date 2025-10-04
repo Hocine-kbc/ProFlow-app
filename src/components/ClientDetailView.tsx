@@ -21,12 +21,14 @@ import {
   MessageSquare,
   BarChart3,
   Edit2,
-  Trash2
+  Trash2,
+  Archive
 } from 'lucide-react';
 import { ClientDetail } from '../types/clientDetail';
 import { supabase } from '../lib/supabase';
 import { openInvoicePrintWindow } from '../lib/print';
 import { sendInvoiceEmail, EmailData } from '../lib/emailService';
+import { useSettings } from '../hooks/useSettings';
 import { updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi } from '../lib/api';
 import { useApp } from '../contexts/AppContext';
 import AlertModal from './AlertModal';
@@ -36,17 +38,16 @@ interface ClientDetailViewProps {
   onBack: () => void;
   onEditClient: (client: ClientDetail) => void;
   onCreateInvoice: (clientId: string) => void;
-  onCreateService: (clientId: string) => void;
 }
 
 export default function ClientDetailView({ 
   clientId, 
   onBack, 
   onEditClient,
-  onCreateInvoice,
-  onCreateService 
+  onCreateInvoice
 }: ClientDetailViewProps) {
   const { state, dispatch, showNotification } = useApp();
+  const settings = useSettings();
   const { clients, services } = state;
 
   // Fonction utilitaire pour calculer le montant d'une facture à partir de ses prestations
@@ -266,6 +267,10 @@ export default function ClientDetailView({
 
   // Fonction pour gérer l'aperçu des factures
   const handleViewInvoiceLocal = (invoice: any) => {
+    console.log('🔍 Invoice pour aperçu:', invoice);
+    console.log('🔍 Services dans l\'invoice:', invoice.services);
+    console.log('🔍 Nombre de services:', invoice.services?.length || 0);
+    
     // Convertir l'invoice du ClientDetail vers le format attendu par le modal
     const invoiceForPreview = {
       id: invoice.id,
@@ -279,6 +284,11 @@ export default function ClientDetailView({
       payment_method: invoice.payment_method || invoice.paymentMethod || '',
       services: invoice.services || []
     };
+    
+    console.log('🔍 InvoiceForPreview créé:', invoiceForPreview);
+    console.log('🔍 Services dans previewInvoice:', invoiceForPreview.services);
+    console.log('🔍 Nombre de services dans previewInvoice:', invoiceForPreview.services?.length || 0);
+    
     setPreviewInvoice(invoiceForPreview);
   };
 
@@ -337,12 +347,7 @@ export default function ClientDetailView({
 
     setSendingEmail(true);
     try {
-      // Get business settings
-      let settings: any = null;
-      try {
-        const raw = localStorage.getItem('business-settings');
-        settings = raw ? JSON.parse(raw) : null;
-      } catch {}
+      // Utiliser les paramètres de l'état global
 
       // Get client information
       const clientName = client?.name || 'Client';
@@ -365,7 +370,7 @@ export default function ClientDetailView({
       };
 
       // Send email via Backend
-      const emailSent = await sendInvoiceEmail(emailDataToSend, emailModal.id);
+      const emailSent = await sendInvoiceEmail(emailDataToSend, emailModal.id, emailModal);
       
       if (emailSent) {
         // Update invoice status to 'sent'
@@ -465,14 +470,8 @@ export default function ClientDetailView({
   // Fonction pour calculer la date d'échéance
   const calculateDueDate = (invoiceDate: string): string => {
     let paymentTerms = 30; // valeur par défaut
-    try {
-      const raw = localStorage.getItem('business-settings');
-      const settings = raw ? JSON.parse(raw) : null;
-      if (settings && settings.paymentTerms) {
-        paymentTerms = settings.paymentTerms;
-      }
-    } catch (error) {
-      console.warn('Impossible de récupérer les paramètres d\'échéance:', error);
+    if (settings && settings.paymentTerms) {
+      paymentTerms = settings.paymentTerms;
     }
     
     const dueDate = new Date(invoiceDate);
@@ -535,6 +534,43 @@ export default function ClientDetailView({
     setSelectedServicesForInvoice([]);
     setShowInvoiceEditModal(false);
     setEditingInvoice(null);
+  };
+
+  // Fonction pour archiver une facture
+  const handleArchiveInvoice = (invoice: any) => {
+    setAlertModal({
+      isOpen: true,
+      title: 'Archiver la facture',
+      message: `Êtes-vous sûr de vouloir archiver la facture #${invoice.invoice_number || invoice.number} ? Elle sera déplacée vers l'archive et ne sera plus visible dans la liste principale.`,
+      type: 'warning',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from('invoices')
+            .update({
+              archived_at: new Date().toISOString()
+            })
+            .eq('id', invoice.id);
+
+          if (error) throw error;
+
+          // Mettre à jour le state global
+          dispatch({ type: 'UPDATE_INVOICE', payload: {
+            ...invoice,
+            archived_at: new Date().toISOString()
+          }});
+          
+          // Recharger les données du client
+          loadClientDetail();
+          
+          showNotification('success', 'Facture archivée', 'La facture a été archivée avec succès !');
+        } catch (error) {
+          console.error('Error archiving invoice:', error);
+          showNotification('error', 'Erreur', 'Impossible d\'archiver la facture');
+        }
+        setAlertModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   // Fonction pour supprimer une facture (avec modal d'alerte personnalisée)
@@ -629,7 +665,8 @@ export default function ClientDetailView({
           const { data: invoicesResult } = await supabase
             .from('invoices')
             .select('*')
-            .eq('client_id', clientId);
+            .eq('client_id', clientId)
+            .is('archived_at', null); // Exclure les factures archivées
           invoicesData = invoicesResult || [];
         } catch (invoicesError) {
           console.log('⚠️ Table invoices non disponible:', invoicesError);
@@ -653,18 +690,26 @@ export default function ClientDetailView({
         invoices = invoicesData || [];
         services = servicesData || [];
         
+        // Filtrer les factures archivées
+        invoices = invoices.filter((invoice: any) => !invoice.archived_at);
+        
         // Charger les services depuis localStorage pour chaque facture (comme dans InvoicesPage)
         invoices = invoices.map((invoice: any) => {
           // Essayer de récupérer les services depuis localStorage
           let invoiceServices = invoice.services || [];
+          console.log(`🔍 Facture ${invoice.id} - Services initiaux:`, invoiceServices.length);
+          
           if (invoiceServices.length === 0) {
             try {
               const storedServices = JSON.parse(localStorage.getItem('invoice-services') || '{}');
               invoiceServices = storedServices[invoice.id] || [];
+              console.log(`🔍 Services depuis localStorage pour facture ${invoice.id}:`, invoiceServices.length);
             } catch (e) {
               console.warn('Could not load services from localStorage for invoice:', invoice.id);
             }
           }
+          
+          console.log(`🔍 Services finaux pour facture ${invoice.id}:`, invoiceServices.length);
           
           return {
             ...invoice,
@@ -676,18 +721,26 @@ export default function ClientDetailView({
         invoices = client.invoices || [];
         services = client.services || [];
         
+        // Filtrer les factures archivées
+        invoices = invoices.filter((invoice: any) => !invoice.archived_at);
+        
         // Charger les services depuis localStorage pour chaque facture (comme dans InvoicesPage)
         invoices = invoices.map((invoice: any) => {
           // Essayer de récupérer les services depuis localStorage
           let invoiceServices = invoice.services || [];
+          console.log(`🔍 Facture ${invoice.id} - Services initiaux:`, invoiceServices.length);
+          
           if (invoiceServices.length === 0) {
             try {
               const storedServices = JSON.parse(localStorage.getItem('invoice-services') || '{}');
               invoiceServices = storedServices[invoice.id] || [];
+              console.log(`🔍 Services depuis localStorage pour facture ${invoice.id}:`, invoiceServices.length);
             } catch (e) {
               console.warn('Could not load services from localStorage for invoice:', invoice.id);
             }
           }
+          
+          console.log(`🔍 Services finaux pour facture ${invoice.id}:`, invoiceServices.length);
           
           return {
             ...invoice,
@@ -846,13 +899,13 @@ export default function ClientDetailView({
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'paid': return <CheckCircle className="w-4 h-4" />;
-      case 'sent': return <Mail className="w-4 h-4" />;
-      case 'overdue': return <AlertCircle className="w-4 h-4" />;
-      case 'draft': return <FileText className="w-4 h-4" />;
-      case 'partial': return <Clock className="w-4 h-4" />;
-      case 'cancelled': return <AlertCircle className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
+      case 'paid': return <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />;
+      case 'sent': return <Mail className="w-3 h-3 sm:w-4 sm:h-4" />;
+      case 'overdue': return <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />;
+      case 'draft': return <FileText className="w-3 h-3 sm:w-4 sm:h-4" />;
+      case 'partial': return <Clock className="w-3 h-3 sm:w-4 sm:h-4" />;
+      case 'cancelled': return <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />;
+      default: return <FileText className="w-3 h-3 sm:w-4 sm:h-4" />;
     }
   };
 
@@ -885,7 +938,11 @@ export default function ClientDetailView({
   const getFilteredInvoices = () => {
     if (!client) return [];
     
-    let filtered = client.invoices;
+    // Filtrer les factures non archivées
+    let filtered = client.invoices.filter(invoice => {
+      const invoiceWithArchive = invoice as any;
+      return !invoiceWithArchive.archived_at;
+    });
     
     // Filtre par recherche
     if (searchTerm) {
@@ -923,10 +980,10 @@ export default function ClientDetailView({
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6">
       {/* En-tête */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
           <div className="flex items-center space-x-4">
             <button
               onClick={onBack}
@@ -936,39 +993,39 @@ export default function ClientDetailView({
               <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100 group-hover:-translate-x-0.5 transition-all duration-200" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                 {client.name}
               </h1>
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="text-xs sm:text-sm sm:text-base text-gray-500 dark:text-gray-400">
                 {client.company && `${client.company} • `}
                 Client depuis {formatDate(client.createdAt)}
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={handleEditClient}
-              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
             >
-              <Edit className="w-4 h-4 mr-1 sm:mr-2 group-hover:scale-110 transition-transform duration-200" />
+              <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 group-hover:scale-110 transition-transform duration-200" />
               <span className="hidden sm:inline">Modifier</span>
               <span className="sm:hidden">Modif.</span>
             </button>
             <button
               onClick={() => onCreateInvoice(clientId)}
-              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transform hover:scale-105"
+              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transform hover:scale-105"
               title={`Créer une nouvelle facture pour ${client?.name || 'ce client'}`}
             >
-              <Plus className="w-4 h-4 mr-1 sm:mr-2 group-hover:rotate-90 transition-transform duration-200" />
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 group-hover:rotate-90 transition-transform duration-200" />
               <span className="hidden sm:inline">Nouvelle facture</span>
               <span className="sm:hidden">Facture</span>
             </button>
             <button
               onClick={handleCreateServiceLocal}
-              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-white bg-green-600 rounded-full hover:bg-green-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transform hover:scale-105"
+              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-green-600 rounded-full hover:bg-green-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transform hover:scale-105"
               title={`Créer une nouvelle prestation pour ${client?.name || 'ce client'}`}
             >
-              <Clock className="w-4 h-4 mr-1 sm:mr-2 group-hover:rotate-12 transition-transform duration-200" />
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 group-hover:rotate-12 transition-transform duration-200" />
               <span className="hidden sm:inline">Nouvelle prestation</span>
               <span className="sm:hidden">Prestation</span>
             </button>
@@ -976,17 +1033,17 @@ export default function ClientDetailView({
         </div>
 
         {/* Informations générales */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Informations générales
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3">
                   <Mail className="w-5 h-5 text-gray-400" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Email</p>
                     <p className="font-medium text-gray-900 dark:text-white">{client.email}</p>
                   </div>
                 </div>
@@ -994,7 +1051,7 @@ export default function ClientDetailView({
                   <div className="flex items-center space-x-3">
                     <Phone className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Téléphone</p>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Téléphone</p>
                       <p className="font-medium text-gray-900 dark:text-white">{client.phone}</p>
                     </div>
                   </div>
@@ -1003,7 +1060,7 @@ export default function ClientDetailView({
                   <div className="flex items-center space-x-3">
                     <MapPin className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Adresse</p>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Adresse</p>
                       <p className="font-medium text-gray-900 dark:text-white">
                         {client.address}
                         {client.postalCode && `, ${client.postalCode}`}
@@ -1016,7 +1073,7 @@ export default function ClientDetailView({
                   <div className="flex items-center space-x-3">
                     <Building className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Entreprise</p>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Entreprise</p>
                       <p className="font-medium text-gray-900 dark:text-white">{client.company}</p>
                     </div>
                   </div>
@@ -1027,10 +1084,10 @@ export default function ClientDetailView({
 
           <div className="space-y-6">
             {/* Statut */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Statut</h3>
               <div className="flex items-center space-x-3">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(client.status)}`}>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusColor(client.status)}`}>
                   {client.status === 'active' ? 'Actif' : client.status === 'inactive' ? 'Inactif' : 'Prospect'}
                 </span>
               </div>
@@ -1038,20 +1095,20 @@ export default function ClientDetailView({
 
             {/* Notes */}
             {client.notes && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Notes</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">{client.notes}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{client.notes}</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Chiffres clés */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Chiffre d'affaires</p>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Chiffre d'affaires</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {formatCurrency(client.kpis.totalRevenue)}
                 </p>
@@ -1065,7 +1122,7 @@ export default function ClientDetailView({
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Factures</p>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Factures</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {client.kpis.totalInvoices}
                 </p>
@@ -1079,7 +1136,7 @@ export default function ClientDetailView({
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Payé</p>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Payé</p>
                 <p className="text-2xl font-bold text-green-600">
                   {formatCurrency(client.kpis.paidAmount)}
                 </p>
@@ -1093,7 +1150,7 @@ export default function ClientDetailView({
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">En attente</p>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">En attente</p>
                 <p className="text-2xl font-bold text-yellow-600">
                   {formatCurrency(client.kpis.pendingAmount)}
                 </p>
@@ -1106,8 +1163,8 @@ export default function ClientDetailView({
         </div>
 
         {/* Onglets */}
-        <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-          <nav className="-mb-px flex space-x-8">
+        <div className="border-b border-gray-200 dark:border-gray-700 mb-4 sm:mb-6">
+          <nav className="-mb-px flex flex-wrap gap-2 sm:gap-8 overflow-x-auto">
             {[
               { id: 'overview', label: 'Vue d\'ensemble', icon: BarChart3 },
               { id: 'invoices', label: 'Factures', icon: FileText },
@@ -1118,13 +1175,13 @@ export default function ClientDetailView({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`flex items-center space-x-1 sm:space-x-2 py-2 px-1 border-b-2 font-medium text-xs sm:text-xs sm:text-sm whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -1133,15 +1190,15 @@ export default function ClientDetailView({
 
         {/* Contenu des onglets */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Graphique des revenus */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Évolution des revenus
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     Revenus mensuels des 6 derniers mois
                   </p>
                 </div>
@@ -1188,7 +1245,7 @@ export default function ClientDetailView({
                 return (
                   <div className="space-y-6">
                     {/* Statistiques rapides */}
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                           {totalRevenue.toFixed(0)}€
@@ -1286,7 +1343,7 @@ export default function ClientDetailView({
                     {/* Message informatif si pas de données */}
                     {totalRevenue === 0 && (
                       <div className="text-center py-4">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                           Aucune prestation enregistrée pour ce client sur les 6 derniers mois
                         </p>
                       </div>
@@ -1297,13 +1354,13 @@ export default function ClientDetailView({
             </div>
 
             {/* Dernières activités */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Dernières activités
               </h3>
               <div className="text-center py-8">
                 <Clock className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
                   Aucune activité récente à afficher
                 </p>
               </div>
@@ -1319,14 +1376,14 @@ export default function ClientDetailView({
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Historique des factures
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     {getFilteredInvoices().length} facture{getFilteredInvoices().length !== 1 ? 's' : ''} 
                     {searchTerm || statusFilter !== 'all' ? ' trouvée(s)' : ''}
                   </p>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Search className="w-3 h-3 sm:w-4 sm:h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <input
                       type="text"
                       placeholder="Rechercher..."
@@ -1354,25 +1411,25 @@ export default function ClientDetailView({
               <table className="w-full min-w-[800px]">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Facture
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Date émission
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Montant à payer
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Statut
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Échéance
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Date paiement
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -1397,23 +1454,23 @@ export default function ClientDetailView({
                   ) : (
                     getFilteredInvoices().map((invoice) => (
                     <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <div className="font-medium text-gray-900 dark:text-white">
                           {invoice.number || 'N/A'}
                         </div>
                         {invoice.description && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                             {invoice.description}
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-xs sm:text-sm text-gray-900 dark:text-white">
                         {formatDate(invoice.date)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                         {formatCurrency(calculateInvoiceAmount(invoice))}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
                           {getStatusIcon(invoice.status)}
                           <span className="ml-1">
@@ -1425,65 +1482,72 @@ export default function ClientDetailView({
                           </span>
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white">
                         {formatDate(invoice.dueDate)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white">
                         {invoice.paidDate ? formatDate(invoice.paidDate) : '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-1">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-xs sm:text-sm font-medium">
+                        <div className="flex items-center justify-end space-x-0.5 sm:space-x-1">
                           {invoice.status === 'draft' && (
                             <button
                               onClick={() => handleEditInvoice(invoice)}
-                              className="p-2 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-full transition-colors"
+                              className="p-1.5 sm:p-1.5 sm:p-2 text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-full transition-colors"
                               title="Modifier"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                           )}
                           <button
                             onClick={() => handleViewInvoiceLocal(invoice)}
-                            className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full transition-colors"
+                            className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full transition-colors"
                             title="Aperçu"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                           {invoice.status === 'draft' && (
                             <button
                               onClick={() => handleSendEmailLocal(invoice)}
-                              className="p-2 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                              className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
                               title="Envoyer par email"
                             >
-                              <Send className="w-4 h-4" />
+                              <Send className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                           )}
                           {invoice.status === 'sent' && (
                             <button
                               onClick={() => handleMarkAsPaid(invoice)}
-                              className="p-2 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors"
+                              className="p-1.5 sm:p-2 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors"
                               title="Marquer comme payée"
                             >
-                              <FileText className="w-4 h-4" />
+                              <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                           )}
                           <button
                             onClick={() => handleDownloadPDF(invoice)}
-                            className="p-2 text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-full transition-colors"
+                            className="p-1.5 sm:p-2 text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-full transition-colors"
                             title="Télécharger PDF"
                           >
-                            <Download className="w-4 h-4" />
+                            <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleArchiveInvoice(invoice)}
+                            className="p-1.5 sm:p-2 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-full transition-colors"
+                            title="Archiver la facture"
+                          >
+                            <Archive className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteInvoice(invoice)}
                             disabled={deletingInvoice === invoice.id}
-                            className={`p-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors ${deletingInvoice === invoice.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`p-1.5 sm:p-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors ${deletingInvoice === invoice.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                             title={deletingInvoice === invoice.id ? "Suppression en cours..." : "Supprimer"}
                           >
                             {deletingInvoice === invoice.id ? (
-                              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                              <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
                             ) : (
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             )}
                           </button>
                         </div>
@@ -1505,25 +1569,25 @@ export default function ClientDetailView({
               </h3>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[800px]">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Description
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Heures
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Tarif/h
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Montant
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Statut
                     </th>
                   </tr>
@@ -1531,24 +1595,24 @@ export default function ClientDetailView({
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {client.services.map((service) => (
                     <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white">
                         {formatDate(service.date)}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 dark:text-white">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <div className="text-xs sm:text-sm text-gray-900 dark:text-white">
                           {service.description}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white">
                         {service.hours}h
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white">
                         {formatCurrency(service.hourlyRate)}/h
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                         {formatCurrency(service.amount)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           service.status === 'completed' ? 'text-green-600 bg-green-100' :
                           service.status === 'in_progress' ? 'text-blue-600 bg-blue-100' :
@@ -1567,14 +1631,14 @@ export default function ClientDetailView({
         )}
 
         {activeTab === 'payments' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Informations de paiement
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Mode de paiement préféré</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Mode de paiement préféré</span>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {client.paymentInfo.preferredMethod === 'bank_transfer' ? 'Virement' :
                      client.paymentInfo.preferredMethod === 'paypal' ? 'PayPal' :
@@ -1584,25 +1648,25 @@ export default function ClientDetailView({
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Dernier paiement</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Dernier paiement</span>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {client.paymentInfo.lastPaymentDate ? formatDate(client.paymentInfo.lastPaymentDate) : 'Aucun'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Montant du dernier paiement</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Montant du dernier paiement</span>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {client.paymentInfo.lastPaymentAmount ? formatCurrency(client.paymentInfo.lastPaymentAmount) : 'N/A'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Nombre total de paiements</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Nombre total de paiements</span>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {client.paymentInfo.totalPayments}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Délai moyen de paiement</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Délai moyen de paiement</span>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {client.paymentInfo.averagePaymentTime} jours
                   </span>
@@ -1610,31 +1674,31 @@ export default function ClientDetailView({
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Pipeline
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Factures brouillons</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Factures brouillons</span>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {client.pipeline.draftInvoices}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Devis en attente</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Devis en attente</span>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {client.pipeline.pendingQuotes}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Prestations planifiées</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Prestations planifiées</span>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {client.pipeline.plannedServices}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Revenus estimés</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Revenus estimés</span>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {formatCurrency(client.pipeline.estimatedRevenue)}
                   </span>
@@ -1681,14 +1745,14 @@ export default function ClientDetailView({
               <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-lg sm:text-xl font-bold truncate">Aperçu de la facture</h3>
-                    <p className="text-white/80 text-xs sm:text-sm truncate">
+                    <p className="text-white/80 text-xs sm:text-xs sm:text-sm truncate">
                       Facture N° {previewInvoice.invoice_number} • {new Date(previewInvoice.date).toLocaleDateString('fr-FR')}
                     </p>
                     <div className="flex items-center space-x-2 mt-1">
@@ -1711,7 +1775,7 @@ export default function ClientDetailView({
                 <div className="flex space-x-1 sm:space-x-2">
                   <button
                     onClick={() => openInvoicePrintWindow(previewInvoice, state.clients, state.services)}
-                    className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 flex items-center space-x-1 sm:space-x-2 font-medium hover:scale-105 hover:shadow-lg text-sm"
+                    className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 flex items-center space-x-1 sm:space-x-2 font-medium hover:scale-105 hover:shadow-lg text-xs sm:text-sm"
                   >
                     <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1724,7 +1788,7 @@ export default function ClientDetailView({
                     className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200 hover:scale-110"
                     title="Fermer"
                   >
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -1733,7 +1797,7 @@ export default function ClientDetailView({
             </div>
             
             {/* Scrollable content */}
-            <div className="overflow-y-auto max-h-[calc(95vh-200px)] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+            <div className="overflow-y-auto max-h-[calc(95vh-200px)] scrollbar-hide">
               <div className="p-4 sm:p-8">
                 {/* Invoice Content */}
                 <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl sm:rounded-3xl p-3 sm:p-6 lg:p-10 max-w-4xl xl:max-w-5xl mx-auto shadow-2xl hover:shadow-3xl transition-all duration-300">
@@ -1756,48 +1820,25 @@ export default function ClientDetailView({
                       })()}
                       <div>
                         <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
-                          {(() => {
-                            let settings: any = null;
-                            try {
-                              const raw = localStorage.getItem('business-settings');
-                              settings = raw ? JSON.parse(raw) : null;
-                            } catch {}
-                            return settings?.companyName || 'ProFlow';
-                          })()}
+                          {settings?.companyName || 'ProFlow'}
                         </h1>
-                        <p className="text-gray-600 dark:text-gray-400 font-medium text-sm sm:text-lg">
-                          {(() => {
-                            let settings: any = null;
-                            try {
-                              const raw = localStorage.getItem('business-settings');
-                              settings = raw ? JSON.parse(raw) : null;
-                            } catch {}
-                            return settings?.ownerName || 'Votre flux professionnel simplifié';
-                          })()}
+                        <p className="text-gray-600 dark:text-gray-400 font-medium text-xs sm:text-sm sm:text-lg">
+                          {settings?.ownerName || 'Votre flux professionnel simplifié'}
                         </p>
                         <div className="mt-3 text-xs sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed">
-                          {(() => {
-                            let settings: any = null;
-                            try {
-                              const raw = localStorage.getItem('business-settings');
-                              settings = raw ? JSON.parse(raw) : null;
-                            } catch {}
-                            return (
-                              <div>
-                                {settings?.address && <div>{settings.address}</div>}
-                                {settings?.email && <div>{settings.email}</div>}
-                                {settings?.phone && <div>{settings.phone}</div>}
-                                {settings?.siret && <div>SIRET: {settings.siret}</div>}
-                              </div>
-                            );
-                          })()}
+                          <div>
+                            {settings?.address && <div>{settings.address}</div>}
+                            {settings?.email && <div>{settings.email}</div>}
+                            {settings?.phone && <div>{settings.phone}</div>}
+                            {settings?.siret && <div>SIRET: {settings.siret}</div>}
+                          </div>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                         <h2 className="text-lg sm:text-2xl font-bold">FACTURE</h2>
-                        <p className="text-blue-100 font-semibold text-sm sm:text-base">N° {previewInvoice.invoice_number}</p>
+                        <p className="text-blue-100 font-semibold text-xs sm:text-sm sm:text-base">N° {previewInvoice.invoice_number}</p>
                       </div>
                     </div>
                   </div>
@@ -1808,7 +1849,7 @@ export default function ClientDetailView({
                       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                         <h3 className="text-lg sm:text-xl font-bold text-blue-900 dark:text-blue-100 mb-4 sm:mb-6 flex items-center">
                           <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
-                            <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                           </div>
@@ -1818,15 +1859,15 @@ export default function ClientDetailView({
                           <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                             {client?.name || 'Client inconnu'}
                           </p>
-                          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300">{client?.email || ''}</p>
-                          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300">{client?.phone || ''}</p>
-                          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300">{client?.address || ''}</p>
+                          <p className="text-xs sm:text-sm sm:text-base text-gray-700 dark:text-gray-300">{client?.email || ''}</p>
+                          <p className="text-xs sm:text-sm sm:text-base text-gray-700 dark:text-gray-300">{client?.phone || ''}</p>
+                          <p className="text-xs sm:text-sm sm:text-base text-gray-700 dark:text-gray-300">{client?.address || ''}</p>
                         </div>
                       </div>
                       <div className="bg-green-50 dark:bg-green-900/20 rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-green-200 dark:border-green-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                         <h3 className="text-lg sm:text-xl font-bold text-green-900 dark:text-green-100 mb-4 sm:mb-6 flex items-center">
                           <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-3">
-                            <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                           </div>
@@ -1849,7 +1890,7 @@ export default function ClientDetailView({
                           )}
                           <div className="flex justify-between items-center pt-2 border-t border-green-200 dark:border-green-700">
                             <span className="font-medium text-gray-700 dark:text-gray-300">Statut :</span>
-                            <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
+                            <span className={`px-3 py-1 text-xs sm:text-sm font-semibold rounded-full ${
                               previewInvoice.status === 'paid' 
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-800'
                                 : previewInvoice.status === 'sent'
@@ -1868,7 +1909,7 @@ export default function ClientDetailView({
                   <div className="mb-12">
                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 flex items-center">
                       <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3">
-                        <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
@@ -1878,6 +1919,10 @@ export default function ClientDetailView({
                     // Get services for this invoice - try from invoice.services first, then from global services
                     // Utiliser les services stockés dans la facture si disponibles
                     let invoiceServices = previewInvoice.services || [];
+                    
+                    console.log('🔍 Dans l\'aperçu - previewInvoice:', previewInvoice);
+                    console.log('🔍 Dans l\'aperçu - invoiceServices:', invoiceServices);
+                    console.log('🔍 Dans l\'aperçu - nombre de services:', invoiceServices.length);
                     
                     // Si pas de services stockés dans la facture, ne pas afficher tous les services du client
                     // car cela fausse l'aperçu. L'aperçu doit montrer seulement les services de cette facture.
@@ -1892,22 +1937,22 @@ export default function ClientDetailView({
                         <table className="min-w-full border-0 rounded-xl sm:rounded-2xl overflow-hidden">
                           <thead className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
                             <tr>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 first:rounded-tl-xl sm:first:rounded-tl-2xl last:rounded-tr-xl sm:last:rounded-tr-2xl">Description</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Heures</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Tarif/h</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 last:rounded-tr-xl sm:last:rounded-tr-2xl">Total</th>
+                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 first:rounded-tl-xl sm:first:rounded-tl-2xl last:rounded-tr-xl sm:last:rounded-tr-2xl">Description</th>
+                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
+                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Heures</th>
+                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Tarif/h</th>
+                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 last:rounded-tr-xl sm:last:rounded-tr-2xl">Total</th>
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-600">
                             {invoiceServices.length > 0 ? (
                               invoiceServices.map((service: any, index: number) => (
                                 <tr key={service.id || index} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${index === invoiceServices.length - 1 ? 'last:rounded-b-xl sm:last:rounded-b-2xl' : ''}`}>
-                                  <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-medium ${index === invoiceServices.length - 1 ? 'first:rounded-bl-xl sm:first:rounded-bl-2xl' : ''}`}>{service.description || 'N/A'}</td>
-                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{new Date(service.date).toLocaleDateString('fr-FR')}</td>
-                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hours}h</td>
-                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hourly_rate}€</td>
-                                  <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-bold ${index === invoiceServices.length - 1 ? 'last:rounded-br-xl sm:last:rounded-br-2xl' : ''}`}>{(service.hours * service.hourly_rate).toFixed(2)}€</td>
+                                  <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-xs sm:text-sm text-gray-900 dark:text-white font-medium ${index === invoiceServices.length - 1 ? 'first:rounded-bl-xl sm:first:rounded-bl-2xl' : ''}`}>{service.description || 'N/A'}</td>
+                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-xs sm:text-sm text-gray-700 dark:text-gray-300">{new Date(service.date).toLocaleDateString('fr-FR')}</td>
+                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hours}h</td>
+                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hourly_rate}€</td>
+                                  <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-xs sm:text-sm text-gray-900 dark:text-white font-bold ${index === invoiceServices.length - 1 ? 'last:rounded-br-xl sm:last:rounded-br-2xl' : ''}`}>{(service.hours * service.hourly_rate).toFixed(2)}€</td>
                                 </tr>
                               ))
                             ) : (
@@ -1920,7 +1965,7 @@ export default function ClientDetailView({
                                       </svg>
                                     </div>
                                     <p className="text-gray-500 dark:text-gray-400 font-medium">Aucune prestation trouvée pour cette facture</p>
-                                    <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Les prestations seront affichées ici une fois ajoutées</p>
+                                    <p className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm mt-1">Les prestations seront affichées ici une fois ajoutées</p>
                                   </div>
                                 </td>
                               </tr>
@@ -1938,7 +1983,7 @@ export default function ClientDetailView({
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-8 border border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                         <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
                           <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
-                            <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
                           </div>
@@ -1946,7 +1991,7 @@ export default function ClientDetailView({
                         </h4>
                           <div className="space-y-4">
                             <div className="flex justify-between items-center py-2 sm:py-3 border-b border-blue-200 dark:border-blue-700">
-                              <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">Sous-total :</span>
+                              <span className="text-xs sm:text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">Sous-total :</span>
                               <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{calculateInvoiceAmount(previewInvoice).toFixed(2)}€</span>
                             </div>
                             <div className="flex justify-between items-center py-3 sm:py-4 bg-white dark:bg-gray-800 rounded-lg px-3 sm:px-4 border-2 border-blue-200 dark:border-blue-700">
@@ -1964,7 +2009,7 @@ export default function ClientDetailView({
             {/* Footer with metadata */}
             <div className="bg-gray-50 dark:bg-gray-700 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
               <div className="flex items-center justify-center">
-                <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 text-xs sm:text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   <div>
                     <span className="font-medium">Créée le :</span> {new Date(previewInvoice.created_at || previewInvoice.date).toLocaleDateString('fr-FR')}
                   </div>
@@ -1993,7 +2038,7 @@ export default function ClientDetailView({
                   </div>
                   <div>
                     <h3 className="text-xl font-bold">Envoyer la facture</h3>
-                    <p className="text-white/80 text-sm">
+                    <p className="text-white/80 text-xs sm:text-sm">
                       Facture N° {emailModal.invoice_number} • {new Date(emailModal.date).toLocaleDateString('fr-FR')}
                     </p>
                   </div>
@@ -2014,7 +2059,7 @@ export default function ClientDetailView({
               <form onSubmit={(e) => { e.preventDefault(); handleSendEmail(); }} className="space-y-6">
                 {/* Email Address */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                     Adresse email du client
                   </label>
                   <input
@@ -2029,7 +2074,7 @@ export default function ClientDetailView({
 
                 {/* Subject */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                     Objet de l'email
                   </label>
                   <input
@@ -2043,7 +2088,7 @@ export default function ClientDetailView({
 
                 {/* Message */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                     Message personnalisé
                   </label>
                   <textarea
@@ -2071,14 +2116,14 @@ export default function ClientDetailView({
                   >
                     {sendingEmail ? (
                       <>
-                        <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                         <span>Envoi en cours...</span>
                       </>
                     ) : (
                       <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                         </svg>
                         <span>Envoyer la facture</span>
@@ -2116,7 +2161,7 @@ export default function ClientDetailView({
                     <h3 className="text-lg sm:text-xl font-bold truncate">
                       {editingService ? 'Modifier la prestation' : 'Nouvelle prestation'}
                     </h3>
-                    <p className="text-white/80 text-xs sm:text-sm truncate">
+                    <p className="text-white/80 text-xs sm:text-xs sm:text-sm truncate">
                       {editingService ? 'Mettre à jour les informations' : `Enregistrer une nouvelle prestation pour ${client?.name}`}
                     </p>
                   </div>
@@ -2134,11 +2179,11 @@ export default function ClientDetailView({
             </div>
             
             {/* Scrollable content area */}
-            <div className="overflow-y-auto scrollbar-none max-h-[calc(95vh-120px)]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <div className="overflow-y-auto scrollbar-hide max-h-[calc(95vh-120px)]">
               <form onSubmit={handleServiceSubmit} className="p-4 sm:p-6 space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="lg:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Client *
                     </label>
                     <select
@@ -2157,7 +2202,7 @@ export default function ClientDetailView({
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Date *
                     </label>
                     <input
@@ -2170,7 +2215,7 @@ export default function ClientDetailView({
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Heures *
                     </label>
                     <input
@@ -2185,9 +2230,9 @@ export default function ClientDetailView({
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Tarif/h (€) *
                     </label>
                     <input
@@ -2201,7 +2246,7 @@ export default function ClientDetailView({
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Statut
                     </label>
                     <select
@@ -2217,7 +2262,7 @@ export default function ClientDetailView({
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Description *
                   </label>
                   <textarea
@@ -2233,7 +2278,7 @@ export default function ClientDetailView({
                 {/* Preview calculation */}
                 {serviceFormData.hours > 0 && serviceFormData.hourly_rate > 0 && (
                   <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                    <div className="flex justify-between text-sm font-semibold text-green-600 dark:text-green-400">
+                    <div className="flex justify-between text-xs sm:text-sm font-semibold text-green-600 dark:text-green-400">
                       <span>Montant total:</span>
                       <span>
                         {calculateServiceAmount(serviceFormData.hours, serviceFormData.hourly_rate).toFixed(2)}€
@@ -2246,13 +2291,13 @@ export default function ClientDetailView({
                   <button
                     type="button"
                     onClick={resetServiceForm}
-                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm font-medium"
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-full border border-green-500 dark:border-green-600 shadow-md hover:shadow-lg transition-all text-sm font-medium"
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-full border border-green-500 dark:border-green-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
                   >
                     {editingService ? 'Modifier' : 'Ajouter'}
                   </button>
@@ -2280,13 +2325,13 @@ export default function ClientDetailView({
               <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <FileText className="w-3 h-3 sm:w-4 sm:h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-lg sm:text-xl font-bold truncate">
                       Modifier la facture
                     </h3>
-                    <p className="text-white/80 text-xs sm:text-sm hidden sm:block">
+                    <p className="text-white/80 text-xs sm:text-xs sm:text-sm hidden sm:block">
                       Mettez à jour les informations de la facture
                     </p>
                   </div>
@@ -2316,9 +2361,9 @@ export default function ClientDetailView({
                     </div>
                     Informations générales
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         N° Facture
                       </label>
                       <input
@@ -2330,7 +2375,7 @@ export default function ClientDetailView({
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Mode de paiement
                       </label>
                       <select
@@ -2358,9 +2403,9 @@ export default function ClientDetailView({
                     </div>
                     Dates
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Date de facture *
                       </label>
                       <input
@@ -2380,7 +2425,7 @@ export default function ClientDetailView({
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Date d'échéance *
                       </label>
                       <input
@@ -2398,7 +2443,7 @@ export default function ClientDetailView({
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
@@ -2413,7 +2458,7 @@ export default function ClientDetailView({
                           </svg>
                         </div>
                         <p className="text-gray-500 dark:text-gray-400 font-medium">Aucune prestation disponible pour ce client.</p>
-                        <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Créez d'abord des prestations pour ce client.</p>
+                        <p className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm mt-1">Créez d'abord des prestations pour ce client.</p>
                       </div>
                     ) : (
                       <div className="divide-y divide-gray-100 dark:divide-gray-600">
@@ -2434,17 +2479,17 @@ export default function ClientDetailView({
                             <div className="flex-1">
                               <div className="flex justify-between items-start">
                                 <div>
-                                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  <span className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                                     {new Date(service.date).toLocaleDateString('fr-FR')}
                                   </span>
                                   {service.description && (
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                                       {service.description}
                                     </p>
                                   )}
                                 </div>
                                 <div className="text-right">
-                                  <span className="text-sm font-bold text-gray-900 dark:text-white">
+                                  <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
                                     {((Number(service.hours) || 0) * (Number(service.hourly_rate) || 0)).toFixed(2)}€
                                   </span>
                                   <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -2465,7 +2510,7 @@ export default function ClientDetailView({
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-700">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                       <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
-                        <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                       </div>
@@ -2496,19 +2541,19 @@ export default function ClientDetailView({
             </div>
             
             {/* Footer with buttons */}
-            <div className="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+            <div className="bg-gray-50 dark:bg-gray-700 px-4 sm:px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
                   type="button"
                   onClick={resetInvoiceForm}
-                  className="flex-1 px-4 sm:px-6 py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium text-sm sm:text-base"
+                  className="flex-1 px-4 sm:px-6 py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium text-xs sm:text-sm sm:text-base"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   onClick={handleInvoiceSubmit}
-                  className="flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-700 dark:to-indigo-700 dark:hover:from-blue-800 dark:hover:to-indigo-800 text-white rounded-full border border-blue-500 dark:border-blue-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
+                  className="flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-700 dark:to-indigo-700 dark:hover:from-blue-800 dark:hover:to-indigo-800 text-white rounded-full border border-blue-500 dark:border-blue-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-xs sm:text-sm sm:text-base"
                 >
                   Mettre à jour la facture
                 </button>

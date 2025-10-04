@@ -33,6 +33,7 @@ export interface Invoice {
   net_amount: number;
   payment_method?: string;
   status: 'draft' | 'sent' | 'paid';
+  archived_at?: string;
   created_at: string;
   updated_at: string;
 }

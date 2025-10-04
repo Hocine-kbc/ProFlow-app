@@ -7,6 +7,7 @@ import InvoicesPage from './components/InvoicesPage';
 import StatsPage from './components/StatsPage';
 import SettingsPage from './components/SettingsPage';
 import ProfilePage from './components/ProfilePage';
+import ArchivePage from './components/ArchivePage';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Client, Service, Invoice } from './types';
@@ -90,6 +91,20 @@ function AppContent() {
     })();
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      // Rediriger vers le dashboard après connexion
+      if (session && _event === 'SIGNED_IN') {
+        setCurrentPage('dashboard');
+      }
+      // Nettoyer le cache lors de la déconnexion
+      if (_event === 'SIGNED_OUT') {
+        localStorage.removeItem('business-settings');
+        localStorage.removeItem('user-settings');
+        // Réinitialiser les données
+        dispatch({ type: 'SET_CLIENTS', payload: [] });
+        dispatch({ type: 'SET_SERVICES', payload: [] });
+        dispatch({ type: 'SET_INVOICES', payload: [] });
+        dispatch({ type: 'SET_SETTINGS', payload: null });
+      }
     });
     return () => {
       isMounted = false;
@@ -122,6 +137,20 @@ function AppContent() {
         // Initialiser avec un tableau vide si la requête échoue
         dispatch({ type: 'SET_INVOICES', payload: [] });
       }
+      
+      // Charger les paramètres du profil
+      try {
+        const { fetchSettings } = await import('./lib/api');
+        const settings = await fetchSettings();
+        if (settings) {
+          // Sauvegarder dans localStorage pour l'affichage
+          localStorage.setItem('business-settings', JSON.stringify(settings));
+          // Mettre à jour l'état global
+          dispatch({ type: 'SET_SETTINGS', payload: settings });
+        }
+      } catch (e) {
+        console.log('Erreur lors du chargement des paramètres:', e);
+      }
     })();
     // Les statistiques seront calculées dynamiquement dans StatsPage
     const stats = {
@@ -151,6 +180,8 @@ function AppContent() {
         return <SettingsPage />;
       case 'profile':
         return <ProfilePage />;
+      case 'archive':
+        return <ArchivePage onPageChange={setCurrentPage} />;
       default:
         return <Dashboard onNavigate={setCurrentPage} />;
     }

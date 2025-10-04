@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { upsertSettings } from '../lib/api';
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -7,6 +8,13 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Champs du profil pour l'inscription
+  const [companyName, setCompanyName] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [siret, setSiret] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,8 +25,31 @@ export default function AuthPage() {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw err;
       } else {
-        const { error: err } = await supabase.auth.signUp({ email, password });
+        // Inscription avec création du profil
+        const { data, error: err } = await supabase.auth.signUp({ email, password });
         if (err) throw err;
+        
+        // Si l'inscription réussit, créer le profil
+        if (data.user) {
+          try {
+            await upsertSettings({
+              companyName: companyName || 'Mon Entreprise',
+              ownerName: ownerName || 'Propriétaire',
+              email: email,
+              phone: phone || '',
+              address: address || '',
+              siret: siret || '',
+              defaultHourlyRate: 50,
+              invoicePrefix: 'FAC',
+              paymentTerms: 30,
+              logoUrl: '',
+              invoiceTerms: 'Paiement à 30 jours net.'
+            });
+          } catch (profileError) {
+            console.error('Erreur lors de la création du profil:', profileError);
+            // Ne pas bloquer l'inscription si la création du profil échoue
+          }
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Erreur');
@@ -123,6 +154,82 @@ export default function AuthPage() {
                     />
                   </div>
                 </div>
+
+                {/* Champs du profil pour l'inscription */}
+                {mode === 'signup' && (
+                  <>
+                    <div className="border-t border-white/20 pt-4 mt-4">
+                      <h3 className="text-lg font-semibold text-white mb-4">Informations de votre entreprise</h3>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-white/90 mb-2">
+                            Nom de l'entreprise
+                          </label>
+                          <input
+                            type="text"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300"
+                            placeholder="Mon Entreprise"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-white/90 mb-2">
+                            Nom du propriétaire
+                          </label>
+                          <input
+                            type="text"
+                            value={ownerName}
+                            onChange={(e) => setOwnerName(e.target.value)}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300"
+                            placeholder="Jean Dupont"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-white/90 mb-2">
+                            Téléphone
+                          </label>
+                          <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300"
+                            placeholder="01 23 45 67 89"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-white/90 mb-2">
+                            Adresse
+                          </label>
+                          <textarea
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            rows={2}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300 resize-none"
+                            placeholder="123 Rue de la Paix, 75001 Paris"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-white/90 mb-2">
+                            SIRET (optionnel)
+                          </label>
+                          <input
+                            type="text"
+                            value={siret}
+                            onChange={(e) => setSiret(e.target.value)}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all duration-300"
+                            placeholder="12345678901234"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {error && (

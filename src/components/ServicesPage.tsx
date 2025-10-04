@@ -261,11 +261,11 @@ export default function ServicesPage() {
         </div>
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1">
+          <div className="flex-1 text-center sm:text-left">
             <h1 className="text-xl sm:text-2xl font-bold">Prestations</h1>
             <p className="text-white/80 mt-1 text-sm sm:text-base">Suivi et facturation de vos prestations professionnelles</p>
           </div>
-          <div className="mt-4 sm:mt-0 flex justify-end">
+          <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end">
             <button
               onClick={() => setShowModal(true)}
               className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
@@ -481,9 +481,9 @@ export default function ServicesPage() {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
         {/* Vue mobile - Cards */}
         <div className="block sm:hidden">
-          {/* Checkbox "Tout sélectionner" pour mobile */}
+          {/* Bouton Tout sélectionner pour mobile */}
           {isSelectionMode && currentServices.length > 0 && (
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-700">
+            <div className="flex justify-center p-4 border-b border-gray-200 dark:border-gray-600">
               <button
                 onClick={() => {
                   const allSelected = currentServices.every(service => selectedServices.has(service.id));
@@ -503,16 +503,10 @@ export default function ServicesPage() {
                     });
                   }
                 }}
-                className="flex items-center space-x-2 text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+                className="inline-flex items-center px-4 py-2 rounded-full text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm font-medium"
               >
-                {currentServices.every(service => selectedServices.has(service.id)) ? (
-                  <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                ) : (
-                  <Circle className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-                )}
-                <span className="text-sm font-medium">
-                  {currentServices.every(service => selectedServices.has(service.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
-                </span>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                {currentServices.every(service => selectedServices.has(service.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
               </button>
             </div>
           )}
@@ -864,7 +858,7 @@ export default function ServicesPage() {
             </div>
             
             {/* Scrollable content area - No visible scrollbar */}
-            <div className="overflow-y-auto scrollbar-none max-h-[calc(95vh-120px)]" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <div className="overflow-y-auto scrollbar-hide max-h-[calc(95vh-120px)]">
               <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="lg:col-span-2">

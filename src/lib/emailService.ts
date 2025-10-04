@@ -18,13 +18,13 @@ export interface EmailData {
 }
 
 // Fonction pour envoyer une facture par email via le backend
-export const sendInvoiceEmail = async (emailData: EmailData, invoiceId?: string): Promise<boolean> => {
+export const sendInvoiceEmail = async (emailData: EmailData, invoiceId?: string, invoiceData?: any): Promise<boolean> => {
   try {
     console.log('📧 Envoi de facture via le backend...', emailData);
     
     // Utiliser l'ID UUID si fourni, sinon utiliser le numéro de facture
     const idToSend = invoiceId || emailData.invoice_number;
-    const result = await sendInvoiceViaBackend(idToSend);
+    const result = await sendInvoiceViaBackend(idToSend, invoiceData);
     
     if (result.success) {
       console.log('✅ Facture envoyée avec succès:', result);

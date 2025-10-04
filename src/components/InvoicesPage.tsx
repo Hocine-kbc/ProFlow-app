@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, Send, Download, Eye, Edit2, CheckCircle, Circle, Trash, X } from 'lucide-react';
+import { Plus, Trash2, FileText, Send, Download, Eye, Edit2, CheckCircle, Circle, Trash, X, Archive } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { openInvoicePrintWindow } from '../lib/print';
 import { sendInvoiceEmail, EmailData } from '../lib/emailService';
 import { createInvoice, updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi } from '../lib/api';
 import { Invoice } from '../types';
 import AlertModal from './AlertModal';
+import { supabase } from '../lib/supabase';
+import { useSettings } from '../hooks/useSettings';
 
 export default function InvoicesPage() {
   const { state, dispatch, showNotification } = useApp();
   const { invoices, clients, services } = state;
+  const settings = useSettings();
 
   // Fonction utilitaire pour calculer le montant d'une facture à partir de ses prestations
   const calculateInvoiceAmount = (invoice: any): number => {
@@ -162,14 +165,8 @@ export default function InvoicesPage() {
   // Fonction utilitaire pour calculer la date d'échéance
   const calculateDueDate = (invoiceDate: string): string => {
     let paymentTerms = 30; // valeur par défaut
-    try {
-      const raw = localStorage.getItem('business-settings');
-      const settings = raw ? JSON.parse(raw) : null;
-      if (settings && settings.paymentTerms) {
-        paymentTerms = settings.paymentTerms;
-      }
-    } catch (error) {
-      console.warn('Impossible de récupérer les paramètres d\'échéance:', error);
+    if (settings && settings.paymentTerms) {
+      paymentTerms = settings.paymentTerms;
     }
     
     const dueDate = new Date(invoiceDate);
@@ -340,6 +337,45 @@ export default function InvoicesPage() {
     });
   };
 
+
+  const handleArchive = (id: string) => {
+    const invoice = invoices.find(i => i.id === id);
+    setAlertModal({
+      isOpen: true,
+      title: 'Archiver la facture',
+      message: `Êtes-vous sûr de vouloir archiver la facture #${invoice?.invoice_number} ? Elle sera déplacée vers l'archive et ne sera plus visible dans la liste principale.`,
+      type: 'warning',
+      onConfirm: async () => {
+        try {
+          // Utiliser archived_at pour marquer comme archivé
+          const updateData = { 
+            archived_at: new Date().toISOString()
+          };
+          
+          const { error } = await supabase
+            .from('invoices')
+            .update(updateData)
+            .eq('id', id);
+          
+          if (error) {
+            throw error;
+          }
+          
+          const updatedInvoice = { 
+            ...invoice, 
+            archived_at: new Date().toISOString()
+          };
+          
+          dispatch({ type: 'UPDATE_INVOICE', payload: updatedInvoice as Invoice });
+          showNotification('success', 'Facture archivée', 'La facture a été archivée avec succès');
+        } catch (error) {
+          console.error('Error archiving invoice:', error);
+          showNotification('error', 'Erreur', `Impossible d'archiver la facture: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+        }
+      }
+    });
+  };
+
   // Fonctions de gestion de sélection multiple (style Prestations)
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
@@ -358,6 +394,25 @@ export default function InvoicesPage() {
       }
       return newSet;
     });
+  };
+
+  const toggleAllInvoicesSelection = () => {
+    const allSelected = activeInvoices.every(invoice => selectedInvoices.has(invoice.id));
+    if (allSelected) {
+      // Désélectionner toutes les factures
+      activeInvoices.forEach(invoice => {
+        if (selectedInvoices.has(invoice.id)) {
+          toggleInvoiceSelection(invoice.id);
+        }
+      });
+    } else {
+      // Sélectionner toutes les factures
+      activeInvoices.forEach(invoice => {
+        if (!selectedInvoices.has(invoice.id)) {
+          toggleInvoiceSelection(invoice.id);
+        }
+      });
+    }
   };
 
   const handleBulkDelete = () => {
@@ -412,11 +467,7 @@ export default function InvoicesPage() {
     setSendingEmail(true);
     try {
       // Get business settings
-      let settings: any = null;
-      try {
-        const raw = localStorage.getItem('business-settings');
-        settings = raw ? JSON.parse(raw) : null;
-      } catch {}
+      // Utiliser les paramètres de l'état global
 
       // Get client information
       const client = clients.find(c => c.id === emailModal.client_id);
@@ -468,9 +519,12 @@ export default function InvoicesPage() {
 
   // kept via selectableServices in edit/new flows
 
-  const totalHT = invoices.reduce((acc, inv) => acc + calculateInvoiceAmount(inv), 0);
-  const totalPayees = invoices.filter(i => i.status === 'paid').reduce((acc, inv) => acc + calculateInvoiceAmount(inv), 0);
-  const totalEnvoyees = invoices.filter(i => i.status === 'sent').length;
+  // Filtrer les factures non archivées pour l'affichage
+  const activeInvoices = invoices.filter(invoice => !(invoice as any).archived_at);
+  
+  const totalHT = activeInvoices.reduce((acc, inv) => acc + calculateInvoiceAmount(inv), 0);
+  const totalPayees = activeInvoices.filter(i => i.status === 'paid').reduce((acc, inv) => acc + calculateInvoiceAmount(inv), 0);
+  const totalEnvoyees = activeInvoices.filter(i => i.status === 'sent').length;
 
   return (
     <div className="space-y-6">
@@ -492,11 +546,11 @@ export default function InvoicesPage() {
         </div>
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1">
+          <div className="flex-1 text-center sm:text-left">
             <h1 className="text-xl sm:text-2xl font-bold">Factures</h1>
             <p className="text-sm sm:text-base text-white/80 mt-1">Émission et suivi de vos factures clients</p>
           </div>
-          <div className="mt-4 sm:mt-0 flex justify-end">
+          <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end">
             <button
               onClick={() => {
                 // Pré-remplir la date du jour et calculer l'échéance automatiquement
@@ -545,22 +599,22 @@ export default function InvoicesPage() {
           {[
             { 
               label: 'Payées', 
-              count: invoices.filter(i => i.status === 'paid').length,
-              amount: invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
+              count: activeInvoices.filter(i => i.status === 'paid').length,
+              amount: activeInvoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
               color: 'bg-green-500',
               textColor: 'text-green-600 dark:text-green-400'
             },
             { 
               label: 'Envoyées', 
-              count: invoices.filter(i => i.status === 'sent').length,
-              amount: invoices.filter(i => i.status === 'sent').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
+              count: activeInvoices.filter(i => i.status === 'sent').length,
+              amount: activeInvoices.filter(i => i.status === 'sent').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
               color: 'bg-yellow-500',
               textColor: 'text-yellow-600 dark:text-yellow-400'
             },
             { 
               label: 'Brouillons', 
-              count: invoices.filter(i => i.status === 'draft').length,
-              amount: invoices.filter(i => i.status === 'draft').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
+              count: activeInvoices.filter(i => i.status === 'draft').length,
+              amount: activeInvoices.filter(i => i.status === 'draft').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
               color: 'bg-gray-500',
               textColor: 'text-gray-600 dark:text-gray-400'
             }
@@ -629,7 +683,7 @@ export default function InvoicesPage() {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Vue mobile - Cards */}
         <div className="block sm:hidden">
-          {invoices.length === 0 ? (
+          {activeInvoices.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
               <div className="flex flex-col items-center space-y-2">
                 <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600" />
@@ -638,8 +692,22 @@ export default function InvoicesPage() {
               </div>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-600">
-              {invoices.map((invoice) => (
+            <>
+              {/* Bouton Tout sélectionner pour mobile */}
+              {isSelectionMode && activeInvoices.length > 0 && (
+                <div className="flex justify-center p-4 border-b border-gray-200 dark:border-gray-600">
+                  <button
+                    onClick={toggleAllInvoicesSelection}
+                    className="inline-flex items-center px-4 py-2 rounded-full text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm font-medium"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    {activeInvoices.every(invoice => selectedInvoices.has(invoice.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
+                  </button>
+                </div>
+              )}
+              
+              <div className="divide-y divide-gray-200 dark:divide-gray-600">
+              {activeInvoices.map((invoice) => (
                 <div key={invoice.id} className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-start space-x-3 flex-1 min-w-0">
@@ -735,6 +803,13 @@ export default function InvoicesPage() {
                         <Download className="w-4 h-4" />
                       </button>
                       <button
+                        onClick={() => handleArchive(invoice.id)}
+                        className="p-2 rounded-full text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                        title="Archiver"
+                      >
+                        <Archive className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(invoice.id)}
                         className="p-2 rounded-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                         title="Supprimer"
@@ -745,7 +820,8 @@ export default function InvoicesPage() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            </>
           )}
         </div>
 
@@ -813,7 +889,7 @@ export default function InvoicesPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-              {invoices.length === 0 ? (
+              {activeInvoices.length === 0 ? (
                 <tr>
                   <td colSpan={isSelectionMode ? 9 : 8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     <div className="flex flex-col items-center space-y-2">
@@ -824,7 +900,7 @@ export default function InvoicesPage() {
                   </td>
                 </tr>
               ) : (
-                invoices.map((invoice) => (
+                activeInvoices.map((invoice) => (
                 <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   {isSelectionMode && (
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -916,6 +992,13 @@ export default function InvoicesPage() {
                         title="Télécharger PDF"
                       >
                         <Download className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleArchive(invoice.id)}
+                        className="text-orange-600 hover:text-orange-900"
+                        title="Archiver"
+                      >
+                        <Archive className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(invoice.id)}
@@ -1296,7 +1379,7 @@ export default function InvoicesPage() {
             </div>
             
             {/* Scrollable content */}
-            <div className="overflow-y-auto max-h-[calc(95vh-200px)] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+            <div className="overflow-y-auto max-h-[calc(95vh-200px)] scrollbar-hide">
               <div className="p-4 sm:p-8">
                 {/* Invoice Content */}
                 <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl sm:rounded-3xl p-3 sm:p-6 lg:p-10 max-w-4xl xl:max-w-5xl mx-auto shadow-2xl hover:shadow-3xl transition-all duration-300">
@@ -1319,41 +1402,18 @@ export default function InvoicesPage() {
                       })()}
                       <div>
                         <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
-                          {(() => {
-                            let settings: any = null;
-                            try {
-                              const raw = localStorage.getItem('business-settings');
-                              settings = raw ? JSON.parse(raw) : null;
-                            } catch {}
-                            return settings?.companyName || 'ProFlow';
-                          })()}
+                          {settings?.companyName || 'ProFlow'}
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400 font-medium text-sm sm:text-lg">
-                          {(() => {
-                            let settings: any = null;
-                            try {
-                              const raw = localStorage.getItem('business-settings');
-                              settings = raw ? JSON.parse(raw) : null;
-                            } catch {}
-                            return settings?.ownerName || 'Votre flux professionnel simplifié';
-                          })()}
+                          {settings?.ownerName || 'Votre flux professionnel simplifié'}
                         </p>
                         <div className="mt-3 text-xs sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed">
-                          {(() => {
-                            let settings: any = null;
-                            try {
-                              const raw = localStorage.getItem('business-settings');
-                              settings = raw ? JSON.parse(raw) : null;
-                            } catch {}
-                            return (
-                              <div>
-                                {settings?.address && <div>{settings.address}</div>}
-                                {settings?.email && <div>{settings.email}</div>}
-                                {settings?.phone && <div>{settings.phone}</div>}
-                                {settings?.siret && <div>SIRET: {settings.siret}</div>}
-                              </div>
-                            );
-                          })()}
+                          <div>
+                            {settings?.address && <div>{settings.address}</div>}
+                            {settings?.email && <div>{settings.email}</div>}
+                            {settings?.phone && <div>{settings.phone}</div>}
+                            {settings?.siret && <div>SIRET: {settings.siret}</div>}
+                          </div>
                         </div>
                       </div>
                     </div>

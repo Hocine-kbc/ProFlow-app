@@ -10,7 +10,7 @@ export interface BackendResponse {
 }
 
 // Envoyer une facture via le backend
-export const sendInvoiceViaBackend = async (invoiceId: string): Promise<BackendResponse> => {
+export const sendInvoiceViaBackend = async (invoiceId: string, invoiceData?: any): Promise<BackendResponse> => {
   try {
     console.log(`📧 Envoi de la facture ${invoiceId} via le backend...`);
     
@@ -24,6 +24,18 @@ export const sendInvoiceViaBackend = async (invoiceId: string): Promise<BackendR
       console.warn('⚠️ Impossible de récupérer les données d\'entreprise:', error);
     }
     
+    // Récupérer les services de la facture depuis localStorage
+    let invoiceServices = [];
+    try {
+      const storedServices = JSON.parse(localStorage.getItem('invoice-services') || '{}');
+      invoiceServices = storedServices[invoiceId] || [];
+      console.log(`🔍 Services récupérés pour la facture ${invoiceId}:`, invoiceServices.length);
+      console.log(`🔍 Détails des services récupérés:`, invoiceServices);
+      console.log(`🔍 Contenu complet de localStorage:`, storedServices);
+    } catch (error) {
+      console.warn('⚠️ Impossible de récupérer les services de la facture:', error);
+    }
+    
     const response = await fetch(`${BACKEND_URL}/send-invoice`, {
       method: 'POST',
       headers: {
@@ -31,7 +43,9 @@ export const sendInvoiceViaBackend = async (invoiceId: string): Promise<BackendR
       },
       body: JSON.stringify({ 
         invoiceId,
-        companySettings 
+        companySettings,
+        invoiceData,
+        services: invoiceServices
       }),
     });
 

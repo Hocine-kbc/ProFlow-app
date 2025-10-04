@@ -10,6 +10,7 @@ interface AppState {
   loading: boolean;
   error: string | null;
   notifications: NotificationData[];
+  settings: any | null;
 }
 
 type AppAction =
@@ -28,6 +29,7 @@ type AppAction =
   | { type: 'UPDATE_INVOICE'; payload: Invoice }
   | { type: 'DELETE_INVOICE'; payload: string }
   | { type: 'SET_STATS'; payload: BusinessStats }
+  | { type: 'SET_SETTINGS'; payload: any | null }
   | { type: 'ADD_NOTIFICATION'; payload: NotificationData }
   | { type: 'REMOVE_NOTIFICATION'; payload: string };
 
@@ -46,6 +48,7 @@ const initialState: AppState = {
   loading: false,
   error: null,
   notifications: [],
+  settings: null,
 };
 
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -104,6 +107,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       };
     case 'SET_STATS':
       return { ...state, stats: action.payload };
+    case 'SET_SETTINGS':
+      return { ...state, settings: action.payload };
     case 'ADD_NOTIFICATION':
       return {
         ...state,

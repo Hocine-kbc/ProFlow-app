@@ -97,20 +97,37 @@ app.post('/api/send-invoice', async (req, res) => {
       email: client.email
     });
 
-    // Récup services
-    console.log(`🔍 Récupération services pour client ID: ${invoice.client_id}`);
-    const { data: services, error: servicesError } = await supabase
-      .from('services')
-      .select('*')
-      .eq('client_id', invoice.client_id);
+    // Récupérer les services spécifiques à cette facture depuis les données envoyées par le frontend
+    const { services: invoiceServices, invoiceData } = req.body;
+    
+    console.log(`🔍 Données complètes reçues du frontend:`, req.body);
+    console.log(`🔍 Services reçus du frontend pour la facture ${invoiceId}:`, invoiceServices ? invoiceServices.length : 0);
+    console.log(`🔍 Détails des services reçus:`, invoiceServices);
+    
+    let services = [];
+    
+    // Utiliser les services envoyés par le frontend s'ils existent
+    if (invoiceServices && invoiceServices.length > 0) {
+      console.log('✅ Utilisation des services spécifiques à la facture envoyés par le frontend');
+      services = invoiceServices;
+    } else {
+      console.log('⚠️ Aucun service spécifique reçu, récupération de tous les services du client');
+      // Fallback : récupérer tous les services du client (ancien comportement)
+      const { data: allServices, error: servicesError } = await supabase
+        .from('services')
+        .select('*')
+        .eq('client_id', invoice.client_id);
 
-    if (servicesError) {
-      console.error('❌ Erreur récupération services:', servicesError);
-      return res.status(404).json({ error: 'Services non trouvés' });
+      if (servicesError) {
+        console.error('❌ Erreur récupération services:', servicesError);
+        return res.status(404).json({ error: 'Services non trouvés' });
+      }
+      
+      services = allServices || [];
     }
 
-    console.log(`✅ Services récupérés: ${services ? services.length : 0} service(s)`, 
-      services ? services.map(s => ({ description: s.description, hours: s.hours, rate: s.hourly_rate })) : 'Aucun service'
+    console.log(`✅ Services à utiliser: ${services.length} service(s)`, 
+      services.map(s => ({ description: s.description, hours: s.hours, rate: s.hourly_rate }))
     );
 
     // Fusionner données

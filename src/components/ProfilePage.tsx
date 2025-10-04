@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Building2, User, Mail, Phone, MapPin, Hash, Upload, Trash2, Edit3 } from 'lucide-react';
-import { uploadLogo, fetchSettings as fetchSettingsApi, upsertSettings } from '../lib/api';
+import { Save, Building2, User, Mail, Phone, MapPin, Hash, Upload, Trash2, Edit3, AlertTriangle } from 'lucide-react';
+import { uploadLogo, fetchSettings as fetchSettingsApi, upsertSettings, deleteUserAccount } from '../lib/api';
 import { useApp } from '../contexts/AppContext';
 
 export default function ProfilePage() {
@@ -16,11 +16,15 @@ export default function ProfilePage() {
     logoUrl: '',
   });
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
   useEffect(() => {
     (async () => {
+      console.log('🔍 ProfilePage: Début du chargement des paramètres');
       try {
         const remote = await fetchSettingsApi();
+        console.log('🔍 ProfilePage: Paramètres récupérés:', remote);
         if (remote) {
           // Séparer le nom complet en prénom et nom
           const fullName = (remote as any).ownerName || '';
@@ -55,6 +59,24 @@ export default function ProfilePage() {
 
   const handleInputChange = (key: string, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation === 'supprimer') {
+      try {
+        // Supprimer complètement le compte (données + utilisateur Auth)
+        await deleteUserAccount();
+        
+        showNotification('success', 'Compte supprimé', 'Votre compte a été supprimé définitivement. Redirection en cours...');
+        setShowDeleteModal(false);
+        setDeleteConfirmation('');
+      } catch (error) {
+        console.error('Erreur lors de la suppression du compte:', error);
+        showNotification('error', 'Erreur', 'Impossible de supprimer le compte. Veuillez réessayer.');
+      }
+    } else {
+      showNotification('error', 'Erreur', 'Vous devez écrire "supprimer" pour confirmer');
+    }
   };
 
   const handleLogoUpload = async (file?: File) => {
@@ -154,11 +176,11 @@ export default function ProfilePage() {
         </div>
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          <div>
+          <div className="text-center sm:text-left">
             <h1 className="text-xl sm:text-2xl font-bold">Profil entreprise</h1>
             <p className="text-white/80 mt-1 text-sm sm:text-base">Informations légales et données entreprise</p>
           </div>
-          <div className="flex justify-end sm:justify-start">
+          <div className="flex justify-center sm:justify-start">
             <button 
               type="submit" 
               form="profile-form"
@@ -369,7 +391,105 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* Bouton de suppression */}
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-full font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 hover:scale-105 active:scale-95"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Supprimer le compte définitivement
+          </button>
+        </div>
+
       </form>
+
+      {/* Modal de suppression personnalisée */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-gray-700">
+            {/* Header avec icône d'alerte */}
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                <AlertTriangle className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Suppression du compte
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Cette action est <span className="font-semibold text-red-600 dark:text-red-400">irréversible</span>
+              </p>
+            </div>
+
+            {/* Contenu principal */}
+            <div className="mb-6">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4 text-center">
+                Vous êtes sur le point de supprimer <strong>définitivement</strong> votre compte et toutes les données associées.
+              </p>
+              
+              {/* Liste des données supprimées */}
+              <div className="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border border-red-200 dark:border-red-700 rounded-2xl p-4 mb-4">
+                <p className="text-xs font-semibold text-red-800 dark:text-red-200 mb-2 text-center">
+                  📋 Données qui seront supprimées
+                </p>
+                <div className="grid grid-cols-1 gap-1">
+                  <div className="flex items-center text-xs text-red-700 dark:text-red-300">
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></div>
+                    Tous vos clients et leurs informations
+                  </div>
+                  <div className="flex items-center text-xs text-red-700 dark:text-red-300">
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></div>
+                    Toutes vos factures et documents
+                  </div>
+                  <div className="flex items-center text-xs text-red-700 dark:text-red-300">
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></div>
+                    Tous vos services et prestations
+                  </div>
+                  <div className="flex items-center text-xs text-red-700 dark:text-red-300">
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></div>
+                    Vos paramètres et préférences
+                  </div>
+                </div>
+              </div>
+
+              {/* Champ de confirmation */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
+                  Pour confirmer, tapez <span className="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-red-600 dark:text-red-400 font-bold">supprimer</span>
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder="Tapez 'supprimer' ici"
+                  className="w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center font-medium transition-all duration-200"
+                />
+              </div>
+            </div>
+
+            {/* Boutons en pilule */}
+            <div className="flex space-x-4">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmation('');
+                }}
+                className="flex-1 px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmation !== 'supprimer'}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white rounded-full font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg disabled:shadow-none"
+              >
+                Supprimer définitivement
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

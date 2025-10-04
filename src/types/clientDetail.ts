@@ -69,6 +69,7 @@ export interface InvoiceDetail {
   paidAmount?: number;
   description?: string;
   services: string[]; // IDs des prestations liées
+  archived_at?: string; // Date d'archivage
 }
 
 export interface ServiceDetail {

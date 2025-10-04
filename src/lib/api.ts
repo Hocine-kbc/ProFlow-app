@@ -1,6 +1,130 @@
 import { supabase } from './supabase';
 import { Client, Service, Invoice, Settings } from '../types';
 
+// Fonction pour supprimer définitivement toutes les données du compte
+export async function deleteAllUserData(): Promise<void> {
+  try {
+    console.log('🗑️ Début de la suppression des données...');
+    
+    // Supprimer dans l'ordre pour respecter les contraintes de clés étrangères
+    
+    // 1. Supprimer tous les services (ils référencent les clients)
+    console.log('Suppression des services...');
+    const { error: servicesError } = await supabase
+      .from('services')
+      .delete()
+      .gte('id', '00000000-0000-0000-0000-000000000000'); // Supprimer tous les services
+    
+    if (servicesError) {
+      console.error('Error deleting services:', servicesError);
+      throw new Error('Erreur lors de la suppression des services');
+    }
+    console.log('✅ Services supprimés');
+
+    // 2. Supprimer toutes les factures (elles référencent les clients)
+    console.log('Suppression des factures...');
+    const { error: invoicesError } = await supabase
+      .from('invoices')
+      .delete()
+      .gte('id', '00000000-0000-0000-0000-000000000000'); // Supprimer toutes les factures
+    
+    if (invoicesError) {
+      console.error('Error deleting invoices:', invoicesError);
+      throw new Error('Erreur lors de la suppression des factures');
+    }
+    console.log('✅ Factures supprimées');
+
+    // 3. Supprimer tous les clients
+    console.log('Suppression des clients...');
+    const { error: clientsError } = await supabase
+      .from('clients')
+      .delete()
+      .gte('id', '00000000-0000-0000-0000-000000000000'); // Supprimer tous les clients
+    
+    if (clientsError) {
+      console.error('Error deleting clients:', clientsError);
+      throw new Error('Erreur lors de la suppression des clients');
+    }
+    console.log('✅ Clients supprimés');
+
+    // 4. Supprimer les paramètres de l'utilisateur
+    console.log('Suppression des paramètres...');
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      const { error: settingsError } = await supabase
+        .from('settings')
+        .delete()
+        .eq('user_id', user.id); // Supprimer seulement les paramètres de cet utilisateur
+      
+      if (settingsError) {
+        console.error('Error deleting settings:', settingsError);
+        throw new Error('Erreur lors de la suppression des paramètres');
+      }
+      console.log('✅ Paramètres supprimés');
+    }
+
+    console.log('🎉 Toutes les données ont été supprimées avec succès');
+  } catch (error) {
+    console.error('❌ Erreur lors de la suppression des données:', error);
+    throw error;
+  }
+}
+
+// Fonction pour supprimer complètement le compte utilisateur
+export async function deleteUserAccount(): Promise<void> {
+  try {
+    console.log('🗑️ Début de la suppression complète du compte...');
+    
+    // 1. Supprimer toutes les données d'abord
+    await deleteAllUserData();
+    console.log('✅ Données supprimées');
+    
+    // 2. Marquer le compte comme supprimé (alternative à la suppression Auth)
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      try {
+        // Mettre à jour les métadonnées pour marquer le compte comme supprimé
+        const { error: updateError } = await supabase.auth.updateUser({
+          data: { 
+            account_deleted: true,
+            deleted_at: new Date().toISOString(),
+            deletion_reason: 'user_requested'
+          }
+        });
+        
+        if (updateError) {
+          console.error('Error updating user metadata:', updateError);
+        } else {
+          console.log('✅ Compte marqué comme supprimé');
+        }
+      } catch (authError) {
+        console.log('⚠️ Erreur lors de la mise à jour des métadonnées:', authError);
+      }
+    }
+    
+    // 3. Déconnecter l'utilisateur
+    const { error: signOutError } = await supabase.auth.signOut();
+    
+    if (signOutError) {
+      console.error('Error signing out:', signOutError);
+      throw new Error('Erreur lors de la déconnexion');
+    }
+    
+    console.log('✅ Utilisateur déconnecté');
+    
+    // 4. Rediriger vers la page d'accueil
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 2000);
+
+  } catch (error) {
+    console.error('❌ Erreur lors de la suppression du compte:', error);
+    throw error;
+  }
+}
+
 export async function fetchClients(): Promise<Client[]> {
   try {
     const { data, error } = await supabase
@@ -25,8 +149,11 @@ export async function fetchClients(): Promise<Client[]> {
 
 export async function createClient(payload: Omit<Client, 'id' | 'created_at' | 'updated_at'>): Promise<Client> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    
     const now = new Date().toISOString();
-    const toInsert = { ...payload, created_at: now, updated_at: now } as any;
+    const toInsert = { ...payload, user_id: user.id, created_at: now, updated_at: now } as any;
     const { data, error } = await supabase
       .from('clients')
       .insert(toInsert)
@@ -105,8 +232,11 @@ export async function fetchServices(): Promise<Service[]> {
 }
 
 export async function createService(payload: Omit<Service, 'id' | 'client' | 'created_at' | 'updated_at'>): Promise<Service> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+  
   const now = new Date().toISOString();
-  const toInsert = { ...payload, created_at: now, updated_at: now } as any;
+  const toInsert = { ...payload, user_id: user.id, created_at: now, updated_at: now } as any;
   const { data, error } = await supabase
     .from('services')
     .insert(toInsert)
@@ -195,12 +325,16 @@ export async function fetchInvoices(): Promise<Invoice[]> {
 }
 
 export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'created_at' | 'updated_at'>): Promise<Invoice> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+  
   const now = new Date().toISOString();
   // Extract services from payload and create a clean invoice object
   const { services, ...invoiceData } = payload;
   
   // Map camelCase to snake_case for database
   const toInsert: any = {
+    user_id: user.id,
     created_at: now,
     updated_at: now
   };
@@ -401,76 +535,210 @@ export async function uploadLogo(file: File): Promise<string> {
   return data.publicUrl;
 }
 
-// Settings (singleton row with id = 'default')
+// Settings (user-specific)
 export async function fetchSettings(): Promise<Settings | null> {
-  const { data, error } = await supabase
-    .from('settings')
-    .select('*')
-    .eq('id', 'default')
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
-  // Map DB lowercase columns -> app camelCase
-  const mapped: Settings = {
-    id: (data as any).id,
-    companyName: (data as any).companyname ?? '',
-    ownerName: (data as any).ownername ?? '',
-    email: (data as any).email ?? '',
-    phone: (data as any).phone ?? '',
-    address: (data as any).address ?? '',
-    siret: (data as any).siret ?? '',
-    defaultHourlyRate: (data as any).defaulthourlyrate ?? 0,
-    invoicePrefix: (data as any).invoiceprefix ?? '',
-    paymentTerms: (data as any).paymentterms ?? 0,
-    logoUrl: (data as any).logourl ?? '',
-    invoiceTerms: (data as any).invoiceterms ?? '',
-    created_at: (data as any).created_at,
-    updated_at: (data as any).updated_at,
-  };
-  return mapped;
+  console.log('🔍 fetchSettings: Vérification de l\'authentification...');
+  const { data: { user } } = await supabase.auth.getUser();
+  console.log('🔍 fetchSettings: Utilisateur:', user);
+  if (!user) {
+    console.log('❌ fetchSettings: Utilisateur non authentifié');
+    return null;
+  }
+  
+  // Essayer de récupérer depuis la base de données
+  try {
+    console.log('🔍 fetchSettings: Recherche des paramètres pour user_id:', user.id);
+    const { data, error } = await supabase
+      .from('settings')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    console.log('🔍 fetchSettings: Résultat de la requête:', { data, error });
+    if (error) throw error;
+    if (data) {
+      console.log('🔍 fetchSettings: Paramètres trouvés en base:', data);
+      // Map DB lowercase columns -> app camelCase
+      const mapped: Settings = {
+        id: (data as any).id,
+        companyName: (data as any).companyname ?? '',
+        ownerName: (data as any).ownername ?? '',
+        email: (data as any).email ?? '',
+        phone: (data as any).phone ?? '',
+        address: (data as any).address ?? '',
+        siret: (data as any).siret ?? '',
+        defaultHourlyRate: (data as any).defaulthourlyrate ?? 0,
+        invoicePrefix: (data as any).invoiceprefix ?? '',
+        paymentTerms: (data as any).paymentterms ?? 0,
+        logoUrl: (data as any).logourl ?? '',
+        invoiceTerms: (data as any).invoiceterms ?? '',
+        created_at: (data as any).created_at,
+        updated_at: (data as any).updated_at,
+      };
+      return mapped;
+    } else {
+      console.log('🔍 fetchSettings: Aucun paramètre en base, recherche dans localStorage...');
+    }
+  } catch (error) {
+    console.log('Erreur lors de la récupération des paramètres depuis la DB:', error);
+  }
+  
+  // Fallback: récupérer depuis localStorage
+  try {
+    console.log('🔍 fetchSettings: Recherche dans localStorage...');
+    const stored = localStorage.getItem('user-settings');
+    console.log('🔍 fetchSettings: Données localStorage:', stored);
+    if (stored) {
+      const data = JSON.parse(stored);
+      console.log('🔍 fetchSettings: Paramètres localStorage parsés:', data);
+      console.log('🔍 fetchSettings: Comparaison user_id - localStorage:', data.user_id, 'vs utilisateur actuel:', user.id);
+      if (data.user_id === user.id) {
+        console.log('✅ fetchSettings: Paramètres localStorage trouvés pour cet utilisateur');
+        return {
+          id: 'local',
+          companyName: data.companyName || '',
+          ownerName: data.ownerName || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          address: data.address || '',
+          siret: data.siret || '',
+          defaultHourlyRate: data.defaultHourlyRate || 0,
+          invoicePrefix: data.invoicePrefix || '',
+          paymentTerms: data.paymentTerms || 0,
+          logoUrl: data.logoUrl || '',
+          invoiceTerms: data.invoiceTerms || '',
+          created_at: data.created_at || new Date().toISOString(),
+          updated_at: data.updated_at || new Date().toISOString(),
+        };
+      } else {
+        console.log('🧹 fetchSettings: Paramètres localStorage appartiennent à un autre utilisateur, nettoyage...');
+        localStorage.removeItem('user-settings');
+        localStorage.removeItem('business-settings');
+      }
+    }
+  } catch (error) {
+    console.log('❌ fetchSettings: Erreur lors de la récupération depuis localStorage:', error);
+  }
+  
+  console.log('❌ fetchSettings: Aucun paramètre trouvé nulle part');
+  return null;
 }
 
 export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at' | 'updated_at'>): Promise<Settings> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+  
   const now = new Date().toISOString();
-  // Map app camelCase -> DB lowercase columns
-  const toUpsert = {
-    id: 'default',
-    companyname: (payload as any).companyName,
-    ownername: (payload as any).ownerName,
-    email: (payload as any).email,
-    phone: (payload as any).phone,
-    address: (payload as any).address,
-    siret: (payload as any).siret,
-    defaulthourlyrate: (payload as any).defaultHourlyRate,
-    invoiceprefix: (payload as any).invoicePrefix,
-    paymentterms: (payload as any).paymentTerms,
-    logourl: (payload as any).logoUrl,
-    invoiceterms: (payload as any).invoiceTerms,
+  
+  // Sauvegarder dans localStorage comme fallback
+  const settingsData = {
+    user_id: user.id,
+    companyName: payload.companyName,
+    ownerName: payload.ownerName,
+    email: payload.email,
+    phone: payload.phone,
+    address: payload.address,
+    siret: payload.siret,
+    defaultHourlyRate: payload.defaultHourlyRate,
+    invoicePrefix: payload.invoicePrefix,
+    paymentTerms: payload.paymentTerms,
+    logoUrl: payload.logoUrl,
+    invoiceTerms: payload.invoiceTerms,
     updated_at: now,
     created_at: now,
-  } as any;
-  const { data, error } = await supabase
-    .from('settings')
-    .upsert(toUpsert, { onConflict: 'id' })
-    .select('*')
-    .single();
-  if (error) throw error;
-  // Map back to app shape
-  const mapped: Settings = {
-    id: (data as any).id,
-    companyName: (data as any).companyname ?? '',
-    ownerName: (data as any).ownername ?? '',
-    email: (data as any).email ?? '',
-    phone: (data as any).phone ?? '',
-    address: (data as any).address ?? '',
-    siret: (data as any).siret ?? '',
-    defaultHourlyRate: (data as any).defaulthourlyrate ?? 0,
-    invoicePrefix: (data as any).invoiceprefix ?? '',
-    paymentTerms: (data as any).paymentterms ?? 0,
-    logoUrl: (data as any).logourl ?? '',
-    invoiceTerms: (data as any).invoiceterms ?? '',
-    created_at: (data as any).created_at,
-    updated_at: (data as any).updated_at,
   };
-  return mapped;
+  
+  // Sauvegarder dans localStorage
+  localStorage.setItem('user-settings', JSON.stringify(settingsData));
+  
+  // Essayer de sauvegarder dans la base de données
+  try {
+    console.log('🔍 upsertSettings: Début de la sauvegarde pour user_id:', user.id);
+    
+    // D'abord supprimer les anciens paramètres de l'utilisateur
+    console.log('🗑️ upsertSettings: Suppression des anciens paramètres...');
+    const { error: deleteError } = await supabase
+      .from('settings')
+      .delete()
+      .eq('user_id', user.id);
+    
+    if (deleteError) {
+      console.error('❌ upsertSettings: Erreur lors de la suppression:', deleteError);
+    } else {
+      console.log('✅ upsertSettings: Anciens paramètres supprimés');
+    }
+    
+    // Puis insérer les nouveaux paramètres
+    console.log('➕ upsertSettings: Insertion des nouveaux paramètres...');
+    const insertData = {
+      id: user.id, // Utiliser l'ID de l'utilisateur comme clé primaire
+      user_id: user.id,
+      companyname: payload.companyName,
+      ownername: payload.ownerName,
+      email: payload.email,
+      phone: payload.phone,
+      address: payload.address,
+      siret: payload.siret,
+      defaulthourlyrate: payload.defaultHourlyRate,
+      invoiceprefix: payload.invoicePrefix,
+      paymentterms: payload.paymentTerms,
+      logourl: payload.logoUrl,
+      invoiceterms: payload.invoiceTerms,
+      updated_at: now,
+      created_at: now,
+    };
+    
+    console.log('📝 upsertSettings: Données à insérer:', insertData);
+    
+    const { data, error } = await supabase
+      .from('settings')
+      .insert(insertData)
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('❌ upsertSettings: Erreur lors de l\'insertion:', error);
+      throw error;
+    }
+    
+    console.log('✅ upsertSettings: Paramètres insérés avec succès:', data);
+    
+    // Map back to app shape
+    const mapped: Settings = {
+      id: (data as any).id,
+      companyName: (data as any).companyname ?? '',
+      ownerName: (data as any).ownername ?? '',
+      email: (data as any).email ?? '',
+      phone: (data as any).phone ?? '',
+      address: (data as any).address ?? '',
+      siret: (data as any).siret ?? '',
+      defaultHourlyRate: (data as any).defaulthourlyrate ?? 0,
+      invoicePrefix: (data as any).invoiceprefix ?? '',
+      paymentTerms: (data as any).paymentterms ?? 0,
+      logoUrl: (data as any).logourl ?? '',
+      invoiceTerms: (data as any).invoiceterms ?? '',
+      created_at: (data as any).created_at,
+      updated_at: (data as any).updated_at,
+    };
+    return mapped;
+  } catch (error) {
+    console.log('Erreur lors de la sauvegarde en base, utilisation du localStorage:', error);
+    // Retourner les données du localStorage
+    return {
+      id: 'local',
+      companyName: payload.companyName,
+      ownerName: payload.ownerName,
+      email: payload.email,
+      phone: payload.phone,
+      address: payload.address,
+      siret: payload.siret,
+      defaultHourlyRate: payload.defaultHourlyRate,
+      invoicePrefix: payload.invoicePrefix,
+      paymentTerms: payload.paymentTerms,
+      logoUrl: payload.logoUrl,
+      invoiceTerms: payload.invoiceTerms,
+      created_at: now,
+      updated_at: now,
+    };
+  }
 }

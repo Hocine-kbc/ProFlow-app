@@ -8,7 +8,7 @@ interface DashboardProps {
 
 export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   const { state } = useApp();
-  const { services, clients, invoices } = state;
+  const { services, clients, invoices, settings } = state;
   
   // Calculer les statistiques en temps réel à partir des données du contexte
   const now = new Date();
@@ -114,19 +114,13 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   const getGreetingMessage = () => {
     const hour = new Date().getHours();
     
-    // Récupérer le prénom du gérant depuis localStorage
+    // Récupérer le prénom du gérant depuis l'état global
     const getOwnerFirstName = () => {
-      try {
-        const settings = localStorage.getItem('business-settings');
-        if (settings) {
-          const parsed = JSON.parse(settings);
-          const fullName = parsed.ownerName || "Entrepreneur";
-          // Extraire seulement le prénom (premier mot)
-          const firstName = fullName.split(' ')[0];
-          return firstName;
-        }
-      } catch (error) {
-        console.error('Erreur lors de la récupération du prénom du gérant:', error);
+      if (settings && settings.ownerName) {
+        const fullName = settings.ownerName;
+        // Extraire seulement le prénom (premier mot)
+        const firstName = fullName.split(' ')[0];
+        return firstName;
       }
       return "Entrepreneur";
     };
@@ -174,8 +168,8 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
         
 
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="text-center sm:text-left">
+            <div className="flex items-center justify-center sm:justify-start space-x-2 sm:space-x-3">
               <span className="text-xl sm:text-2xl">{greeting.emoji}</span>
               <h1 className="text-xl sm:text-2xl font-bold">{greeting.message} !</h1>
             </div>

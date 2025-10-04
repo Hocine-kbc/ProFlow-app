@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Mail, Phone, Users, Search, ChevronLeft, ChevronRight, CheckCircle, Circle, Trash, X, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Mail, Phone, Users, Search, ChevronLeft, ChevronRight, CheckCircle, Circle, Trash, X, Eye, Archive } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { createClient, updateClient as updateClientApi, deleteClient as deleteClientApi } from '../lib/api';
 import { Client } from '../types';
@@ -166,6 +166,37 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
     });
   };
 
+  const handleArchive = (id: string) => {
+    const client = clients.find(c => c.id === id);
+    setAlertModal({
+      isOpen: true,
+      title: 'Archiver le client',
+      message: `Êtes-vous sûr de vouloir archiver le client "${client?.name}" ? Il sera déplacé vers l'archive et ne sera plus visible dans la liste principale.`,
+      type: 'warning',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from('clients')
+            .update({ 
+              status: 'archived'
+            })
+            .eq('id', id);
+          
+          if (error) throw error;
+          
+          dispatch({ type: 'UPDATE_CLIENT', payload: { 
+            ...client, 
+            status: 'archived'
+          } });
+          showNotification('success', 'Client archivé', 'Le client a été archivé avec succès');
+        } catch (error) {
+          console.error('Error archiving client:', error);
+          showNotification('error', 'Erreur', 'Impossible d\'archiver le client');
+        }
+      }
+    });
+  };
+
   // Fonctions de gestion de sélection multiple
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
@@ -184,6 +215,25 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
       }
       return newSet;
     });
+  };
+
+  const toggleAllClientsSelection = () => {
+    const allSelected = currentClients.every(client => selectedClients.has(client.id));
+    if (allSelected) {
+      // Désélectionner tous les clients
+      currentClients.forEach(client => {
+        if (selectedClients.has(client.id)) {
+          toggleClientSelection(client.id);
+        }
+      });
+    } else {
+      // Sélectionner tous les clients
+      currentClients.forEach(client => {
+        if (!selectedClients.has(client.id)) {
+          toggleClientSelection(client.id);
+        }
+      });
+    }
   };
 
   const handleBulkDelete = () => {
@@ -323,11 +373,13 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
   };
 
 
-  // Filtrer les clients
+  // Filtrer les clients (exclure les clients archivés)
   const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (client.phone && client.phone.includes(searchTerm))
+    client.status !== 'archived' && (
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (client.phone && client.phone.includes(searchTerm))
+    )
   );
 
   // Pagination
@@ -345,9 +397,6 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
           onBack={handleCloseClientDetail}
           onEditClient={handleEditClientDetail}
           onCreateInvoice={handleCreateInvoiceForClient}
-          onCreateService={handleCreateServiceForClient}
-          onSendInvoice={handleSendInvoiceToClient}
-          onViewInvoice={handleViewInvoiceDetail}
         />
         
         {/* Modal d'édition par-dessus la vue détaillée */}
@@ -524,11 +573,11 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
         </div>
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1">
+          <div className="flex-1 text-center sm:text-left">
             <h1 className="text-xl sm:text-2xl font-bold">Clients</h1>
             <p className="text-white/80 mt-1 text-sm sm:text-base">Gestion centralisée de votre portefeuille clients</p>
           </div>
-          <div className="mt-4 sm:mt-0 flex justify-end">
+          <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end">
             <button
               onClick={() => setShowModal(true)}
               className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
@@ -611,6 +660,19 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
 
       {/* Mobile Cards View */}
       <div className="block sm:hidden">
+          {/* Bouton Tout sélectionner pour mobile */}
+          {isSelectionMode && currentClients.length > 0 && (
+            <div className="flex justify-center p-4 border-b border-gray-200 dark:border-gray-600">
+              <button
+                onClick={toggleAllClientsSelection}
+                className="inline-flex items-center px-4 py-2 rounded-full text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm font-medium"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                {currentClients.every(client => selectedClients.has(client.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
+              </button>
+            </div>
+          )}
+          
           {currentClients.map((client) => {
             const firstLetter = client.name.charAt(0).toUpperCase();
             const colors = [
@@ -703,6 +765,13 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                       title="Modifier"
                     >
                       <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleArchive(client.id)}
+                      className="p-2 rounded-full text-gray-500 hover:text-orange-600 bg-gray-50/50 hover:bg-orange-50/50 dark:text-gray-400 dark:hover:text-orange-400 dark:bg-gray-700/30 dark:hover:bg-orange-900/20 border border-gray-200/50 hover:border-orange-200/50 dark:border-gray-600/50 dark:hover:border-orange-700/50 shadow-sm hover:shadow-md transition-all"
+                      title="Archiver"
+                    >
+                      <Archive className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(client.id)}
@@ -880,6 +949,12 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                       >
                         <Edit2 className="w-3 h-3 mr-1" />
                         <span className="hidden sm:inline">Modifier</span>
+                      </button>
+                      <button
+                        onClick={() => handleArchive(client.id)}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-orange-600 bg-gray-50/50 hover:bg-orange-50/50 dark:text-gray-400 dark:hover:text-orange-400 dark:bg-gray-700/30 dark:hover:bg-orange-900/20 border border-gray-200/50 hover:border-orange-200/50 dark:border-gray-600/50 dark:hover:border-orange-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
+                      >
+                        <Archive className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => handleDelete(client.id)}

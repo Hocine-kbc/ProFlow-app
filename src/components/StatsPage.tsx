@@ -374,7 +374,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         </div>
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
+          <div className="text-center sm:text-left">
             <h1 className="text-xl sm:text-2xl font-bold">Statistiques</h1>
             <p className="text-white/80 mt-1 text-sm sm:text-base">Tableaux de bord et analyses financières</p>
           </div>
