@@ -18,7 +18,6 @@ const menuItems = [
   { id: 'invoices', label: 'Factures', icon: FileText, color: 'purple' },
   { id: 'stats', label: 'Statistiques', icon: BarChart3, color: 'indigo' },
   { id: 'archive', label: 'Archive', icon: Archive, color: 'gray' },
-  { id: 'settings', label: 'Paramètres', icon: Settings, color: 'gray' },
   { id: 'profile', label: 'Profil', icon: User, color: 'pink' },
 ];
 

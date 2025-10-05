@@ -44,7 +44,11 @@ export async function generateInvoicePDFWithPuppeteer(invoiceData, companyData) 
       paymentTerms: companyData.paymentTerms,
       paymentDays: companyData.paymentDays,
       paymentMethod: companyData.paymentMethod,
-      additionalTerms: companyData.additionalTerms
+      additionalTerms: companyData.additionalTerms,
+      // Paramètre de pénalités de retard
+      // Nouvelles options de règlement personnalisables
+      showLegalRate: companyData.showLegalRate,
+      showFixedFee: companyData.showFixedFee
     };
 
     // Générer le HTML avec le template partagé
@@ -138,7 +142,11 @@ export async function generateInvoicePDFWithPuppeteerAdvanced(invoiceData, compa
       paymentTerms: companyData.paymentTerms,
       paymentDays: companyData.paymentDays,
       paymentMethod: companyData.paymentMethod,
-      additionalTerms: companyData.additionalTerms
+      additionalTerms: companyData.additionalTerms,
+      // Paramètre de pénalités de retard
+      // Nouvelles options de règlement personnalisables
+      showLegalRate: companyData.showLegalRate,
+      showFixedFee: companyData.showFixedFee
     };
 
     // Générer le HTML avec le template partagé

@@ -154,10 +154,35 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
       </table>
     </main>
     <footer style="margin-top:24px" class="muted">
-      ${settings?.invoiceTerms || settings?.paymentTerms || `Conditions de paiement: ${settings?.paymentDays || 30} jours. Aucune TVA applicable (franchise de base).`}
-      ${settings?.paymentMethod ? `<br><br><strong>Mode de paiement :</strong> ${settings.paymentMethod}` : ''}
-      ${settings?.additionalTerms ? `<br><br>${settings.additionalTerms}` : ''}
-      ${invoice.payment_method ? `<br><br><strong>Mode de paiement :</strong> ${invoice.payment_method}` : ''}
+      ${invoice.invoice_terms || settings?.invoiceTerms || settings?.paymentTerms || `Conditions de paiement: ${settings?.paymentDays || 30} jours. Aucune TVA applicable (franchise de base).`}
+      ${(invoice.payment_method || settings?.paymentMethod) ? `<br><br><strong>Mode de paiement :</strong> ${invoice.payment_method || settings.paymentMethod}` : ''}
+      ${(invoice.additional_terms || settings?.additionalTerms) ? `<br><br>${invoice.additional_terms || settings.additionalTerms}` : ''}
+        ${(invoice.show_legal_rate !== null ? invoice.show_legal_rate : (settings?.showLegalRate || false)) || (invoice.show_fixed_fee !== null ? invoice.show_fixed_fee : (settings?.showFixedFee || false)) ? (() => {
+        // Calculer la date limite à partir des paramètres de la facture
+        const paymentTerms = invoice.payment_terms || settings?.paymentTerms || 30;
+        const invoiceDate = new Date(invoice.date);
+        const dueDate = new Date(invoiceDate);
+        dueDate.setDate(dueDate.getDate() + paymentTerms);
+        
+        // Récupérer les options d'affichage spécifiques à la facture
+        const showLegalRate = invoice.show_legal_rate !== null ? invoice.show_legal_rate : (settings?.showLegalRate !== false);
+        const showFixedFee = invoice.show_fixed_fee !== null ? invoice.show_fixed_fee : (settings?.showFixedFee !== false);
+        
+        let reglementText = '<br><br><strong>Règlement :</strong><br>';
+        
+        // La date limite s'affiche toujours automatiquement
+        reglementText += `• Date limite : ${dueDate.toLocaleDateString('fr-FR')} (${paymentTerms} jours)<br>`;
+        
+        if (showLegalRate) {
+          reglementText += '• Taux annuel de pénalité en cas de retard de paiement : 3 fois le taux légal selon la loi n°2008-776 du 4 août 2008<br>';
+        }
+        
+        if (showFixedFee) {
+          reglementText += '• En cas de retard de paiement, application d\'une indemnité forfaitaire pour frais de recouvrement de 40 € selon l\'article D. 441-5 du code du commerce.';
+        }
+        
+        return reglementText;
+      })() : ''}
     </footer>
     <script>window.onload = () => { window.print(); };</script>
     </div>

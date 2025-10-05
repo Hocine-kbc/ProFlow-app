@@ -4,10 +4,12 @@ import { useApp } from '../contexts/AppContext';
 import { createService, updateService as updateServiceApi, deleteService as deleteServiceApi } from '../lib/api';
 import { Service } from '../types';
 import AlertModal from './AlertModal';
+import { useSettings } from '../hooks/useSettings';
 
 export default function ServicesPage() {
   const { state, dispatch, showNotification } = useApp();
   const { services, clients } = state;
+  const settings = useSettings();
   
   // Debug: Log services and clients data
   console.log('ServicesPage Debug:', {
@@ -41,12 +43,12 @@ export default function ServicesPage() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
-  const [preselectedClient, setPreselectedClient] = useState<{ id: string; name: string } | null>(null);
+  const [_preselectedClient, setPreselectedClient] = useState<{ id: string; name: string } | null>(null);
   const [formData, setFormData] = useState({
     client_id: '',
     date: '',
     hours: 0,
-    hourly_rate: 25,
+    hourly_rate: settings?.defaultHourlyRate || 25,
     description: '',
     status: 'pending' as 'pending' | 'completed' | 'invoiced',
   });
@@ -102,7 +104,7 @@ export default function ServicesPage() {
       client_id: '',
       date: '',
       hours: 0,
-      hourly_rate: 25,
+      hourly_rate: settings?.defaultHourlyRate || 25,
       description: '',
       status: 'pending',
     });

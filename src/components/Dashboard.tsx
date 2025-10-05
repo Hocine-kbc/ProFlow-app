@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Users, Clock, Euro, FileText, TrendingUp, BarChart3, PieChart, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useApp } from '../contexts/AppContext';
+import { Users, Clock, Euro, FileText, TrendingUp, BarChart3, PieChart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useApp } from '../contexts/AppContext.tsx';
 
 interface DashboardProps {
   onNavigate?: (page: string) => void;
@@ -265,6 +265,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
               </div>
               <div className="flex items-center space-x-2">
                 <button
+                  type="button"
                   onClick={goToPreviousYear}
                   disabled={selectedYear <= Math.min(...availableYears)}
                   className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
@@ -276,6 +277,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
                   {selectedYear}
                 </span>
                 <button
+                  type="button"
                   onClick={goToNextYear}
                   disabled={selectedYear >= Math.max(...availableYears)}
                   className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
@@ -331,6 +333,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
               </div>
               <div className="flex items-center space-x-2">
                 <button
+                  type="button"
                   onClick={goToPreviousYear}
                   disabled={selectedYear <= Math.min(...availableYears)}
                   className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
@@ -342,6 +345,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
                   {selectedYear}
                 </span>
                 <button
+                  type="button"
                   onClick={goToNextYear}
                   disabled={selectedYear >= Math.max(...availableYears)}
                   className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
@@ -508,6 +512,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
                 {services.length > 5 && (
                   <div className="p-3 sm:p-4 text-center border-t border-gray-200 dark:border-gray-600">
                     <button
+                      type="button"
                       onClick={() => onNavigate?.('services')}
                       className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
                     >
@@ -583,6 +588,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
                 {invoices.length > 5 && (
                   <div className="p-3 sm:p-4 text-center border-t border-gray-200 dark:border-gray-600">
                     <button
+                      type="button"
                       onClick={() => onNavigate?.('invoices')}
                       className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
                     >

@@ -5,7 +5,6 @@ import ClientsPage from './components/ClientsPage.tsx';
 import ServicesPage from './components/ServicesPage.tsx';
 import InvoicesPage from './components/InvoicesPage.tsx';
 import StatsPage from './components/StatsPage.tsx';
-import SettingsPage from './components/SettingsPage.tsx';
 import ProfilePage from './components/ProfilePage.tsx';
 import ArchivePage from './components/ArchivePage.tsx';
 import { AppProvider, useApp } from './contexts/AppContext.tsx';
@@ -16,9 +15,31 @@ import { supabase } from './lib/supabase.ts';
 
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  // Récupérer la page sauvegardée depuis localStorage ou utiliser 'dashboard' par défaut
+  const [currentPage, setCurrentPage] = useState(() => {
+    try {
+      const savedPage = localStorage.getItem('current-page');
+      console.log('📖 Page récupérée depuis localStorage:', savedPage);
+      return savedPage || 'dashboard';
+    } catch {
+      console.log('❌ Erreur lors de la récupération de la page, utilisation du dashboard');
+      return 'dashboard';
+    }
+  });
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const { dispatch } = useApp();
+
+  // Fonction pour changer de page et sauvegarder dans localStorage
+  const handlePageChange = (page: string) => {
+    console.log('🔄 Changement de page vers:', page);
+    setCurrentPage(page);
+    try {
+      localStorage.setItem('current-page', page);
+      console.log('💾 Page sauvegardée dans localStorage:', page);
+    } catch (error) {
+      console.warn('Impossible de sauvegarder la page courante:', error);
+    }
+  };
 
   // Auth session
   useEffect(() => {
@@ -29,15 +50,31 @@ function AppContent() {
       setIsAuthenticated(!!data.session);
     })();
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('🔐 Auth state change:', _event, 'Session:', !!session);
       setIsAuthenticated(!!session);
-      // Rediriger vers le dashboard après connexion
+      
+      // Ne rediriger vers le dashboard QUE si c'est une vraie connexion ET qu'il n'y a pas de page sauvegardée
       if (session && _event === 'SIGNED_IN') {
-        setCurrentPage('dashboard');
+        try {
+          const savedPage = localStorage.getItem('current-page');
+          if (!savedPage) {
+            console.log('🔑 Vraie connexion détectée, redirection vers dashboard');
+            handlePageChange('dashboard');
+          } else {
+            console.log('🔑 Connexion détectée mais page déjà sauvegardée, pas de redirection');
+          }
+        } catch (error) {
+          console.log('🔑 Connexion détectée, redirection vers dashboard (erreur localStorage)');
+          handlePageChange('dashboard');
+        }
       }
+      
       // Nettoyer le cache lors de la déconnexion
       if (_event === 'SIGNED_OUT') {
+        console.log('🚪 Déconnexion détectée, nettoyage du cache');
         localStorage.removeItem('business-settings');
         localStorage.removeItem('user-settings');
+        localStorage.removeItem('current-page');
         // Réinitialiser les données
         dispatch({ type: 'SET_CLIENTS', payload: [] });
         dispatch({ type: 'SET_SERVICES', payload: [] });
@@ -103,26 +140,51 @@ function AppContent() {
     dispatch({ type: 'SET_STATS', payload: stats });
   }, [dispatch, isAuthenticated]);
 
+  // Détecter les changements de visibilité de la page (changement d'onglet)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('👁️ Page redevenue visible, page courante:', currentPage);
+        // Vérifier si la page sauvegardée est différente de la page courante
+        try {
+          const savedPage = localStorage.getItem('current-page');
+          console.log('🔍 Page sauvegardée dans localStorage:', savedPage);
+          if (savedPage && savedPage !== currentPage) {
+            console.log('🔄 Restauration de la page sauvegardée:', savedPage);
+            setCurrentPage(savedPage);
+          } else {
+            console.log('✅ Page déjà correcte, pas de changement nécessaire');
+          }
+        } catch (error) {
+          console.warn('Erreur lors de la vérification de la page sauvegardée:', error);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [currentPage]);
+
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard onNavigate={setCurrentPage} />;
+        return <Dashboard onNavigate={handlePageChange} />;
       case 'clients':
-        return <ClientsPage onPageChange={setCurrentPage} />;
+        return <ClientsPage onPageChange={handlePageChange} />;
       case 'services':
         return <ServicesPage />;
       case 'invoices':
         return <InvoicesPage />;
       case 'stats':
-        return <StatsPage onPageChange={setCurrentPage} />;
-      case 'settings':
-        return <SettingsPage />;
+        return <StatsPage onPageChange={handlePageChange} />;
       case 'profile':
         return <ProfilePage />;
       case 'archive':
-        return <ArchivePage onPageChange={setCurrentPage} />;
+        return <ArchivePage onPageChange={handlePageChange} />;
       default:
-        return <Dashboard onNavigate={setCurrentPage} />;
+        return <Dashboard onNavigate={handlePageChange} />;
     }
   };
 
@@ -131,7 +193,7 @@ function AppContent() {
   }
 
   return (
-    <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
+    <Layout currentPage={currentPage} onPageChange={handlePageChange}>
       {renderCurrentPage()}
     </Layout>
   );

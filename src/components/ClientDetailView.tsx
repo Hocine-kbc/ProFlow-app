@@ -231,7 +231,7 @@ export default function ClientDetailView({
     client_id: '',
     date: '',
     hours: 0,
-    hourly_rate: 25,
+    hourly_rate: settings?.defaultHourlyRate || 25,
     description: '',
     status: 'pending' as 'pending' | 'completed' | 'invoiced',
   });
@@ -250,11 +250,12 @@ export default function ClientDetailView({
   const handleCreateServiceLocal = () => {
     // Pré-remplir avec le client actuel et la date du jour
     const today = new Date().toISOString().split('T')[0];
+    const defaultRate = settings?.defaultHourlyRate || 25;
     setServiceFormData({
       client_id: clientId,
       date: today,
       hours: 0,
-      hourly_rate: 25,
+      hourly_rate: defaultRate,
       description: '',
       status: 'pending',
     });
@@ -346,7 +347,7 @@ export default function ClientDetailView({
       client_id: '',
       date: '',
       hours: 0,
-      hourly_rate: 25,
+      hourly_rate: settings?.defaultHourlyRate || 25,
       description: '',
       status: 'pending',
     });

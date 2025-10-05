@@ -1,5 +1,85 @@
-import { supabase } from './supabase';
-import { Client, Service, Invoice, Settings } from '../types';
+import { supabase } from './supabase.ts';
+import { Client, Service, Invoice, Settings } from '../types/index.ts';
+
+// Interfaces pour les données de la base de données
+interface DatabaseSettings {
+  id: string;
+  user_id: string;
+  companyname: string;
+  ownername: string;
+  email: string;
+  phone: string;
+  address: string;
+  siret: string;
+  defaulthourlyrate: number;
+  invoiceprefix: string;
+  paymentterms: number;
+  logourl: string;
+  invoiceterms: string;
+  paymentmethod?: string;
+  additionalterms?: string;
+  show_legal_rate?: boolean;
+  show_fixed_fee?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface DatabaseClient {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface DatabaseService {
+  id: string;
+  user_id: string;
+  client_id: string;
+  description: string;
+  hourly_rate: number;
+  hours: number;
+  date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface DatabaseInvoice {
+  id: string;
+  user_id: string;
+  client_id: string;
+  invoice_number: string;
+  date: string;
+  due_date: string;
+  subtotal: number;
+  net_amount: number;
+  status: string;
+  urssaf_deduction: number;
+  payment_method?: string;
+  services?: unknown[];
+  // Paramètres spécifiques à la facture
+  invoice_terms?: string;
+  payment_terms?: number;
+  include_late_payment_penalties?: boolean;
+  additional_terms?: string;
+  show_legal_rate?: boolean;
+  show_fixed_fee?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface DatabaseClientContact {
+  id: string;
+  client_id: string;
+  type: string;
+  subject: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
 
 // Fonction pour supprimer définitivement toutes les données du compte
 export async function deleteAllUserData(): Promise<void> {
@@ -116,7 +196,9 @@ export async function deleteUserAccount(): Promise<void> {
     
     // 4. Rediriger vers la page d'accueil
     setTimeout(() => {
-      window.location.href = '/';
+      if (typeof globalThis.window !== 'undefined') {
+        globalThis.window.location.href = '/';
+      }
     }, 2000);
 
   } catch (error) {
@@ -141,7 +223,7 @@ export async function fetchClients(): Promise<Client[]> {
     }
     
     return (data || []) as Client[];
-  } catch (error) {
+  } catch (_error) {
     // Return empty array if there's any error
     return [];
   }
@@ -153,7 +235,7 @@ export async function createClient(payload: Omit<Client, 'id' | 'created_at' | '
     if (!user) throw new Error('User not authenticated');
     
     const now = new Date().toISOString();
-    const toInsert = { ...payload, user_id: user.id, created_at: now, updated_at: now } as any;
+    const toInsert = { ...payload, user_id: user.id, created_at: now, updated_at: now } as DatabaseClient;
     const { data, error } = await supabase
       .from('clients')
       .insert(toInsert)
@@ -236,7 +318,7 @@ export async function createService(payload: Omit<Service, 'id' | 'client' | 'cr
   if (!user) throw new Error('User not authenticated');
   
   const now = new Date().toISOString();
-  const toInsert = { ...payload, user_id: user.id, created_at: now, updated_at: now } as any;
+  const toInsert = { ...payload, user_id: user.id, created_at: now, updated_at: now } as Partial<DatabaseService>;
   const { data, error } = await supabase
     .from('services')
     .insert(toInsert)
@@ -280,14 +362,14 @@ export async function fetchInvoices(): Promise<Invoice[]> {
     }
     
     // Transform the data to match the Invoice interface
-    const invoices = (data || []).map((invoice: any) => {
+    const invoices = (data || []).map((invoice: DatabaseInvoice) => {
       // Get payment_method from localStorage if not in database
       let paymentMethod = invoice.payment_method;
       if (!paymentMethod) {
         try {
           const paymentMethods = JSON.parse(localStorage.getItem('invoice-payment-methods') || '{}');
           paymentMethod = paymentMethods[invoice.id] || null;
-        } catch (e) {
+        } catch (_e) {
           // Gestion silencieuse des erreurs
         }
       }
@@ -301,8 +383,8 @@ export async function fetchInvoices(): Promise<Invoice[]> {
           if (invoiceServices.length > 0) {
             console.log(`📋 Services chargés pour la facture ${invoice.id}:`, invoiceServices.length, 'services');
           }
-        } catch (e) {
-          console.warn('Could not load services from localStorage:', e);
+        } catch (_e) {
+          console.warn('Could not load services from localStorage:', _e);
         }
       }
       
@@ -314,11 +396,19 @@ export async function fetchInvoices(): Promise<Invoice[]> {
         client: null,
         // Add payment_method from localStorage if not in database
         payment_method: paymentMethod,
+        // Map database fields to camelCase for the new invoice-specific fields
+        invoice_terms: invoice.invoice_terms,
+        payment_terms: invoice.payment_terms,
+        include_late_payment_penalties: invoice.include_late_payment_penalties,
+        additional_terms: invoice.additional_terms,
+        // Paramètres de Règlement spécifiques à la facture
+        show_legal_rate: invoice.show_legal_rate,
+        show_fixed_fee: invoice.show_fixed_fee,
       };
     });
     
-    return invoices as Invoice[];
-  } catch (error) {
+    return invoices as unknown as Invoice[];
+  } catch (_error) {
     // Return empty array if there's any error
     return [];
   }
@@ -332,8 +422,16 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
   // Extract services from payload and create a clean invoice object
   const { services, ...invoiceData } = payload;
   
+  // Récupérer les paramètres actuels pour les sauvegarder dans la facture
+  let currentSettings: Settings | null = null;
+  try {
+    currentSettings = await fetchSettings();
+  } catch (error) {
+    console.warn('Could not fetch current settings for invoice:', error);
+  }
+  
   // Map camelCase to snake_case for database
-  const toInsert: any = {
+  const toInsert: Partial<DatabaseInvoice> = {
     user_id: user.id,
     created_at: now,
     updated_at: now
@@ -344,11 +442,22 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
   if (invoiceData.invoice_number !== undefined) toInsert.invoice_number = invoiceData.invoice_number;
   if (invoiceData.date !== undefined) toInsert.date = invoiceData.date;
   if (invoiceData.due_date !== undefined) toInsert.due_date = invoiceData.due_date;
-  // Note: payment_method column might not exist in database yet
-  // if (invoiceData.payment_method !== undefined) toInsert.payment_method = invoiceData.payment_method;
+  // Sauvegarder le mode de paiement de la facture
+  if (invoiceData.payment_method !== undefined) toInsert.payment_method = invoiceData.payment_method;
   if (invoiceData.subtotal !== undefined) toInsert.subtotal = invoiceData.subtotal;
   if (invoiceData.net_amount !== undefined) toInsert.net_amount = invoiceData.net_amount;
   if (invoiceData.status !== undefined) toInsert.status = invoiceData.status;
+  
+  // Sauvegarder les paramètres actuels dans la facture pour préserver les conditions d'origine
+  if (currentSettings) {
+    toInsert.invoice_terms = currentSettings.invoiceTerms;
+    toInsert.payment_terms = currentSettings.paymentTerms;
+    toInsert.additional_terms = currentSettings.additionalTerms;
+    // Sauvegarder les paramètres de Règlement spécifiques à cette facture
+    toInsert.show_legal_rate = currentSettings.showLegalRate ?? true;
+    toInsert.show_fixed_fee = currentSettings.showFixedFee ?? true;
+  }
+  
   // Ajouter urssaf_deduction avec 0 pour satisfaire la contrainte NOT NULL de la DB
   toInsert.urssaf_deduction = 0;
   
@@ -370,6 +479,30 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
       const retryData = {
         ...toInsert,
         // Don't include payment_method
+      };
+      
+      const { data: retryDataResult, error: retryError } = await supabase
+        .from('invoices')
+        .insert(retryData)
+        .select('*')
+        .single();
+        
+      if (retryError) {
+        console.error('Error creating invoice (retry):', retryError);
+        throw retryError;
+      }
+      
+      return { ...retryDataResult, services: services || [] } as Invoice;
+    }
+    
+    // If show_legal_rate or show_fixed_fee columns don't exist, try without them
+    if (error.code === 'PGRST204' && (error.message.includes('show_legal_rate') || error.message.includes('show_fixed_fee'))) {
+      console.log('Règlement columns not found, retrying without them...');
+      // Remove règlement columns from the data and try again
+      const retryData = {
+        ...toInsert,
+        show_legal_rate: undefined,
+        show_fixed_fee: undefined,
       };
       
       const { data: retryDataResult, error: retryError } = await supabase
@@ -420,7 +553,7 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
   const { services, ...updateData } = payload;
   
   // Map camelCase to snake_case for database
-  const dbUpdateData: any = {
+  const dbUpdateData: Partial<DatabaseInvoice> = {
     updated_at: new Date().toISOString()
   };
   
@@ -548,34 +681,40 @@ export async function fetchSettings(): Promise<Settings | null> {
   // Essayer de récupérer depuis la base de données
   try {
     console.log('🔍 fetchSettings: Recherche des paramètres pour user_id:', user.id);
-    const { data, error } = await supabase
-      .from('settings')
-      .select('*')
+  const { data, error } = await supabase
+    .from('settings')
+    .select('*')
       .eq('user_id', user.id)
-      .maybeSingle();
+    .maybeSingle();
     
     console.log('🔍 fetchSettings: Résultat de la requête:', { data, error });
-    if (error) throw error;
+  if (error) throw error;
     if (data) {
       console.log('🔍 fetchSettings: Paramètres trouvés en base:', data);
       // Map DB lowercase columns -> app camelCase
+      const dbData = data as DatabaseSettings;
+      console.log('🔍 fetchSettings: Toutes les colonnes:', Object.keys(dbData));
       const mapped: Settings = {
-        id: (data as any).id,
-        companyName: (data as any).companyname ?? '',
-        ownerName: (data as any).ownername ?? '',
-        email: (data as any).email ?? '',
-        phone: (data as any).phone ?? '',
-        address: (data as any).address ?? '',
-        siret: (data as any).siret ?? '',
-        defaultHourlyRate: (data as any).defaulthourlyrate ?? 0,
-        invoicePrefix: (data as any).invoiceprefix ?? '',
-        paymentTerms: (data as any).paymentterms ?? 0,
-        logoUrl: (data as any).logourl ?? '',
-        invoiceTerms: (data as any).invoiceterms ?? '',
-        created_at: (data as any).created_at,
-        updated_at: (data as any).updated_at,
+        id: dbData.id,
+        companyName: dbData.companyname ?? '',
+        ownerName: dbData.ownername ?? '',
+        email: dbData.email ?? '',
+        phone: dbData.phone ?? '',
+        address: dbData.address ?? '',
+        siret: dbData.siret ?? '',
+        defaultHourlyRate: dbData.defaulthourlyrate ?? 0,
+        invoicePrefix: dbData.invoiceprefix ?? '',
+        paymentTerms: dbData.paymentterms ?? 0,
+        logoUrl: dbData.logourl ?? '',
+        invoiceTerms: dbData.invoiceterms ?? '',
+        paymentMethod: dbData.paymentmethod,
+        additionalTerms: dbData.additionalterms,
+        showLegalRate: dbData.show_legal_rate ?? true,
+        showFixedFee: dbData.show_fixed_fee ?? true,
+        created_at: dbData.created_at,
+        updated_at: dbData.updated_at,
       };
-      return mapped;
+  return mapped;
     } else {
       console.log('🔍 fetchSettings: Aucun paramètre en base, recherche dans localStorage...');
     }
@@ -646,6 +785,10 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
     paymentTerms: payload.paymentTerms,
     logoUrl: payload.logoUrl,
     invoiceTerms: payload.invoiceTerms,
+    paymentMethod: payload.paymentMethod,
+    additionalTerms: payload.additionalTerms,
+    showLegalRate: payload.showLegalRate,
+    showFixedFee: payload.showFixedFee,
     updated_at: now,
     created_at: now,
   };
@@ -670,9 +813,10 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
       console.log('✅ upsertSettings: Anciens paramètres supprimés');
     }
     
-    // Puis insérer les nouveaux paramètres
+    // Puis insérer les nouveaux paramètres avec un ID généré
     console.log('➕ upsertSettings: Insertion des nouveaux paramètres...');
     const insertData = {
+      id: user.id, // Utiliser l'ID de l'utilisateur comme ID de la table
       user_id: user.id,
       companyname: payload.companyName || '',
       ownername: payload.ownerName || '',
@@ -685,14 +829,18 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
       paymentterms: payload.paymentTerms || 30,
       logourl: payload.logoUrl || '',
       invoiceterms: payload.invoiceTerms || '',
+      paymentmethod: payload.paymentMethod,
+      additionalterms: payload.additionalTerms,
+      show_legal_rate: payload.showLegalRate ?? true,
+      show_fixed_fee: payload.showFixedFee ?? true,
       updated_at: now,
       created_at: now,
     };
     
     console.log('📝 upsertSettings: Données à insérer:', insertData);
     
-    const { data, error } = await supabase
-      .from('settings')
+  const { data, error } = await supabase
+    .from('settings')
       .insert(insertData)
       .select('*')
       .single();
@@ -705,29 +853,81 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
         hint: error.hint,
         code: error.code
       });
+      
+      // Si l'erreur est liée à la colonne includelatepaymentpenalties, essayer sans cette colonne
+      if (error.message.includes('includelatepaymentpenalties')) {
+        console.log('🔄 upsertSettings: Tentative sans la colonne includelatepaymentpenalties...');
+        const insertDataWithoutPenalties = {
+          user_id: user.id,
+          companyname: payload.companyName || '',
+          ownername: payload.ownerName || '',
+          email: payload.email || '',
+          phone: payload.phone || '',
+          address: payload.address || '',
+          siret: payload.siret || '',
+          defaulthourlyrate: payload.defaultHourlyRate || 0,
+          invoiceprefix: payload.invoicePrefix || 'FAC',
+          paymentterms: payload.paymentTerms || 30,
+          logourl: payload.logoUrl || '',
+          invoiceterms: payload.invoiceTerms || '',
+          updated_at: now,
+          created_at: now,
+        };
+        
+        const { data: retryData, error: retryError } = await supabase
+          .from('settings')
+          .insert(insertDataWithoutPenalties)
+    .select('*')
+    .single();
+          
+        if (retryError) {
+          console.error('❌ upsertSettings: Erreur même sans la colonne:', retryError);
+          throw retryError;
+        }
+        
+        console.log('✅ upsertSettings: Sauvegarde réussie sans la colonne includelatepaymentpenalties');
+        return {
+          id: retryData.id,
+          companyName: retryData.companyname || '',
+          ownerName: retryData.ownername || '',
+          email: retryData.email || '',
+          phone: retryData.phone || '',
+          address: retryData.address || '',
+          siret: retryData.siret || '',
+          defaultHourlyRate: retryData.defaulthourlyrate || 0,
+          invoicePrefix: retryData.invoiceprefix || 'FAC',
+          paymentTerms: retryData.paymentterms || 30,
+          logoUrl: retryData.logourl || '',
+          invoiceTerms: retryData.invoiceterms || '',
+          created_at: retryData.created_at,
+          updated_at: retryData.updated_at,
+        };
+      }
+      
       throw error;
     }
     
     console.log('✅ upsertSettings: Paramètres insérés avec succès:', data);
     
     // Map back to app shape
+    const dbData = data as DatabaseSettings;
     const mapped: Settings = {
-      id: (data as any).id,
-      companyName: (data as any).companyname ?? '',
-      ownerName: (data as any).ownername ?? '',
-      email: (data as any).email ?? '',
-      phone: (data as any).phone ?? '',
-      address: (data as any).address ?? '',
-      siret: (data as any).siret ?? '',
-      defaultHourlyRate: (data as any).defaulthourlyrate ?? 0,
-      invoicePrefix: (data as any).invoiceprefix ?? '',
-      paymentTerms: (data as any).paymentterms ?? 0,
-      logoUrl: (data as any).logourl ?? '',
-      invoiceTerms: (data as any).invoiceterms ?? '',
-      created_at: (data as any).created_at,
-      updated_at: (data as any).updated_at,
+      id: dbData.id,
+      companyName: dbData.companyname ?? '',
+      ownerName: dbData.ownername ?? '',
+      email: dbData.email ?? '',
+      phone: dbData.phone ?? '',
+      address: dbData.address ?? '',
+      siret: dbData.siret ?? '',
+      defaultHourlyRate: dbData.defaulthourlyrate ?? 0,
+      invoicePrefix: dbData.invoiceprefix ?? '',
+      paymentTerms: dbData.paymentterms ?? 0,
+      logoUrl: dbData.logourl ?? '',
+      invoiceTerms: dbData.invoiceterms ?? '',
+      created_at: dbData.created_at,
+      updated_at: dbData.updated_at,
     };
-    return mapped;
+  return mapped;
   } catch (error) {
     console.log('Erreur lors de la sauvegarde en base, utilisation du localStorage:', error);
     // Retourner les données du localStorage
@@ -776,7 +976,7 @@ export async function fetchClientNotes(clientId: string): Promise<ClientNote[]> 
     }
     
     // Mapper les données de la base vers notre interface
-    return (data || []).map((note: any) => ({
+    return (data || []).map((note: DatabaseClientContact) => ({
       id: note.id,
       client_id: note.client_id,
       type: note.type as 'general' | 'call' | 'email' | 'meeting',

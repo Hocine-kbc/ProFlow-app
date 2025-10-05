@@ -1,4 +1,6 @@
 // Service pour communiquer avec le backend Express
+import { fetchSettings } from './api';
+
 const BACKEND_URL = 'http://localhost:3001/api';
 
 export interface BackendResponse {
@@ -14,14 +16,21 @@ export const sendInvoiceViaBackend = async (invoiceId: string, invoiceData?: any
   try {
     console.log(`📧 Envoi de la facture ${invoiceId} via le backend...`);
     
-    // Récupérer les données d'entreprise depuis localStorage
+    // Récupérer les données d'entreprise depuis la base de données
     let companySettings = null;
     try {
-      const raw = localStorage.getItem('business-settings');
-      companySettings = raw ? JSON.parse(raw) : null;
-      console.log('🏢 Données d\'entreprise récupérées:', companySettings);
+      companySettings = await fetchSettings();
+      console.log('🏢 Données d\'entreprise récupérées depuis la base de données:', companySettings);
     } catch (error) {
-      console.warn('⚠️ Impossible de récupérer les données d\'entreprise:', error);
+      console.warn('⚠️ Impossible de récupérer les données d\'entreprise depuis la base de données:', error);
+      // Fallback vers localStorage si la base de données échoue
+      try {
+        const raw = localStorage.getItem('business-settings');
+        companySettings = raw ? JSON.parse(raw) : null;
+        console.log('🏢 Données d\'entreprise récupérées depuis localStorage (fallback):', companySettings);
+      } catch (localError) {
+        console.warn('⚠️ Impossible de récupérer les données d\'entreprise depuis localStorage:', localError);
+      }
     }
     
     // Récupérer les services de la facture depuis localStorage

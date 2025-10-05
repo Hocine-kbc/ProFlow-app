@@ -100,7 +100,8 @@ export default function AuthPage() {
               invoicePrefix: 'FAC',
               paymentTerms: 30,
               logoUrl: '',
-              invoiceTerms: 'Paiement à 30 jours net.'
+              invoiceTerms: 'Paiement à 30 jours net.',
+              includeLatePaymentPenalties: false
             });
             setSuccess('Compte créé avec succès ! Vérifiez votre email pour confirmer votre compte.');
           } catch (profileError) {

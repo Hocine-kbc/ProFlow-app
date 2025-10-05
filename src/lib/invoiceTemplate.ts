@@ -19,6 +19,9 @@ export interface InvoiceData {
     hours: number;
     hourly_rate: number;
   }>;
+  payment_terms?: number;
+  show_legal_rate?: boolean;
+  show_fixed_fee?: boolean;
 }
 
 export interface CompanyData {
@@ -29,6 +32,10 @@ export interface CompanyData {
   phone: string;
   siret: string;
   logoUrl?: string;
+  invoiceTerms?: string;
+  paymentTerms?: number;
+  showLegalRate?: boolean;
+  showFixedFee?: boolean;
 }
 
 /**
@@ -213,7 +220,33 @@ export function generateInvoiceHTML(invoiceData: InvoiceData, companyData: Compa
     <!-- Footer -->
     <footer>
       TVA non applicable, art.293 B du CGI<br>
-      Paiement à 30 jours. Pas de TVA (franchise en base).
+      ${companyData.invoiceTerms || 'Paiement à 30 jours. Pas de TVA (franchise en base).'}
+        ${(invoiceData.show_legal_rate !== null ? invoiceData.show_legal_rate : (companyData.showLegalRate || false)) || (invoiceData.show_fixed_fee !== null ? invoiceData.show_fixed_fee : (companyData.showFixedFee || false)) ? (() => {
+        // Calculer la date limite à partir des paramètres de la facture
+        const paymentTerms = invoiceData.payment_terms || companyData.paymentTerms || 30;
+        const invoiceDate = new Date(invoiceData.date);
+        const dueDate = new Date(invoiceDate);
+        dueDate.setDate(dueDate.getDate() + paymentTerms);
+        
+        // Récupérer les options d'affichage spécifiques à la facture
+        const showLegalRate = invoiceData.show_legal_rate !== null ? invoiceData.show_legal_rate : (companyData.showLegalRate !== false);
+        const showFixedFee = invoiceData.show_fixed_fee !== null ? invoiceData.show_fixed_fee : (companyData.showFixedFee !== false);
+        
+        let reglementText = '<br><br><strong>Règlement :</strong><br>';
+        
+        // La date limite s'affiche toujours automatiquement
+        reglementText += `• Date limite : ${dueDate.toLocaleDateString('fr-FR')} (${paymentTerms} jours)<br>`;
+        
+        if (showLegalRate) {
+          reglementText += '• Taux annuel de pénalité en cas de retard de paiement : 3 fois le taux légal selon la loi n°2008-776 du 4 août 2008<br>';
+        }
+        
+        if (showFixedFee) {
+          reglementText += '• En cas de retard de paiement, application d\'une indemnité forfaitaire pour frais de recouvrement de 40 € selon l\'article D. 441-5 du code du commerce.';
+        }
+        
+        return reglementText;
+      })() : ''}
     </footer>
   </div>
 </body>

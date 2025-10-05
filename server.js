@@ -154,35 +154,24 @@ app.post('/api/send-invoice', async (req, res) => {
     // Debug: Log des données d'entreprise reçues
     console.log('🏢 Données d\'entreprise reçues:', companySettings);
     
-    // Utiliser les données d'entreprise fournies par le frontend ou des paramètres par défaut
-    const companyData = companySettings ? {
-      name: companySettings.companyName || 'ProFlow',
-      owner: companySettings.ownerName || 'Votre flux professionnel simplifié',
-      address: companySettings.address || '',
-      email: companySettings.email || '',
-      phone: companySettings.phone || '',
-      siret: companySettings.siret || '',
-      logoUrl: companySettings.logoUrl || null,
-      // Paramètres de conditions de paiement
-      invoiceTerms: companySettings.invoiceTerms || null,
-      paymentTerms: companySettings.paymentTerms || null,
-      paymentDays: companySettings.paymentDays || 30,
-      paymentMethod: companySettings.paymentMethod || null,
-      additionalTerms: companySettings.additionalTerms || null
-    } : {
-      name: 'ProFlow',
-      owner: 'Votre flux professionnel simplifié',
-      address: '123 Rue ProFlow, 75001 Paris',
-      email: 'contact@proflow.com',
-      phone: '01 23 45 67 89',
-      siret: '123 456 789 00010',
-      logoUrl: null,
-      // Paramètres par défaut pour les conditions de paiement
-      invoiceTerms: null,
-      paymentTerms: null,
-      paymentDays: 30,
-      paymentMethod: null,
-      additionalTerms: null
+    // Utiliser les paramètres stockés dans la facture en priorité, sinon les paramètres globaux
+    const companyData = {
+      name: companySettings?.companyName || 'ProFlow',
+      owner: companySettings?.ownerName || 'Votre flux professionnel simplifié',
+      address: companySettings?.address || '',
+      email: companySettings?.email || '',
+      phone: companySettings?.phone || '',
+      siret: companySettings?.siret || '',
+      logoUrl: companySettings?.logoUrl || null,
+      // Utiliser les paramètres spécifiques de la facture en priorité
+      invoiceTerms: invoice.invoice_terms || companySettings?.invoiceTerms || null,
+      paymentTerms: invoice.payment_terms || companySettings?.paymentTerms || null,
+      paymentDays: invoice.payment_terms || companySettings?.paymentDays || 30,
+      paymentMethod: companySettings?.paymentMethod || null,
+      additionalTerms: companySettings?.additionalTerms || null,
+      // Options de règlement personnalisables
+      showLegalRate: companySettings?.showLegalRate !== false,
+      showFixedFee: companySettings?.showFixedFee !== false
     };
     
     console.log('🏢 Données d\'entreprise utilisées:', companyData);

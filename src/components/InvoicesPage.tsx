@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, Send, Download, Eye, Edit2, CheckCircle, Circle, Trash, X, Archive } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Plus, Trash2, FileText, Send, Download, Eye, Edit2, CheckCircle, Circle, Trash, X, Archive, Settings, Euro, Percent, Save } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { openInvoicePrintWindow } from '../lib/print';
 import { sendInvoiceEmail, EmailData } from '../lib/emailService';
-import { createInvoice, updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi } from '../lib/api';
+import { createInvoice, updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi, fetchSettings as fetchSettingsApi, upsertSettings } from '../lib/api';
 import { Invoice } from '../types';
 import AlertModal from './AlertModal';
 import { supabase } from '../lib/supabase';
@@ -13,6 +13,28 @@ export default function InvoicesPage() {
   const { state, dispatch, showNotification } = useApp();
   const { invoices, clients, services } = state;
   const settings = useSettings();
+  
+  // État pour gérer l'affichage des pages
+  const [currentView, setCurrentView] = useState<'invoices' | 'settings'>('invoices');
+  
+  // États pour les paramètres
+  const [isSaving, setIsSaving] = useState(false);
+  const [billingSettings, setBillingSettings] = useState({
+    companyName: 'Mon Entreprise de Nettoyage',
+    ownerName: 'John Doe',
+    email: 'john@nettoyage.fr',
+    phone: '06 12 34 56 78',
+    address: '123 Rue de l\'Exemple, 75000 Paris',
+    siret: '123 456 789 00010',
+    defaultHourlyRate: 25,
+    invoicePrefix: 'FAC',
+    paymentTerms: 30,
+    logoUrl: '',
+    invoiceTerms: 'Paiement à 30 jours. Pas de TVA (franchise en base).',
+    // Options de règlement
+    showLegalRate: true,
+    showFixedFee: true,
+  });
 
   // Fonction utilitaire pour calculer le montant d'une facture à partir de ses prestations
   const calculateInvoiceAmount = (invoice: any): number => {
@@ -80,6 +102,78 @@ export default function InvoicesPage() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [preselectedClient, setPreselectedClient] = useState<{ id: string; name: string } | null>(null);
   
+  // Charger les paramètres existants
+  useEffect(() => {
+    if (settings) {
+      console.log('🔄 InvoicesPage: Chargement des paramètres globaux:', settings);
+      setBillingSettings(prev => ({ ...prev, ...settings } as any));
+    } else {
+      (async () => {
+        console.log('🔄 InvoicesPage: Chargement des paramètres depuis la base...');
+        try {
+          const remote = await fetchSettingsApi();
+          if (remote) {
+            console.log('🔄 InvoicesPage: Paramètres récupérés de la base:', remote);
+            setBillingSettings(prev => ({ ...prev, ...remote } as any));
+            localStorage.setItem('business-settings', JSON.stringify(remote));
+            return;
+          }
+        } catch (_) {
+          // ignore and fallback to local
+        }
+        try {
+          const raw = localStorage.getItem('business-settings');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+              console.log('🔄 InvoicesPage: Paramètres récupérés du localStorage:', parsed);
+              setBillingSettings(prev => ({ ...prev, ...parsed }));
+            }
+          }
+        } catch (_) {
+          // ignore malformed localStorage
+        }
+      })();
+    }
+  }, [settings]);
+
+  // Fonctions pour gérer les paramètres
+  const handleSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('🔍 InvoicesPage: Début de la sauvegarde avec settings:', billingSettings);
+    
+    setIsSaving(true);
+    
+    try {
+      const saved = await upsertSettings(billingSettings as any);
+      console.log('✅ InvoicesPage: Paramètres sauvegardés avec succès:', saved);
+      localStorage.setItem('business-settings', JSON.stringify(saved));
+      
+      // Mettre à jour l'état global
+      dispatch({ type: 'SET_SETTINGS', payload: saved });
+      
+      showNotification('success', 'Paramètres sauvegardés', 'Vos paramètres de facturation ont été mis à jour avec succès');
+    } catch (err) {
+      console.error('❌ InvoicesPage: Erreur lors de la sauvegarde:', err);
+      localStorage.setItem('business-settings', JSON.stringify(billingSettings));
+      
+      // Mettre à jour l'état global même en cas d'erreur
+      dispatch({ type: 'SET_SETTINGS', payload: billingSettings });
+      
+      showNotification('warning', 'Sauvegarde locale', 'Paramètres sauvegardés en local (erreur de connexion)');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSettingsChange = (key: string, value: string | number | boolean) => {
+    console.log('🔧 InvoicesPage: Changement de', key, 'vers', value);
+    setBillingSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+  
   // Détecter le client pré-sélectionné depuis la vue détaillée client
   useEffect(() => {
     const preselectedClientId = localStorage.getItem('preselectedClientId');
@@ -115,44 +209,60 @@ export default function InvoicesPage() {
     due_date: '',
     payment_method: '',
   });
+  const [originalPaymentTerms, setOriginalPaymentTerms] = useState<number | null>(null);
 
-  // Get available services for invoicing (completed but not invoiced)
-  const availableServices = services.filter(s => s.status === 'completed');
+  // Get available services for invoicing (completed but not invoiced) - recalculé automatiquement
+  const availableServices = useMemo(() => {
+    console.log('🔄 Recalcul des availableServices, services:', services.length);
+    const filtered = services.filter(s => s.status === 'completed');
+    console.log('🔄 Services terminés disponibles:', filtered.length);
+    return filtered;
+  }, [services]);
   
-  // When editing a draft, also allow keeping currently linked services
-  const selectableServices = editingInvoice
-    ? (() => {
-        // Get services for this invoice - try from invoice.services first, then from global services
-        let invoiceServices = editingInvoice.services || [];
+  // When editing a draft, also allow keeping currently linked services - recalculé automatiquement
+  const selectableServices = useMemo(() => {
+    if (editingInvoice) {
+      // Get services for this invoice - try from invoice.services first, then from global services
+      let invoiceServices = editingInvoice.services || [];
+      
+      // If no services in invoice, try to find them from global services
+      if (invoiceServices.length === 0 && services.length > 0) {
+        // Find services that are marked as 'invoiced' and belong to the same client
+        const clientServices = services.filter(s => 
+          s.client_id === editingInvoice.client_id && s.status === 'invoiced'
+        );
         
-        // If no services in invoice, try to find them from global services
-        if (invoiceServices.length === 0 && services.length > 0) {
-          // Find services that are marked as 'invoiced' and belong to the same client
-          const clientServices = services.filter(s => 
-            s.client_id === editingInvoice.client_id && s.status === 'invoiced'
+        if (clientServices.length > 0) {
+          invoiceServices = clientServices;
+        } else {
+          // If no invoiced services found, try to find completed services for this client
+          const completedServices = services.filter(s => 
+            s.client_id === editingInvoice.client_id && s.status === 'completed'
           );
           
-          if (clientServices.length > 0) {
-            invoiceServices = clientServices;
-          } else {
-            // If no invoiced services found, try to find completed services for this client
-            const completedServices = services.filter(s => 
-              s.client_id === editingInvoice.client_id && s.status === 'completed'
-            );
-            
-            if (completedServices.length > 0) {
-              invoiceServices = completedServices;
-            }
+          if (completedServices.length > 0) {
+            invoiceServices = completedServices;
           }
         }
-        
-        return Array.from(
-          new Map(
-            [...availableServices, ...invoiceServices].map(s => [s.id, s])
-          ).values()
-        );
-      })()
-    : availableServices;
+      }
+      
+      return Array.from(
+        new Map(
+          [...availableServices, ...invoiceServices].map(s => [s.id, s])
+        ).values()
+      );
+    } else {
+      return availableServices;
+    }
+  }, [services, editingInvoice, availableServices]);
+
+  // Effet pour s'assurer que les services sont chargés quand la modal s'ouvre
+  useEffect(() => {
+    if (showModal && services.length === 0) {
+      console.log('🔄 Modal ouverte mais pas de services, rechargement...');
+      // Les services devraient être chargés par le contexte App, mais on peut forcer un rechargement si nécessaire
+    }
+  }, [showModal, services]);
 
   const generateInvoiceNumber = () => {
     const date = new Date();
@@ -163,9 +273,14 @@ export default function InvoicesPage() {
   };
 
   // Fonction utilitaire pour calculer la date d'échéance
-  const calculateDueDate = (invoiceDate: string): string => {
+  const calculateDueDate = (invoiceDate: string, customPaymentTerms?: number): string => {
     let paymentTerms = 30; // valeur par défaut
-    if (settings && settings.paymentTerms) {
+    
+    // Si des termes de paiement personnalisés sont fournis, les utiliser
+    if (customPaymentTerms !== undefined) {
+      paymentTerms = customPaymentTerms;
+    } else if (settings && settings.paymentTerms) {
+      // Sinon, utiliser les paramètres globaux (pour les nouvelles factures)
       paymentTerms = settings.paymentTerms;
     }
     
@@ -254,6 +369,17 @@ export default function InvoicesPage() {
       due_date: inv.due_date,
       payment_method: inv.payment_method || '',
     });
+    
+    // Calculer les termes de paiement originaux de cette facture
+    if (inv.date && inv.due_date) {
+      const invoiceDate = new Date(inv.date);
+      const dueDate = new Date(inv.due_date);
+      const diffTime = dueDate.getTime() - invoiceDate.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setOriginalPaymentTerms(diffDays);
+    } else {
+      setOriginalPaymentTerms(null);
+    }
     
     // Get services for this invoice - try from invoice.services first, then from global services
     let invoiceServices = inv.services || [];
@@ -528,7 +654,9 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      {/* Header de la page Facture - seulement visible quand on est dans la vue factures */}
+      {currentView === 'invoices' && (
+        <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -545,38 +673,55 @@ export default function InvoicesPage() {
           <div className="absolute top-0 bottom-0 right-24 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
         </div>
         
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1 text-center sm:text-left">
-            <h1 className="text-xl sm:text-2xl font-bold">Factures</h1>
-            <p className="text-sm sm:text-base text-white/80 mt-1">Émission et suivi de vos factures clients</p>
-          </div>
-          <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end">
-            <button
-              onClick={() => {
-                // Pré-remplir la date du jour et calculer l'échéance automatiquement
-                const today = new Date().toISOString().split('T')[0];
-                
-                // Calculer la date d'échéance automatiquement
-                const dueDateString = calculateDueDate(today);
-                
-                setFormData(prev => ({
-                  ...prev,
-                  date: today,
-                  due_date: dueDateString
-                }));
-                setShowModal(true);
-              }}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Nouvelle facture</span>
-              <span className="sm:hidden">Nouvelle</span>
-            </button>
+        <div className="relative z-10">
+          {/* Titre et bouton */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div className="flex-1 text-center sm:text-left">
+              <h1 className="text-xl sm:text-2xl font-bold">Factures</h1>
+              <p className="text-sm sm:text-base text-white/80 mt-1">Émission et suivi de vos factures clients</p>
+            </div>
+            <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setCurrentView('settings')}
+                className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Paramètres</span>
+                <span className="sm:hidden">Param.</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  // Pré-remplir la date du jour et calculer l'échéance automatiquement
+                  const today = new Date().toISOString().split('T')[0];
+                  
+                  // Calculer la date d'échéance automatiquement
+                  const dueDateString = calculateDueDate(today);
+                  
+                  setFormData(prev => ({
+                    ...prev,
+                    date: today,
+                    due_date: dueDateString
+                  }));
+                  setShowModal(true);
+                }}
+                className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Nouvelle facture</span>
+                <span className="sm:hidden">Nouvelle</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      )}
 
-      {/* Summary cards */}
+      {/* Contenu conditionnel selon la vue */}
+      {currentView === 'invoices' && (
+        <>
+          {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
           <div className="text-xs text-gray-500 dark:text-gray-300">Total facturé</div>
@@ -1167,10 +1312,16 @@ export default function InvoicesPage() {
                           
                           // Calculer automatiquement la date d'échéance si une date de facture est sélectionnée
                           if (newDate && !editingInvoice) {
-                            // Calculer la date d'échéance
+                            // Calculer la date d'échéance pour une nouvelle facture
                             const dueDateString = calculateDueDate(newDate);
                             
                             // Mettre à jour la date d'échéance seulement si elle n'a pas été modifiée manuellement
+                            setFormData(prev => ({ ...prev, date: newDate, due_date: dueDateString }));
+                          } else if (newDate && editingInvoice) {
+                            // Pour une facture existante, utiliser les termes de paiement originaux
+                            const dueDateString = calculateDueDate(newDate, originalPaymentTerms || undefined);
+                            
+                            // Mettre à jour la date d'échéance avec les termes originaux
                             setFormData(prev => ({ ...prev, date: newDate, due_date: dueDateString }));
                           }
                         }}
@@ -1191,6 +1342,35 @@ export default function InvoicesPage() {
                         placeholder="Sélectionnez d'abord une date de facture"
                       />
                     </div>
+                    
+                    {/* Champ pour modifier les termes de paiement - seulement pour les factures en brouillon */}
+                    {editingInvoice && (
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                          Termes de paiement (jours)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={originalPaymentTerms || 30}
+                          onChange={(e) => {
+                            const newPaymentTerms = parseInt(e.target.value);
+                            setOriginalPaymentTerms(newPaymentTerms);
+                            
+                            // Recalculer la date d'échéance avec les nouveaux termes
+                            if (formData.date) {
+                              const dueDateString = calculateDueDate(formData.date, newPaymentTerms);
+                              setFormData(prev => ({ ...prev, due_date: dueDateString }));
+                            }
+                          }}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder="30"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Modifiez le nombre de jours pour recalculer automatiquement la date d'échéance
+                        </p>
+                      </div>
+                    )}
                     
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
@@ -1225,7 +1405,12 @@ export default function InvoicesPage() {
                       Prestations à facturer *
                     </h4>
                     <div className="border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 max-h-80 overflow-y-auto">
-                      {selectableServices.filter(s => s.client_id === formData.client_id).length === 0 ? (
+                      {(() => {
+                        const clientServices = selectableServices.filter(s => s.client_id === formData.client_id);
+                        console.log('🔄 Services pour le client', formData.client_id, ':', clientServices.length);
+                        console.log('🔄 Tous les selectableServices:', selectableServices.length);
+                        return clientServices.length === 0;
+                      })() ? (
                         <div className="p-8 text-center">
                           <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1766,6 +1951,217 @@ export default function InvoicesPage() {
               </form>
             </div>
           </div>
+        </div>
+      )}
+        </>
+      )}
+
+      {/* Page Paramètres */}
+      {currentView === 'settings' && (
+        <div className="space-y-4 sm:space-y-6">
+          {/* Header de la page Paramètres */}
+          <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+            {/* Traits décoratifs */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
+              <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
+              <div className="absolute top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
+              <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
+              <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
+            </div>
+            
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('invoices')}
+                  className="p-2 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur transition-colors"
+                  title="Retour aux factures"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold">Paramètres de facturation</h1>
+                  <p className="text-sm sm:text-base text-white/80 mt-1">Configurez vos paramètres de facturation</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <form id="settings-form" onSubmit={handleSettingsSubmit} className="space-y-4 sm:space-y-6">
+            {/* Billing Settings */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+              <div className="flex items-center space-x-2 mb-4 sm:mb-6">
+                <Euro className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                  Paramètres de facturation
+                </h3>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Tarif horaire par défaut (€)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={billingSettings.defaultHourlyRate}
+                    onChange={(e) => handleSettingsChange('defaultHourlyRate', parseFloat(e.target.value))}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    placeholder="25.00"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Préfixe facture
+                  </label>
+                  <input
+                    type="text"
+                    value={billingSettings.invoicePrefix}
+                    onChange={(e) => handleSettingsChange('invoicePrefix', e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    placeholder="FAC"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Délai de paiement (jours)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={billingSettings.paymentTerms}
+                    onChange={(e) => handleSettingsChange('paymentTerms', parseInt(e.target.value))}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    placeholder="30"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Conditions de paiement personnalisées
+                  </label>
+                  <textarea
+                    value={billingSettings.invoiceTerms}
+                    onChange={(e) => handleSettingsChange('invoiceTerms', e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    placeholder="Paiement à 30 jours. Pas de TVA (franchise en base)."
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="mb-4">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Règlement
+                    </h3>
+                    <div className="space-y-4 bg-gray-50 dark:bg-gray-700 p-5 rounded-lg">
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <input
+                            type="checkbox"
+                            checked={billingSettings.showLegalRate}
+                            onChange={(e) => handleSettingsChange('showLegalRate', e.target.checked)}
+                            className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-800 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                            • Taux annuel de pénalité en cas de retard de paiement : 3 fois le taux légal selon la loi n°2008-776 du 4 août 2008
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <input
+                            type="checkbox"
+                            checked={billingSettings.showFixedFee}
+                            onChange={(e) => handleSettingsChange('showFixedFee', e.target.checked)}
+                            className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-800 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                            • En cas de retard de paiement, application d'une indemnité forfaitaire pour frais de recouvrement de 40 € selon l'article D. 441-5 du code du commerce
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tax Information */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+              <div className="flex items-center space-x-2 mb-4 sm:mb-6">
+                <Percent className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                  Informations fiscales
+                </h3>
+              </div>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-3">
+                  <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                      Micro-entreprise - Régime fiscal
+                    </h4>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                      En tant que micro-entrepreneur dans le secteur des services, vous bénéficiez :
+                    </p>
+                    <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1 ml-4 list-disc">
+                      <li>Franchise de TVA (pas de TVA à facturer)</li>
+                      <li>Comptabilité simplifiée</li>
+                      <li>Déclaration mensuelle ou trimestrielle</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 sm:mt-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Conditions de facturation (affichées sur le PDF)
+                </label>
+                <textarea
+                  rows={4}
+                  value={billingSettings.invoiceTerms}
+                  onChange={(e) => handleSettingsChange('invoiceTerms', e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200 resize-none"
+                  placeholder="Paiement à 30 jours. Pas de TVA (franchise en base)."
+                />
+                {billingSettings.includeLatePaymentPenalties && (
+                  <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      <strong>Note :</strong> Les pénalités de retard de paiement seront automatiquement ajoutées aux factures selon la loi n°2008-776 du 4 août 2008 (taux légal × 3 + indemnité forfaitaire 40€).
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bouton de sauvegarde */}
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="inline-flex items-center px-6 py-3 rounded-full text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                <Save className={`w-4 h-4 mr-2 ${isSaving ? 'animate-spin' : ''}`} />
+                <span className="text-sm font-medium">
+                  {isSaving ? 'Sauvegarde...' : 'Sauvegarder les paramètres'}
+                </span>
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

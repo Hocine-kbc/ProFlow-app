@@ -34,6 +34,14 @@ export interface Invoice {
   payment_method?: string;
   status: 'draft' | 'sent' | 'paid';
   archived_at?: string;
+  // Paramètres spécifiques à la facture (pour préserver les conditions d'origine)
+  invoice_terms?: string;
+  payment_terms?: number;
+  include_late_payment_penalties?: boolean;
+  additional_terms?: string;
+  // Paramètres de Règlement spécifiques à la facture
+  show_legal_rate?: boolean;
+  show_fixed_fee?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -60,6 +68,10 @@ export interface Settings {
   paymentTerms: number;
   logoUrl: string;
   invoiceTerms: string;
+  paymentMethod?: string;
+  additionalTerms?: string;
+  showLegalRate?: boolean;
+  showFixedFee?: boolean;
   created_at: string;
   updated_at: string;
 }
