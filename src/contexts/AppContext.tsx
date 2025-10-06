@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { Client, Service, Invoice, BusinessStats } from '../types';
 import { NotificationData, NotificationType } from '../components/Notification';
+import { fetchSettings } from '../lib/api';
 
 interface AppState {
   clients: Client[];
@@ -108,6 +109,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_STATS':
       return { ...state, stats: action.payload };
     case 'SET_SETTINGS':
+      console.log('🔄 AppContext: SET_SETTINGS appelé avec payload:', action.payload);
       return { ...state, settings: action.payload };
     case 'ADD_NOTIFICATION':
       return {
@@ -132,6 +134,22 @@ const AppContext = createContext<{
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+
+  // Charger les settings au démarrage
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settings = await fetchSettings();
+        if (settings) {
+          dispatch({ type: 'SET_SETTINGS', payload: settings });
+        }
+      } catch (error) {
+        console.warn('Impossible de charger les settings:', error);
+      }
+    };
+
+    loadSettings();
+  }, []);
 
   const showNotification = (type: NotificationType, title: string, message?: string, duration?: number) => {
     const id = Math.random().toString(36).substr(2, 9);

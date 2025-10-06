@@ -67,6 +67,14 @@ interface DatabaseInvoice {
   additional_terms?: string;
   show_legal_rate?: boolean;
   show_fixed_fee?: boolean;
+  // Données d'entreprise au moment de la création (pour immutabilité)
+  company_name?: string;
+  company_owner?: string;
+  company_email?: string;
+  company_phone?: string;
+  company_address?: string;
+  company_siret?: string;
+  company_logo_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -351,7 +359,7 @@ export async function fetchInvoices(): Promise<Invoice[]> {
     const { data, error } = await supabase
       .from('invoices')
       .select('*')
-      .order('date', { ascending: false });
+      .order('invoice_number', { ascending: false });
     
     if (error) {
       // If table doesn't exist, return empty array
@@ -404,6 +412,14 @@ export async function fetchInvoices(): Promise<Invoice[]> {
         // Paramètres de Règlement spécifiques à la facture
         show_legal_rate: invoice.show_legal_rate,
         show_fixed_fee: invoice.show_fixed_fee,
+        // Données d'entreprise au moment de la création (pour immutabilité)
+        company_name: invoice.company_name,
+        company_owner: invoice.company_owner,
+        company_email: invoice.company_email,
+        company_phone: invoice.company_phone,
+        company_address: invoice.company_address,
+        company_siret: invoice.company_siret,
+        company_logo_url: invoice.company_logo_url,
       };
     });
     
@@ -456,6 +472,14 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
     // Sauvegarder les paramètres de Règlement spécifiques à cette facture
     toInsert.show_legal_rate = currentSettings.showLegalRate ?? true;
     toInsert.show_fixed_fee = currentSettings.showFixedFee ?? true;
+    // Sauvegarder les données d'entreprise au moment de la création (pour immutabilité)
+    toInsert.company_name = currentSettings.companyName;
+    toInsert.company_owner = currentSettings.ownerName;
+    toInsert.company_email = currentSettings.email;
+    toInsert.company_phone = currentSettings.phone;
+    toInsert.company_address = currentSettings.address;
+    toInsert.company_siret = currentSettings.siret;
+    toInsert.company_logo_url = currentSettings.logoUrl;
   }
   
   // Ajouter urssaf_deduction avec 0 pour satisfaire la contrainte NOT NULL de la DB

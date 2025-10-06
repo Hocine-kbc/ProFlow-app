@@ -22,6 +22,14 @@ export interface InvoiceData {
   payment_terms?: number;
   show_legal_rate?: boolean;
   show_fixed_fee?: boolean;
+  // Données d'entreprise au moment de la création (pour immutabilité)
+  company_name?: string;
+  company_owner?: string;
+  company_email?: string;
+  company_phone?: string;
+  company_address?: string;
+  company_siret?: string;
+  company_logo_url?: string;
 }
 
 export interface CompanyData {
@@ -160,12 +168,12 @@ export function generateInvoiceHTML(invoiceData: InvoiceData, companyData: Compa
     <!-- Header -->
     <div class="header">
       <div class="company">
-        <h2>${companyData.name}</h2>
+        <h2>${invoiceData.company_name !== null ? invoiceData.company_name : companyData.name}</h2>
         <p>
-          ${companyData.owner}<br>
-          ${companyData.address}<br>
-          ${companyData.email} • ${companyData.phone}<br>
-          SIRET: ${companyData.siret}
+          ${invoiceData.company_owner !== null ? invoiceData.company_owner : companyData.owner}<br>
+          ${invoiceData.company_address !== null ? invoiceData.company_address : companyData.address}<br>
+          ${invoiceData.company_email !== null ? invoiceData.company_email : companyData.email} • ${invoiceData.company_phone !== null ? invoiceData.company_phone : companyData.phone}<br>
+          SIRET: ${invoiceData.company_siret !== null ? invoiceData.company_siret : companyData.siret}
         </p>
       </div>
       <div class="invoice-info">

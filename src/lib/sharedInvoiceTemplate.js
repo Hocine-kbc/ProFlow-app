@@ -94,17 +94,17 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
     <header class="row" style="align-items:flex-start">
       <div style="flex:1">
         <div style="display:flex; align-items:center; gap:12px">
-          ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="logo" style="height:56px; width:auto; object-fit:contain;" />` : ''}
+          ${(invoice.company_logo_url !== null ? invoice.company_logo_url : settings?.logoUrl) ? `<img src="${invoice.company_logo_url !== null ? invoice.company_logo_url : settings.logoUrl}" alt="logo" style="height:56px; width:auto; object-fit:contain;" />` : ''}
           <div>
-            <h1 class="brand" style="margin:0">${settings?.companyName || 'ProFlow'}</h1>
-            <div class="muted" style="margin-top:4px">${settings?.ownerName || 'Votre flux professionnel simplifié'}</div>
+            <h1 class="brand" style="margin:0">${invoice.company_name !== null ? invoice.company_name : (settings?.companyName || 'ProFlow')}</h1>
+            <div class="muted" style="margin-top:4px">${invoice.company_owner !== null ? invoice.company_owner : (settings?.ownerName || 'Votre flux professionnel simplifié')}</div>
           </div>
         </div>
         <div class="divider"></div>
         <div style="margin-top:10px">
-          <div class="muted">${settings?.address || ''}</div>
-          <div class="muted">${settings?.email || ''} ${settings?.phone ? ' • ' + settings.phone : ''}</div>
-          ${settings?.siret ? `<div class="muted">SIRET: ${settings.siret}</div>` : ''}
+          <div class="muted">${invoice.company_address !== null ? invoice.company_address : (settings?.address || '')}</div>
+          <div class="muted">${invoice.company_email !== null ? invoice.company_email : (settings?.email || '')} ${(invoice.company_phone !== null ? invoice.company_phone : settings?.phone) ? ' • ' + (invoice.company_phone !== null ? invoice.company_phone : settings.phone) : ''}</div>
+          ${(invoice.company_siret !== null ? invoice.company_siret : settings?.siret) ? `<div class="muted">SIRET: ${invoice.company_siret !== null ? invoice.company_siret : settings.siret}</div>` : ''}
         </div>
       </div>
       <div class="card brand-border" style="min-width:280px; border-width:2px">

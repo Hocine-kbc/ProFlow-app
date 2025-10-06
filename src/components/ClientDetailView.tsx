@@ -1564,7 +1564,7 @@ export default function ClientDetailView({
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
+              <table className="w-full" style={{ minWidth: '800px' }}>
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -1725,7 +1725,7 @@ export default function ClientDetailView({
               </h3>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
+              <table className="w-full" style={{ minWidth: '800px' }}>
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">

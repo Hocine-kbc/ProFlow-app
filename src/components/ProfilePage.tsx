@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Building2, User, Mail, Phone, MapPin, Hash, Upload, Trash2, Edit3, AlertTriangle } from 'lucide-react';
-import { uploadLogo, fetchSettings as fetchSettingsApi, upsertSettings, deleteUserAccount } from '../lib/api';
+import { AlertTriangle, Building2, Edit3, Hash, Mail, MapPin, Phone, Save, Trash2, Upload, User } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { deleteUserAccount, fetchSettings as fetchSettingsApi, uploadLogo, upsertSettings } from '../lib/api';
 
 export default function ProfilePage() {
   const { showNotification } = useApp();
@@ -27,23 +27,23 @@ export default function ProfilePage() {
         console.log('🔍 ProfilePage: Paramètres récupérés:', remote);
         if (remote) {
           // Séparer le nom complet en prénom et nom
-          const fullName = (remote as any).ownerName || '';
+          const fullName = (remote as Record<string, unknown>).ownerName as string || '';
           const nameParts = fullName.split(' ');
           const firstName = nameParts[0] || '';
           const lastName = nameParts.slice(1).join(' ') || '';
           
           const picked = {
-            companyName: (remote as any).companyName || '',
+            companyName: (remote as Record<string, unknown>).companyName as string || '',
             ownerFirstName: firstName,
             ownerLastName: lastName,
-            email: (remote as any).email || '',
-            phone: (remote as any).phone || '',
-            address: (remote as any).address || '',
-            siret: (remote as any).siret || '',
-            logoUrl: (remote as any).logoUrl || '',
+            email: (remote as Record<string, unknown>).email as string || '',
+            phone: (remote as Record<string, unknown>).phone as string || '',
+            address: (remote as Record<string, unknown>).address as string || '',
+            siret: (remote as Record<string, unknown>).siret as string || '',
+            logoUrl: (remote as Record<string, unknown>).logoUrl as string || '',
           };
           setSettings(picked);
-          localStorage.setItem('business-settings', JSON.stringify({ ...(remote as any), ...picked }));
+          localStorage.setItem('business-settings', JSON.stringify({ ...(remote as Record<string, unknown>), ...picked }));
           return;
         }
       } catch {}
@@ -94,7 +94,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleLogoDelete = async () => {
+  const handleLogoDelete = () => {
     if (!settings.logoUrl) return;
     
     try {
@@ -135,7 +135,7 @@ export default function ProfilePage() {
         ownerName: `${settings.ownerFirstName} ${settings.ownerLastName}`.trim()
       };
       
-      const saved = await upsertSettings(settingsToSave as any);
+      const saved = await upsertSettings(settingsToSave as Record<string, unknown>);
       localStorage.setItem('business-settings', JSON.stringify(saved));
       
       // Afficher la notification de succès

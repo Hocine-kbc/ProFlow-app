@@ -124,6 +124,7 @@ const Notification: React.FC<NotificationProps> = ({ notification, onClose }) =>
             )}
           </div>
           <button
+            type="button"
             onClick={() => onClose(id)}
             className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >

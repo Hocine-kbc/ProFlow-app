@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Clock, Euro, FileText, TrendingUp, BarChart3, PieChart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../contexts/AppContext.tsx';
 
@@ -7,8 +7,22 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onNavigate }: DashboardProps = {}) {
+  console.log('🔄 Dashboard: Composant Dashboard monté');
   const { state } = useApp();
   const { services, clients, invoices, settings } = state;
+  console.log('🔄 Dashboard: Composant rendu avec settings:', settings);
+  
+  // État local pour forcer le re-rendu
+  const [localSettings, setLocalSettings] = useState(settings);
+  
+  // Log des settings pour débogage et mise à jour de l'état local
+  useEffect(() => {
+    if (settings) {
+      console.log('🔄 Dashboard: Settings mises à jour:', settings);
+      console.log('🔍 Dashboard: ownerName reçu:', settings.ownerName);
+      setLocalSettings(settings);
+    }
+  }, [settings]);
   
   // Calculer les statistiques en temps réel à partir des données du contexte
   const now = new Date();
@@ -114,14 +128,18 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   const getGreetingMessage = () => {
     const hour = new Date().getHours();
     
-    // Récupérer le prénom du gérant depuis l'état global
+    // Récupérer le prénom du gérant depuis l'état local
     const getOwnerFirstName = () => {
-      if (settings && settings.ownerName) {
-        const fullName = settings.ownerName;
+      console.log('🔍 Dashboard: getOwnerFirstName appelé avec localSettings:', localSettings);
+      if (localSettings && localSettings.ownerName) {
+        const fullName = localSettings.ownerName;
+        console.log('🔍 Dashboard: fullName extrait:', fullName);
         // Extraire seulement le prénom (premier mot)
         const firstName = fullName.split(' ')[0];
+        console.log('🔍 Dashboard: firstName extrait:', firstName);
         return firstName;
       }
+      console.log('🔍 Dashboard: Pas de localSettings ou ownerName, retour Entrepreneur');
       return "Entrepreneur";
     };
     
@@ -140,6 +158,8 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   };
 
   const greeting = getGreetingMessage();
+  
+  console.log('🔄 Dashboard: Rendu avec greeting:', greeting);
 
   return (
     <div className="space-y-6">

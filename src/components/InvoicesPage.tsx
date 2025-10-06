@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, FileText, Send, Download, Eye, Edit2, CheckCircle, Circle, Trash, X, Archive, Settings, Euro, Percent, Save } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+
+import { Archive, CheckCircle, ChevronLeft, ChevronRight, Circle, Download, Edit2, Euro, Eye, FileText, Percent, Plus, Save, Send, Settings, Trash, Trash2, X } from 'lucide-react';
+
 import { useApp } from '../contexts/AppContext';
-import { openInvoicePrintWindow } from '../lib/print';
-import { sendInvoiceEmail, EmailData } from '../lib/emailService';
-import { createInvoice, updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi, fetchSettings as fetchSettingsApi, upsertSettings } from '../lib/api';
-import { Invoice } from '../types';
-import AlertModal from './AlertModal';
-import { supabase } from '../lib/supabase';
 import { useSettings } from '../hooks/useSettings';
+import { createInvoice, deleteInvoice as deleteInvoiceApi, fetchSettings as fetchSettingsApi, updateInvoice as updateInvoiceApi, upsertSettings } from '../lib/api';
+import { EmailData, sendInvoiceEmail } from '../lib/emailService';
+import { openInvoicePrintWindow } from '../lib/print';
+import { supabase } from '../lib/supabase';
+import { Invoice, Service } from '../types';
+
+import AlertModal from './AlertModal';
 
 export default function InvoicesPage() {
   const { state, dispatch, showNotification } = useApp();
@@ -16,6 +19,16 @@ export default function InvoicesPage() {
   
   // État pour gérer l'affichage des pages
   const [currentView, setCurrentView] = useState<'invoices' | 'settings'>('invoices');
+  
+  // États pour les filtres et le tri
+  const [sortBy, setSortBy] = useState<'invoice_number' | 'date' | 'status'>('invoice_number');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'sent' | 'paid'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // États pour la pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   
   // États pour les paramètres
   const [isSaving, setIsSaving] = useState(false);
@@ -37,10 +50,10 @@ export default function InvoicesPage() {
   });
 
   // Fonction utilitaire pour calculer le montant d'une facture à partir de ses prestations
-  const calculateInvoiceAmount = (invoice: any): number => {
+  const calculateInvoiceAmount = (invoice: Invoice): number => {
     // 1. Essayer d'utiliser les services stockés dans la facture
-    if (invoice.services && invoice.services.length > 0) {
-      return invoice.services.reduce((acc: number, service: any) => {
+    if (invoice.services && Array.isArray(invoice.services) && invoice.services.length > 0) {
+      return invoice.services.reduce((acc: number, service: Service) => {
         const hours = Number(service.hours) || 0;
         const rate = Number(service.hourly_rate) || 0;
         return acc + (hours * rate);
@@ -62,7 +75,7 @@ export default function InvoicesPage() {
     // 3. En dernier recours, chercher les services dans le state global
     const invoiceServices = services.filter(s => s.client_id === invoice.client_id);
     if (invoiceServices.length > 0) {
-      return invoiceServices.reduce((acc: number, service: any) => {
+      return invoiceServices.reduce((acc: number, service) => {
         const hours = Number(service.hours) || 0;
         const rate = Number(service.hourly_rate) || 0;
         return acc + (hours * rate);
@@ -106,7 +119,7 @@ export default function InvoicesPage() {
   useEffect(() => {
     if (settings) {
       console.log('🔄 InvoicesPage: Chargement des paramètres globaux:', settings);
-      setBillingSettings(prev => ({ ...prev, ...settings } as any));
+      setBillingSettings(prev => ({ ...prev, ...settings }));
     } else {
       (async () => {
         console.log('🔄 InvoicesPage: Chargement des paramètres depuis la base...');
@@ -114,7 +127,7 @@ export default function InvoicesPage() {
           const remote = await fetchSettingsApi();
           if (remote) {
             console.log('🔄 InvoicesPage: Paramètres récupérés de la base:', remote);
-            setBillingSettings(prev => ({ ...prev, ...remote } as any));
+            setBillingSettings(prev => ({ ...prev, ...remote }));
             localStorage.setItem('business-settings', JSON.stringify(remote));
             return;
           }
@@ -145,14 +158,23 @@ export default function InvoicesPage() {
     setIsSaving(true);
     
     try {
-      const saved = await upsertSettings(billingSettings as any);
+      const saved = await upsertSettings(billingSettings);
       console.log('✅ InvoicesPage: Paramètres sauvegardés avec succès:', saved);
+      console.log('🔍 InvoicesPage: ownerName dans les settings sauvegardées:', saved.ownerName);
       localStorage.setItem('business-settings', JSON.stringify(saved));
       
       // Mettre à jour l'état global
+      console.log('🔄 InvoicesPage: Mise à jour du contexte avec:', saved);
+      console.log('🔄 InvoicesPage: ownerName dans saved:', saved.ownerName);
       dispatch({ type: 'SET_SETTINGS', payload: saved });
+      console.log('🔄 InvoicesPage: dispatch SET_SETTINGS appelé');
       
       showNotification('success', 'Paramètres sauvegardés', 'Vos paramètres de facturation ont été mis à jour avec succès');
+      
+      // Naviguer vers le Dashboard pour voir les changements
+      setTimeout(() => {
+        globalThis.location.href = '/';
+      }, 1000);
     } catch (err) {
       console.error('❌ InvoicesPage: Erreur lors de la sauvegarde:', err);
       localStorage.setItem('business-settings', JSON.stringify(billingSettings));
@@ -293,9 +315,9 @@ export default function InvoicesPage() {
     e.preventDefault();
     
     const client = clients.find(c => c.id === formData.client_id);
-    const invoiceServices = selectableServices.filter(s => selectedServices.includes(s.id));
+    const invoiceServices = selectableServices.filter((s: Service) => selectedServices.includes(s.id));
     
-    const totalAmount = invoiceServices.reduce((acc, service) => 
+    const totalAmount = invoiceServices.reduce((acc: number, service: Service) => 
       acc + (service.hours * service.hourly_rate), 0
     );
     
@@ -311,7 +333,7 @@ export default function InvoicesPage() {
           subtotal: totalAmount,
           net_amount: totalAmount,
           status: 'draft',
-        } as any);
+        });
         dispatch({ type: 'UPDATE_INVOICE', payload: { ...editingInvoice, ...saved, client, services: invoiceServices } as Invoice });
         showNotification('success', 'Facture modifiée', 'La facture a été mise à jour avec succès');
       } else {
@@ -325,15 +347,10 @@ export default function InvoicesPage() {
           subtotal: totalAmount,
           net_amount: totalAmount,
           status: 'draft',
-        } as any);
-        dispatch({ type: 'ADD_INVOICE', payload: { ...saved, client, services: invoiceServices } as Invoice });
-        // Mark services as invoiced for new invoice
-        invoiceServices.forEach(service => {
-          dispatch({ 
-            type: 'UPDATE_SERVICE', 
-            payload: { ...service, status: 'invoiced', updated_at: new Date().toISOString() }
-          });
         });
+        dispatch({ type: 'ADD_INVOICE', payload: { ...saved, client, services: invoiceServices } as Invoice });
+        // Ne pas marquer les services comme 'invoiced' pour permettre leur réutilisation
+        // Les services restent 'completed' et peuvent être utilisés dans d'autres factures
         showNotification('success', 'Facture créée', 'La facture a été créée avec succès');
       }
     } catch (err) {
@@ -419,7 +436,7 @@ export default function InvoicesPage() {
           type: 'UPDATE_INVOICE',
           payload: { ...invoice, ...saved }
         });
-      } catch (err) {
+      } catch (_err) {
         // eslint-disable-next-line no-alert
         showNotification('error', 'Erreur', 'Erreur lors de la mise à jour de la facture');
       }
@@ -438,10 +455,10 @@ export default function InvoicesPage() {
         try {
           // Mark services as completed again before deleting
           if (invoice && invoice.services) {
-            invoice.services.forEach(service => {
+            invoice.services.forEach((service: Service) => {
               dispatch({
                 type: 'UPDATE_SERVICE',
-                payload: { ...service, status: 'completed', updated_at: new Date().toISOString() }
+                payload: { ...service, status: 'completed' }
               });
             });
           }
@@ -523,17 +540,17 @@ export default function InvoicesPage() {
   };
 
   const toggleAllInvoicesSelection = () => {
-    const allSelected = activeInvoices.every(invoice => selectedInvoices.has(invoice.id));
+    const allSelected = currentInvoices.every(invoice => selectedInvoices.has(invoice.id));
     if (allSelected) {
       // Désélectionner toutes les factures
-      activeInvoices.forEach(invoice => {
+      currentInvoices.forEach(invoice => {
         if (selectedInvoices.has(invoice.id)) {
           toggleInvoiceSelection(invoice.id);
         }
       });
     } else {
       // Sélectionner toutes les factures
-      activeInvoices.forEach(invoice => {
+      currentInvoices.forEach(invoice => {
         if (!selectedInvoices.has(invoice.id)) {
           toggleInvoiceSelection(invoice.id);
         }
@@ -555,13 +572,13 @@ export default function InvoicesPage() {
           for (const invoiceId of selectedInvoices) {
             const invoice = invoices.find(inv => inv.id === invoiceId);
             if (invoice && invoice.services) {
-              // Marquer les services comme completed avant suppression
-              invoice.services.forEach(service => {
-                dispatch({
-                  type: 'UPDATE_SERVICE',
-                  payload: { ...service, status: 'completed', updated_at: new Date().toISOString() }
-                });
+            // Marquer les services comme completed avant suppression
+            invoice.services.forEach((service: Service) => {
+              dispatch({
+                type: 'UPDATE_SERVICE',
+                payload: { ...service, status: 'completed' }
               });
+            });
             }
             await deleteInvoiceApi(invoiceId);
             dispatch({ type: 'DELETE_INVOICE', payload: invoiceId });
@@ -645,8 +662,83 @@ export default function InvoicesPage() {
 
   // kept via selectableServices in edit/new flows
 
-  // Filtrer les factures non archivées pour l'affichage
-  const activeInvoices = invoices.filter(invoice => !(invoice as any).archived_at);
+  // Filtrer et trier les factures selon les critères sélectionnés
+  const activeInvoices = invoices
+    .filter(invoice => {
+      // Filtrer les factures non archivées
+      if (invoice.archived_at) return false;
+      
+      // Filtrer par statut
+      if (statusFilter !== 'all' && invoice.status !== statusFilter) return false;
+      
+      // Filtrer par terme de recherche
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          invoice.invoice_number.toLowerCase().includes(searchLower) ||
+          invoice.date.includes(searchTerm) ||
+          invoice.status.toLowerCase().includes(searchLower) ||
+          (invoice.client && invoice.client.name.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      return true;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'invoice_number': {
+          // Tri par numéro de facture
+          const getInvoiceNumber = (invoiceNumber: string) => {
+            const parts = invoiceNumber.split('-');
+            if (parts.length >= 3) {
+              const year = parts[1].substring(0, 4);
+              const month = parts[1].substring(4, 6);
+              const number = parseInt(parts[2]);
+              return parseInt(year + month) * 1000 + number;
+            }
+            return 0;
+          };
+          comparison = getInvoiceNumber(a.invoice_number) - getInvoiceNumber(b.invoice_number);
+          break;
+        }
+          
+        case 'date': {
+          // Tri par date
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+        }
+          
+        case 'status': {
+          // Tri par statut (draft < sent < paid)
+          const statusOrder = { draft: 0, sent: 1, paid: 2 };
+          comparison = statusOrder[a.status] - statusOrder[b.status];
+          break;
+        }
+      }
+      
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+  
+  // Logique de pagination
+  const totalPages = Math.ceil(activeInvoices.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentInvoices = activeInvoices.slice(startIndex, endIndex);
+  
+  
+  // Réinitialiser la page courante si elle dépasse le nombre total de pages
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+  
+  // Réinitialiser la page courante quand les filtres changent
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchTerm, sortBy, sortOrder]);
   
   const totalHT = activeInvoices.reduce((acc, inv) => acc + calculateInvoiceAmount(inv), 0);
   const totalPayees = activeInvoices.filter(i => i.status === 'paid').reduce((acc, inv) => acc + calculateInvoiceAmount(inv), 0);
@@ -792,6 +884,7 @@ export default function InvoicesPage() {
             </div>
             <div className="flex space-x-2">
               <button
+                type="button"
                 onClick={handleBulkDelete}
                 disabled={selectedInvoices.size === 0}
                 className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
@@ -800,6 +893,7 @@ export default function InvoicesPage() {
                 Supprimer sélection
               </button>
               <button
+                type="button"
                 onClick={toggleSelectionMode}
                 className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
               >
@@ -811,16 +905,125 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* Bouton pour activer le mode sélection */}
+      {/* Contrôles de filtrage et tri - Design simple */}
       {!isSelectionMode && invoices.length > 0 && (
-        <div className="flex justify-end">
-          <button
-            onClick={toggleSelectionMode}
-            className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm"
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Mode sélection
-          </button>
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            {/* Barre de recherche */}
+            <div className="flex-1 min-w-0">
+              <input
+                type="text"
+                placeholder="Rechercher par numéro, date, statut ou client..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+            </div>
+            
+            {/* Filtre par statut - Boutons en pilule */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Statut:</label>
+              <div className="flex space-x-1">
+                {[
+                  { value: 'all', label: 'Tous' },
+                  { value: 'draft', label: 'Brouillon' },
+                  { value: 'sent', label: 'Envoyée' },
+                  { value: 'paid', label: 'Payée' }
+                ].map((option) => (
+                  <button
+                    type="button"
+                    key={option.value}
+                    onClick={() => setStatusFilter(option.value as 'all' | 'draft' | 'sent' | 'paid')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      statusFilter === option.value
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Tri - Boutons en pilule */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Trier par:</label>
+              <div className="flex space-x-1">
+                {[
+                  { value: 'invoice_number', label: 'Numéro' },
+                  { value: 'date', label: 'Date' },
+                  { value: 'status', label: 'Statut' }
+                ].map((option) => (
+                  <button
+                    type="button"
+                    key={option.value}
+                    onClick={() => setSortBy(option.value as 'invoice_number' | 'date' | 'status')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      sortBy === option.value
+                        ? 'bg-green-500 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              
+              <button
+                type="button"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  sortOrder === 'asc'
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : 'bg-indigo-500 text-white shadow-md'
+                }`}
+                title={`Tri ${sortOrder === 'asc' ? 'croissant' : 'décroissant'}`}
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
+            </div>
+            
+            {/* Bouton mode sélection - Pilule */}
+            <button
+              type="button"
+              onClick={toggleSelectionMode}
+              className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Mode sélection
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* En-tête avec nombre de factures filtrées - Design simple */}
+      {!isSelectionMode && invoices.length > 0 && (
+        <div className="mb-4 flex justify-between items-center">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {activeInvoices.length === invoices.filter(invoice => !invoice.archived_at).length ? (
+              `${activeInvoices.length} facture${activeInvoices.length > 1 ? 's' : ''}`
+            ) : (
+              `${activeInvoices.length} facture${activeInvoices.length > 1 ? 's' : ''} sur ${invoices.filter(invoice => !invoice.archived_at).length}`
+            )}
+            {(searchTerm || statusFilter !== 'all') && (
+              <span className="ml-2 text-blue-600 dark:text-blue-400">
+                (filtrées)
+              </span>
+            )}
+          </div>
+          {(searchTerm || statusFilter !== 'all') && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+              }}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+            >
+              Effacer les filtres
+            </button>
+          )}
         </div>
       )}
 
@@ -828,7 +1031,7 @@ export default function InvoicesPage() {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Vue mobile - Cards */}
         <div className="block sm:hidden">
-          {activeInvoices.length === 0 ? (
+          {currentInvoices.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
               <div className="flex flex-col items-center space-y-2">
                 <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600" />
@@ -839,25 +1042,27 @@ export default function InvoicesPage() {
           ) : (
             <>
               {/* Bouton Tout sélectionner pour mobile */}
-              {isSelectionMode && activeInvoices.length > 0 && (
+              {isSelectionMode && currentInvoices.length > 0 && (
                 <div className="flex justify-center p-4 border-b border-gray-200 dark:border-gray-600">
                   <button
+                    type="button"
                     onClick={toggleAllInvoicesSelection}
                     className="inline-flex items-center px-4 py-2 rounded-full text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm font-medium"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    {activeInvoices.every(invoice => selectedInvoices.has(invoice.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
+                    {currentInvoices.every(invoice => selectedInvoices.has(invoice.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
                   </button>
                 </div>
               )}
               
               <div className="divide-y divide-gray-200 dark:divide-gray-600">
-              {activeInvoices.map((invoice) => (
+              {currentInvoices.map((invoice) => (
                 <div key={invoice.id} className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-start space-x-3 flex-1 min-w-0">
                       {isSelectionMode && (
                         <button
+                          type="button"
                           onClick={() => toggleInvoiceSelection(invoice.id)}
                           className="mt-1 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                         >
@@ -907,6 +1112,7 @@ export default function InvoicesPage() {
                   <div className="flex items-center justify-end">
                     <div className="flex items-center space-x-1">
                       <button
+                        type="button"
                         onClick={() => setPreviewInvoice(invoice)}
                         className="p-2 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                         title="Aperçu"
@@ -915,6 +1121,7 @@ export default function InvoicesPage() {
                       </button>
                       {invoice.status === 'draft' && (
                         <button
+                          type="button"
                           onClick={() => openEdit(invoice)}
                           className="p-2 rounded-full text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
                           title="Modifier"
@@ -924,6 +1131,7 @@ export default function InvoicesPage() {
                       )}
                       {invoice.status === 'draft' && (
                         <button
+                          type="button"
                           onClick={() => {
                             // Trouver le client associé à cette facture
                             const associatedClient = clients.find(c => c.id === invoice.client_id);
@@ -943,6 +1151,7 @@ export default function InvoicesPage() {
                       )}
                       {invoice.status === 'sent' && (
                         <button
+                          type="button"
                           onClick={() => updateInvoiceStatus(invoice.id, 'paid')}
                           className="p-2 rounded-full text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
                           title="Marquer payée"
@@ -951,6 +1160,7 @@ export default function InvoicesPage() {
                         </button>
                       )}
                       <button
+                        type="button"
                         onClick={() => openInvoicePrintWindow(invoice, clients, services)}
                         className="p-2 rounded-full text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
                         title="PDF"
@@ -958,6 +1168,7 @@ export default function InvoicesPage() {
                         <Download className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleArchive(invoice.id)}
                         className="p-2 rounded-full text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
                         title="Archiver"
@@ -965,6 +1176,7 @@ export default function InvoicesPage() {
                         <Archive className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDelete(invoice.id)}
                         className="p-2 rounded-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                         title="Supprimer"
@@ -979,6 +1191,62 @@ export default function InvoicesPage() {
             </>
           )}
         </div>
+        
+        {/* Pagination pour mobile */}
+        {(
+          <div className="block sm:hidden bg-gray-50 dark:bg-gray-700 px-4 py-3 border-t border-gray-200 dark:border-gray-600">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center space-x-1">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="inline-flex items-center px-2 py-1 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </button>
+                
+                {/* Numéros de page */}
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-2 py-1 text-xs rounded-full transition-all ${
+                        currentPage === pageNum
+                          ? 'bg-blue-500 text-white shadow-md'
+                          : 'text-gray-600 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-600/30 hover:bg-gray-200/50 dark:hover:bg-gray-500/50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="inline-flex items-center px-2 py-1 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Vue desktop - Table */}
         <div className="hidden sm:block overflow-x-auto">
@@ -988,6 +1256,7 @@ export default function InvoicesPage() {
                 {isSelectionMode && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
+                      type="button"
                       onClick={() => {
                         const allSelected = invoices.every(invoice => selectedInvoices.has(invoice.id));
                         if (allSelected) {
@@ -1044,7 +1313,7 @@ export default function InvoicesPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-              {activeInvoices.length === 0 ? (
+              {currentInvoices.length === 0 ? (
                 <tr>
                   <td colSpan={isSelectionMode ? 9 : 8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     <div className="flex flex-col items-center space-y-2">
@@ -1055,11 +1324,12 @@ export default function InvoicesPage() {
                   </td>
                 </tr>
               ) : (
-                activeInvoices.map((invoice) => (
+                currentInvoices.map((invoice) => (
                 <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   {isSelectionMode && (
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
+                        type="button"
                         onClick={() => toggleInvoiceSelection(invoice.id)}
                         className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                       >
@@ -1099,14 +1369,15 @@ export default function InvoicesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {invoice.status === 'paid' && (invoice as any).updated_at 
-                      ? new Date((invoice as any).updated_at).toLocaleDateString('fr-FR')
+                    {invoice.status === 'paid' && invoice.updated_at 
+                      ? new Date(invoice.updated_at).toLocaleDateString('fr-FR')
                       : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       {invoice.status === 'draft' && (
                         <button
+                          type="button"
                           onClick={() => openEdit(invoice)}
                           className="text-indigo-600 hover:text-indigo-900"
                           title="Modifier"
@@ -1115,6 +1386,7 @@ export default function InvoicesPage() {
                         </button>
                       )}
                       <button
+                        type="button"
                         onClick={() => setPreviewInvoice(invoice)}
                         className="text-gray-600 hover:text-gray-900"
                         title="Aperçu"
@@ -1123,6 +1395,7 @@ export default function InvoicesPage() {
                       </button>
                       {invoice.status === 'draft' && (
                         <button
+                          type="button"
                           onClick={() => {
                             // Trouver le client associé à cette facture
                             const associatedClient = clients.find(c => c.id === invoice.client_id);
@@ -1142,6 +1415,7 @@ export default function InvoicesPage() {
                       )}
                       {invoice.status === 'sent' && (
                         <button
+                          type="button"
                           onClick={() => updateInvoiceStatus(invoice.id, 'paid')}
                           className="text-green-600 dark:text-green-400 hover:text-green-900 dark:text-green-100"
                           title="Marquer comme payée"
@@ -1150,6 +1424,7 @@ export default function InvoicesPage() {
                         </button>
                       )}
                       <button
+                        type="button"
                         onClick={() => {
                           openInvoicePrintWindow(invoice, clients, services);
                         }}
@@ -1159,6 +1434,7 @@ export default function InvoicesPage() {
                         <Download className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleArchive(invoice.id)}
                         className="text-orange-600 hover:text-orange-900"
                         title="Archiver"
@@ -1166,6 +1442,7 @@ export default function InvoicesPage() {
                         <Archive className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDelete(invoice.id)}
                         disabled={deletingInvoice === invoice.id}
                         className={`text-red-600 hover:text-red-900 ${deletingInvoice === invoice.id ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -1185,6 +1462,90 @@ export default function InvoicesPage() {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        {(
+          <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center space-x-1">
+                {/* Bouton Première page */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Première page"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                  <ChevronLeft className="w-3 h-3 -ml-1" />
+                </button>
+                
+                {/* Bouton Page précédente */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Page précédente"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </button>
+                
+                {/* Numéros de page */}
+                {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 7) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 4) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 3) {
+                    pageNum = totalPages - 6 + i;
+                  } else {
+                    pageNum = currentPage - 3 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-1.5 text-sm rounded-full transition-all font-medium ${
+                        currentPage === pageNum
+                          ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
+                          : 'text-gray-600 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-600/30 hover:bg-gray-200/50 dark:hover:bg-gray-500/50 hover:text-gray-800 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                {/* Bouton Page suivante */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Page suivante"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+                
+                {/* Bouton Dernière page */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Dernière page"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                  <ChevronRight className="w-3 h-3 -ml-1" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal */}
@@ -1228,6 +1589,7 @@ export default function InvoicesPage() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={resetForm}
                   className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
                   title="Fermer"
@@ -1422,7 +1784,7 @@ export default function InvoicesPage() {
                         </div>
                       ) : (
                         <div className="divide-y divide-gray-100 dark:divide-gray-600">
-                          {selectableServices.filter(s => s.client_id === formData.client_id).map((service) => (
+                          {selectableServices.filter(s => s.client_id === formData.client_id).map((service, _index) => (
                             <label key={service.id} className="flex items-center space-x-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
                               <input
                                 type="checkbox"
@@ -1563,6 +1925,7 @@ export default function InvoicesPage() {
                 </div>
                 <div className="flex space-x-1 sm:space-x-2">
                   <button
+                    type="button"
                     onClick={() => openInvoicePrintWindow(previewInvoice, clients, services)}
                     className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 flex items-center space-x-1 sm:space-x-2 font-medium hover:scale-105 hover:shadow-lg text-sm"
                   >
@@ -1571,6 +1934,7 @@ export default function InvoicesPage() {
                     <span className="sm:hidden">PDF</span>
                   </button>
                   <button
+                    type="button"
                     onClick={() => setPreviewInvoice(null)}
                     className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200 hover:scale-110"
                     title="Fermer"
@@ -1593,31 +1957,34 @@ export default function InvoicesPage() {
                     <div className="flex items-center space-x-3 sm:space-x-6">
                       {(() => {
                         // Get business settings from localStorage
-                        let settings: any = null;
+                        let settings: Record<string, unknown> | null = null;
                         try {
                           const raw = localStorage.getItem('business-settings');
                           settings = raw ? JSON.parse(raw) : null;
-                        } catch {}
+                        } catch {
+                          // Ignore parsing errors
+                          settings = null;
+                        }
                         
                         return settings?.logoUrl ? (
                           <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                            <img src={settings.logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
+                            <img src={settings.logoUrl as string} alt="Logo" className="w-10 h-10 object-contain" />
                           </div>
                         ) : null;
                       })()}
                       <div>
                         <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
-                          {settings?.companyName || 'ProFlow'}
+                          {(settings?.companyName as string) || 'ProFlow'}
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400 font-medium text-sm sm:text-lg">
-                          {settings?.ownerName || 'Votre flux professionnel simplifié'}
+                          {(settings?.ownerName as string) || 'Votre flux professionnel simplifié'}
                         </p>
                         <div className="mt-3 text-xs sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed">
                           <div>
-                            {settings?.address && <div>{settings.address}</div>}
-                            {settings?.email && <div>{settings.email}</div>}
-                            {settings?.phone && <div>{settings.phone}</div>}
-                            {settings?.siret && <div>SIRET: {settings.siret}</div>}
+                            {settings?.address && <div>{settings.address as string}</div>}
+                            {settings?.email && <div>{settings.email as string}</div>}
+                            {settings?.phone && <div>{settings.phone as string}</div>}
+                            {settings?.siret && <div>SIRET: {settings.siret as string}</div>}
                           </div>
                         </div>
                       </div>
@@ -1706,7 +2073,7 @@ export default function InvoicesPage() {
                   {(() => {
                     // Get services for this invoice - try from invoice.services first, then from global services
                     // Utiliser les services stockés dans la facture si disponibles
-                    let invoiceServices = previewInvoice.services || [];
+                    const invoiceServices = previewInvoice.services || [];
                     
                     // Si pas de services stockés dans la facture, ne pas afficher tous les services du client
                     // car cela fausse l'aperçu. L'aperçu doit montrer seulement les services de cette facture.
@@ -1717,46 +2084,91 @@ export default function InvoicesPage() {
                     }
                     
                     return (
-                      <div className="overflow-x-auto rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800">
-                        <table className="min-w-full border-0 rounded-xl sm:rounded-2xl overflow-hidden">
-                          <thead className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
-                            <tr>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 first:rounded-tl-xl sm:first:rounded-tl-2xl last:rounded-tr-xl sm:last:rounded-tr-2xl">Description</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Heures</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Tarif/h</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 last:rounded-tr-xl sm:last:rounded-tr-2xl">Total</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-600">
-                            {invoiceServices.length > 0 ? (
-                              invoiceServices.map((service, index) => (
-                                <tr key={service.id || index} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${index === invoiceServices.length - 1 ? 'last:rounded-b-xl sm:last:rounded-b-2xl' : ''}`}>
-                                  <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-medium ${index === invoiceServices.length - 1 ? 'first:rounded-bl-xl sm:first:rounded-bl-2xl' : ''}`}>{service.description || 'N/A'}</td>
-                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{new Date(service.date).toLocaleDateString('fr-FR')}</td>
-                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hours}h</td>
-                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hourly_rate}€</td>
-                                  <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-bold ${index === invoiceServices.length - 1 ? 'last:rounded-br-xl sm:last:rounded-br-2xl' : ''}`}>{(service.hours * service.hourly_rate).toFixed(2)}€</td>
-                                </tr>
-                              ))
-                            ) : (
-                              <tr>
-                                <td colSpan={5} className="px-3 sm:px-6 py-8 sm:py-12 text-center rounded-b-xl sm:rounded-b-2xl">
-                                  <div className="flex flex-col items-center">
-                                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                                      <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                      </svg>
-                                    </div>
-                                    <p className="text-gray-500 dark:text-gray-400 font-medium">Aucune prestation trouvée pour cette facture</p>
-                                    <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Les prestations seront affichées ici une fois ajoutées</p>
+                      <>
+                        {/* Vue mobile - Cards */}
+                        <div className="block sm:hidden space-y-3">
+                          {invoiceServices.length > 0 ? (
+                            invoiceServices.map((service: Service, index: number) => (
+                              <div key={service.id || index} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                                <div className="flex justify-between items-start mb-2">
+                                  <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                                    {service.description || 'N/A'}
+                                  </h4>
+                                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                    {(service.hours * service.hourly_rate).toFixed(2)}€
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                  <div>
+                                    <span className="font-medium">Date:</span> {new Date(service.date).toLocaleDateString('fr-FR')}
                                   </div>
-                                </td>
+                                  <div>
+                                    <span className="font-medium">Heures:</span> {service.hours}h
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Tarif:</span> {service.hourly_rate}€/h
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Total:</span> {(service.hours * service.hourly_rate).toFixed(2)}€
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8">
+                              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <p className="text-gray-500 dark:text-gray-400 font-medium">Aucune prestation trouvée pour cette facture</p>
+                              <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Les prestations seront affichées ici une fois ajoutées</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Vue desktop - Table */}
+                        <div className="hidden sm:block overflow-x-auto rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800">
+                          <table className="min-w-full border-0 rounded-xl sm:rounded-2xl overflow-hidden" style={{ minWidth: '600px' }}>
+                            <thead className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
+                              <tr>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 first:rounded-tl-xl sm:first:rounded-tl-2xl last:rounded-tr-xl sm:last:rounded-tr-2xl">Description</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Heures</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Tarif/h</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 last:rounded-tr-xl sm:last:rounded-tr-2xl">Total</th>
                               </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-600">
+                              {invoiceServices.length > 0 ? (
+                                invoiceServices.map((service: Service, index: number) => (
+                                  <tr key={service.id || index} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${index === invoiceServices.length - 1 ? 'last:rounded-b-xl sm:last:rounded-b-2xl' : ''}`}>
+                                    <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-medium ${index === invoiceServices.length - 1 ? 'first:rounded-bl-xl sm:first:rounded-bl-2xl' : ''}`}>{service.description || 'N/A'}</td>
+                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{new Date(service.date).toLocaleDateString('fr-FR')}</td>
+                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hours}h</td>
+                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hourly_rate}€</td>
+                                    <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-bold ${index === invoiceServices.length - 1 ? 'last:rounded-br-xl sm:last:rounded-br-2xl' : ''}`}>{(service.hours * service.hourly_rate).toFixed(2)}€</td>
+                                  </tr>
+                                ))
+                              ) : (
+                                <tr>
+                                  <td colSpan={5} className="px-3 sm:px-6 py-8 sm:py-12 text-center rounded-b-xl sm:rounded-b-2xl">
+                                    <div className="flex flex-col items-center">
+                                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                                        <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                      </div>
+                                      <p className="text-gray-500 dark:text-gray-400 font-medium">Aucune prestation trouvée pour cette facture</p>
+                                      <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Les prestations seront affichées ici une fois ajoutées</p>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
                     );
                   })()}
                 </div>
@@ -1838,6 +2250,7 @@ export default function InvoicesPage() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setEmailModal(null)}
                   className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
                   title="Fermer"
@@ -2138,7 +2551,7 @@ export default function InvoicesPage() {
                   className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200 resize-none"
                   placeholder="Paiement à 30 jours. Pas de TVA (franchise en base)."
                 />
-                {billingSettings.includeLatePaymentPenalties && (
+                {billingSettings.showLegalRate && (
                   <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
                     <p className="text-sm text-yellow-800 dark:text-yellow-200">
                       <strong>Note :</strong> Les pénalités de retard de paiement seront automatiquement ajoutées aux factures selon la loi n°2008-776 du 4 août 2008 (taux légal × 3 + indemnité forfaitaire 40€).

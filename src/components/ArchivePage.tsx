@@ -1,34 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   Archive, 
-  Users, 
-  FileText, 
-  Search, 
-  Filter, 
-  RotateCcw, 
-  Trash2, 
-  Calendar,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
-  Eye,
+  Circle,
   Download,
+  FileText, 
+  Filter, 
+  RotateCcw, 
+  Search,
   Send,
   Trash,
-  CheckCircle,
-  Circle,
-  X
+  Trash2, 
+  Users
 } from 'lucide-react';
-import { useApp } from '../contexts/AppContext';
-import { supabase } from '../lib/supabase';
-import { openInvoicePrintWindow } from '../lib/print';
-import { sendInvoiceEmail } from '../lib/emailService';
 import AlertModal from './AlertModal';
+import { useApp } from '../contexts/AppContext';
+import { sendInvoiceEmail } from '../lib/emailService';
+import { openInvoicePrintWindow } from '../lib/print';
+import { supabase } from '../lib/supabase';
 
 interface ArchivePageProps {
   onPageChange: (page: string) => void;
 }
 
-export default function ArchivePage({ onPageChange }: ArchivePageProps) {
+export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePageProps) {
   const { state, dispatch, showNotification } = useApp();
   const { clients, invoices, services } = state;
   
@@ -37,7 +34,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
   const [dateFilter, setDateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [_loading, _setLoading] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [alertModal, setAlertModal] = useState({
@@ -73,19 +70,19 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
 
   // Fonction pour sélectionner/désélectionner tous les éléments
   const toggleAllSelection = () => {
-    const allSelected = currentData.every(item => selectedItems.has(item.id));
+    const allSelected = currentData.every(item => selectedItems.has(item.id as string));
     if (allSelected) {
       // Désélectionner toutes les factures
       currentData.forEach(item => {
-        if (selectedItems.has(item.id)) {
-          toggleItemSelection(item.id);
+        if (selectedItems.has(item.id as string)) {
+          toggleItemSelection(item.id as string);
         }
       });
     } else {
       // Sélectionner toutes les factures
       currentData.forEach(item => {
-        if (!selectedItems.has(item.id)) {
-          toggleItemSelection(item.id);
+        if (!selectedItems.has(item.id as string)) {
+          toggleItemSelection(item.id as string);
         }
       });
     }
@@ -100,7 +97,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
         month: '2-digit',
         day: '2-digit'
       });
-    } catch (error) {
+    } catch (_error) {
       return '-';
     }
   };
@@ -115,7 +112,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
 
   // Fonction pour obtenir les clients archivés
   const getArchivedClients = () => {
-    return clients.filter(client => (client as any).status === 'archived');
+    return clients.filter(client => (client as Record<string, unknown>).status === 'archived');
   };
 
   // Fonction pour obtenir les factures archivées
@@ -130,17 +127,17 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
 
   // Fonction pour filtrer les données
   const getFilteredData = () => {
-    let data: any[] = activeTab === 'clients' ? getArchivedClients() : getArchivedInvoices();
+    let data: Record<string, unknown>[] = activeTab === 'clients' ? getArchivedClients() : getArchivedInvoices();
     
     // Filtre par recherche
     if (searchTerm) {
       data = data.filter(item => {
         if (activeTab === 'clients') {
-          return (item as any).name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                 (item as any).email.toLowerCase().includes(searchTerm.toLowerCase());
+          return (item.name as string).toLowerCase().includes(searchTerm.toLowerCase()) ||
+                 (item.email as string).toLowerCase().includes(searchTerm.toLowerCase());
         } else {
-          return (item as any).invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                 (item as any).client?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+          return (item.invoice_number as string)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                 (item.client as Record<string, unknown>)?.name?.toString().toLowerCase().includes(searchTerm.toLowerCase());
         }
       });
     }
@@ -154,35 +151,41 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
         let itemDate;
         if (activeTab === 'clients') {
           // Pour les clients archivés, utiliser created_at car ils n'ont pas archived_at
-          itemDate = new Date((item as any).created_at);
+          itemDate = new Date(item.created_at as string);
         } else {
           // Pour les factures archivées, utiliser archived_at en priorité
-          itemDate = new Date((item as any).archived_at || (item as any).created_at);
+          itemDate = new Date((item.archived_at as string) || (item.created_at as string));
         }
         
         const itemDateOnly = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate());
         
         switch (dateFilter) {
-          case 'today':
+          case 'today': {
             return itemDateOnly.getTime() === today.getTime();
-          case 'week':
+          }
+          case 'week': {
             const weekAgo = new Date(today);
             weekAgo.setDate(weekAgo.getDate() - 7);
             return itemDateOnly >= weekAgo && itemDateOnly <= today;
-          case 'month':
+          }
+          case 'month': {
             const monthAgo = new Date(today);
             monthAgo.setMonth(monthAgo.getMonth() - 1);
             return itemDateOnly >= monthAgo && itemDateOnly <= today;
-          case 'year':
+          }
+          case 'year': {
             const yearAgo = new Date(today);
             yearAgo.setFullYear(yearAgo.getFullYear() - 1);
             return itemDateOnly >= yearAgo && itemDateOnly <= today;
-          case 'older':
+          }
+          case 'older': {
             const yearAgoOlder = new Date(today);
             yearAgoOlder.setFullYear(yearAgoOlder.getFullYear() - 1);
             return itemDateOnly < yearAgoOlder;
-          default:
+          }
+          default: {
             return true;
+          }
         }
       });
     }
@@ -191,9 +194,9 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
     if (statusFilter && activeTab === 'invoices') {
       if (statusFilter === 'archived') {
         // Filtrer les factures archivées (avec archived_at)
-        data = data.filter(item => (item as any).archived_at !== null && (item as any).archived_at !== undefined);
+        data = data.filter(item => (item.archived_at as string) !== null && (item.archived_at as string) !== undefined);
       } else {
-        data = data.filter(item => (item as any).status === statusFilter);
+        data = data.filter(item => (item.status as string) === statusFilter);
       }
     }
     
@@ -206,79 +209,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
   const endIndex = startIndex + itemsPerPage;
   const currentData = filteredData.slice(startIndex, endIndex);
 
-  // Fonction pour archiver un client
-  const handleArchiveClient = (id: string) => {
-    const client = clients.find(c => c.id === id);
-    setAlertModal({
-      isOpen: true,
-      title: 'Archiver le client',
-      message: `Êtes-vous sûr de vouloir archiver le client "${client?.name}" ? Il sera déplacé vers l'archive et ne sera plus visible dans la liste principale.`,
-      type: 'warning',
-      onConfirm: async () => {
-        try {
-          const { error } = await supabase
-            .from('clients')
-            .update({
-              status: 'archived',
-              archived_at: new Date().toISOString()
-            })
-            .eq('id', id);
 
-          if (error) throw error;
-
-          dispatch({ type: 'UPDATE_CLIENT', payload: {
-            ...client,
-            status: 'archived' as any,
-            archived_at: new Date().toISOString()
-          } as any });
-          showNotification('success', 'Client archivé', 'Le client a été archivé avec succès');
-        } catch (error) {
-          console.error('Error archiving client:', error);
-          showNotification('error', 'Erreur', 'Impossible d\'archiver le client');
-        }
-        setAlertModal(prev => ({ ...prev, isOpen: false }));
-      }
-    });
-  };
-
-  // Fonction pour archiver une facture
-  const handleArchiveInvoice = (id: string) => {
-    const invoice = invoices.find(i => i.id === id);
-    setAlertModal({
-      isOpen: true,
-      title: 'Archiver la facture',
-      message: `Êtes-vous sûr de vouloir archiver la facture #${invoice?.invoice_number} ? Elle sera déplacée vers l'archive et ne sera plus visible dans la liste principale.`,
-      type: 'warning',
-      onConfirm: async () => {
-        try {
-          const updateData = {
-            archived_at: new Date().toISOString()
-          };
-
-          const { error } = await supabase
-            .from('invoices')
-            .update(updateData)
-            .eq('id', id);
-
-          if (error) {
-            throw error;
-          }
-
-          const updatedInvoice = {
-            ...invoice,
-            archived_at: new Date().toISOString()
-          };
-
-          dispatch({ type: 'UPDATE_INVOICE', payload: updatedInvoice as any });
-          showNotification('success', 'Facture archivée', 'La facture a été archivée avec succès');
-        } catch (error) {
-          console.error('Error archiving invoice:', error);
-          showNotification('error', 'Erreur', `Impossible d'archiver la facture: ${(error as Error).message}`);
-        }
-        setAlertModal(prev => ({ ...prev, isOpen: false }));
-      }
-    });
-  };
 
   // Fonction pour restaurer un client
   const handleRestoreClient = (id: string) => {
@@ -302,9 +233,9 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
 
           dispatch({ type: 'UPDATE_CLIENT', payload: {
             ...client,
-            status: 'active' as any,
+            status: 'active',
             archived_at: null
-          } as any });
+          } });
           showNotification('success', 'Client restauré', 'Le client a été restauré avec succès');
         } catch (error) {
           console.error('Error restoring client:', error);
@@ -351,7 +282,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
   // Fonction pour supprimer définitivement
   const handleDeletePermanently = (type: string, id: string) => {
     const item = type === 'clients' ? clients.find(c => c.id === id) : invoices.find(i => i.id === id);
-    const itemName = type === 'clients' ? (item as any)?.name : `#${(item as any)?.invoice_number}`;
+    const itemName = type === 'clients' ? (item as Record<string, unknown>)?.name : `#${(item as Record<string, unknown>)?.invoice_number}`;
     
     setAlertModal({
       isOpen: true,
@@ -429,7 +360,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
   };
 
   return (
-    <div className="space-y-6 scrollbar-hide">
+    <div className="space-y-6 scrollbar-hide w-full max-w-full overflow-x-hidden">
       {/* En-tête */}
       <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 dark:from-purple-700 dark:via-indigo-700 dark:to-blue-700 text-white shadow-lg overflow-hidden">
         <div className="absolute inset-0 opacity-20">
@@ -451,6 +382,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
         <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="flex flex-col sm:flex-row sm:space-x-8 space-y-2 sm:space-y-0 px-4 sm:px-6">
             <button
+              type="button"
               onClick={() => setActiveTab('invoices')}
               className={`flex items-center justify-center sm:justify-start space-x-2 py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'invoices'
@@ -462,6 +394,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
               <span className="text-xs sm:text-sm">Factures archivées ({getArchivedInvoices().length})</span>
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('clients')}
               className={`flex items-center justify-center sm:justify-start space-x-2 py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'clients'
@@ -476,62 +409,83 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
         </div>
 
         {/* Filtres */}
-        <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            
-            <div>
-              <select
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="">Toutes les périodes</option>
-                <option value="today">Aujourd'hui</option>
-                <option value="week">Cette semaine</option>
-                <option value="month">Ce mois</option>
-                <option value="year">Cette année</option>
-                <option value="older">Plus ancien</option>
-              </select>
-            </div>
-            
-            {activeTab === 'invoices' && (
+        <div className="p-3 sm:p-4 lg:p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="space-y-3 lg:space-y-0">
+            {/* Ligne 1: Recherche et Période */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+              
               <div>
                 <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full px-3 py-2.5 sm:py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  <option value="">Tous les statuts</option>
-                  <option value="paid">Payées</option>
-                  <option value="sent">Envoyées</option>
-                  <option value="draft">Brouillons</option>
+                  <option value="" className="text-xs">Toutes les périodes</option>
+                  <option value="today" className="text-xs">Aujourd'hui</option>
+                  <option value="week" className="text-xs">Cette semaine</option>
+                  <option value="month" className="text-xs">Ce mois</option>
+                  <option value="year" className="text-xs">Cette année</option>
+                  <option value="older" className="text-xs">Plus ancien</option>
                 </select>
               </div>
-            )}
-            
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setDateFilter('');
-                  setStatusFilter('');
-                }}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                title="Effacer les filtres"
-              >
-                <Filter className="w-4 h-4" />
-              </button>
-              
+
+              {/* Statut pour les factures */}
+              {activeTab === 'invoices' && (
+                <div>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2.5 sm:py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="" className="text-xs">Tous les statuts</option>
+                    <option value="paid" className="text-xs">Payées</option>
+                    <option value="sent" className="text-xs">Envoyées</option>
+                    <option value="draft" className="text-xs">Brouillons</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center justify-center lg:justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setDateFilter('');
+                    setStatusFilter('');
+                  }}
+                  className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  title="Effacer les filtres"
+                >
+                  <Filter className="w-4 h-4" />
+                  <span className="hidden sm:inline">Effacer</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setDateFilter('');
+                    setStatusFilter('');
+                    setCurrentPage(1);
+                  }}
+                  className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                  title="Réinitialiser"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span className="hidden sm:inline">Réinitialiser</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -547,6 +501,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
               </div>
               <div className="flex space-x-2">
                 <button
+                  type="button"
                   onClick={handleBulkDelete}
                   disabled={selectedItems.size === 0}
                   className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
@@ -555,6 +510,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                   Supprimer sélection
                 </button>
                 <button
+                  type="button"
                   onClick={toggleSelectionMode}
                   className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
                 >
@@ -569,6 +525,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
         {!isSelectionMode && filteredData.length > 0 && (
           <div className="flex justify-end px-4 sm:px-6 pt-4 sm:pt-5">
             <button
+              type="button"
               onClick={toggleSelectionMode}
               className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm"
             >
@@ -579,7 +536,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
         )}
 
         {/* Contenu */}
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 w-full max-w-full">
           {/* Vue desktop - Table */}
           <div className="hidden lg:block overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600">
             <table className="w-full divide-y divide-gray-200 dark:divide-gray-600">
@@ -588,11 +545,12 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                   {isSelectionMode && (
                     <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
                       <button
+                        type="button"
                         onClick={toggleAllSelection}
                         className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        title={currentData.every(item => selectedItems.has(item.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
+                        title={currentData.every(item => selectedItems.has(item.id as string)) ? 'Tout désélectionner' : 'Tout sélectionner'}
                       >
-                        {currentData.every(item => selectedItems.has(item.id)) ? (
+                        {currentData.every(item => selectedItems.has(item.id as string)) ? (
                           <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                         ) : (
                           <Circle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -674,14 +632,15 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                   </tr>
                 ) : (
                   currentData.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={item.id as string} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       {isSelectionMode && (
                         <td className="px-2 py-4 whitespace-nowrap w-12">
                           <button
-                            onClick={() => toggleItemSelection(item.id)}
+                            type="button"
+                            onClick={() => toggleItemSelection(item.id as string)}
                             className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                           >
-                            {selectedItems.has(item.id) ? (
+                            {selectedItems.has(item.id as string) ? (
                               <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                             ) : (
                               <Circle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -692,57 +651,59 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                       {activeTab === 'invoices' ? (
                         <>
                           <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                            {(item as any).invoice_number}
+                            {item.invoice_number as string}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {(item as any).client?.name || clients.find(c => c.id === (item as any).client_id)?.name || 'Client inconnu'}
+                            {(item.client as Record<string, unknown>)?.name || clients.find(c => c.id === (item.client_id as string))?.name || 'Client inconnu'}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {formatDate((item as any).date)}
+                            {formatDate(item.date as string)}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                            {formatCurrency((item as any).subtotal || (item as any).net_amount || 0)}
+                            {formatCurrency((item.subtotal as number) || (item.net_amount as number) || 0)}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {formatDate((item as any).due_date)}
+                            {formatDate(item.due_date as string)}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              (item as any).status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                              (item as any).status === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                              (item as any).status === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
-                              (item as any).status === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                              (item.status as string) === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                              (item.status as string) === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                              (item.status as string) === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
+                              (item.status as string) === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
                               'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
                             }`}>
-                              {(item as any).status === 'paid' ? 'Payée' :
-                               (item as any).status === 'sent' ? 'Envoyée' :
-                               (item as any).status === 'draft' ? 'Brouillon' :
-                               (item as any).status === 'overdue' ? 'En retard' :
-                               (item as any).status}
+                              {(item.status as string) === 'paid' ? 'Payée' :
+                               (item.status as string) === 'sent' ? 'Envoyée' :
+                               (item.status as string) === 'draft' ? 'Brouillon' :
+                               (item.status as string) === 'overdue' ? 'En retard' :
+                               (item.status as string)}
                             </span>
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {(item as any).archived_at ? formatDate((item as any).archived_at) : formatDate((item as any).created_at)}
+                            {(item.archived_at as string) ? formatDate(item.archived_at as string) : formatDate(item.created_at as string)}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-0.5 sm:space-x-1">
                               <button
-                                onClick={() => openInvoicePrintWindow(item, clients, services)}
+                                type="button"
+                                onClick={() => openInvoicePrintWindow(item as any, clients, services)}
                                 className="p-1 sm:p-1.5 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
                                 title="Télécharger PDF"
                               >
                                 <Download className="w-4 h-4" />
                               </button>
                               <button
+                                type="button"
                                 onClick={() => sendInvoiceEmail({
-                                  to_email: activeTab === 'invoices' ? (item as any).client?.email || '' : '',
-                                  to_name: activeTab === 'invoices' ? (item as any).client?.name || '' : '',
-                                  subject: `Facture ${(item as any).invoice_number}`,
+                                  to_email: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.email as string || '' : '',
+                                  to_name: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.name as string || '' : '',
+                                  subject: `Facture ${item.invoice_number as string}`,
                                   message: 'Veuillez trouver ci-joint votre facture.',
-                                  invoice_number: (item as any).invoice_number,
-                                  invoice_date: (item as any).date,
-                                  invoice_due_date: (item as any).due_date,
-                                  invoice_amount: String((item as any).subtotal || (item as any).net_amount || 0),
+                                  invoice_number: item.invoice_number as string,
+                                  invoice_date: item.date as string,
+                                  invoice_due_date: item.due_date as string,
+                                  invoice_amount: String((item.subtotal as number) || (item.net_amount as number) || 0),
                                   company_name: 'Votre Entreprise',
                                   company_email: 'contact@votreentreprise.com'
                                 })}
@@ -752,14 +713,16 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                                 <Send className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleRestoreInvoice(item.id)}
+                                type="button"
+                                onClick={() => handleRestoreInvoice(item.id as string)}
                                 className="p-1 sm:p-1.5 text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors"
                                 title="Restaurer"
                               >
                                 <RotateCcw className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleDeletePermanently('invoice', item.id)}
+                                type="button"
+                                onClick={() => handleDeletePermanently('invoice', item.id as string)}
                                 className="p-1 sm:p-1.5 text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
                                 title="Supprimer définitivement"
                               >
@@ -771,44 +734,46 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                       ) : (
                         <>
                           <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                            {(item as any).name}
+                            {item.name as string}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {(item as any).email}
+                            {item.email as string}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {(item as any).phone || 'Non renseigné'}
+                            {(item.phone as string) || 'Non renseigné'}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {(item as any).company || 'Non renseignée'}
+                            {(item.company as string) || 'Non renseignée'}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              (item as any).status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                              (item as any).status === 'inactive' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
-                              (item as any).status === 'prospect' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                              (item.status as string) === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                              (item.status as string) === 'inactive' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
+                              (item.status as string) === 'prospect' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
                               'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
                             }`}>
-                              {(item as any).status === 'active' ? 'Actif' :
-                               (item as any).status === 'inactive' ? 'Inactif' :
-                               (item as any).status === 'prospect' ? 'Prospect' :
-                               (item as any).status}
+                              {(item.status as string) === 'active' ? 'Actif' :
+                               (item.status as string) === 'inactive' ? 'Inactif' :
+                               (item.status as string) === 'prospect' ? 'Prospect' :
+                               (item.status as string)}
                             </span>
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {formatDate((item as any).created_at)}
+                            {formatDate(item.created_at as string)}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-0.5 sm:space-x-1">
                               <button
-                                onClick={() => handleRestoreClient(item.id)}
+                                type="button"
+                                onClick={() => handleRestoreClient(item.id as string)}
                                 className="p-1 sm:p-1.5 text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors"
                                 title="Restaurer"
                               >
                                 <RotateCcw className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleDeletePermanently('client', item.id)}
+                                type="button"
+                                onClick={() => handleDeletePermanently('client', item.id as string)}
                                 className="p-1 sm:p-1.5 text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
                                 title="Supprimer définitivement"
                               >
@@ -834,11 +799,12 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                     {isSelectionMode && (
                       <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-10">
                         <button
+                          type="button"
                           onClick={toggleAllSelection}
                           className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                          title={currentData.every(item => selectedItems.has(item.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
+                          title={currentData.every(item => selectedItems.has(item.id as string)) ? 'Tout désélectionner' : 'Tout sélectionner'}
                         >
-                          {currentData.every(item => selectedItems.has(item.id)) ? (
+                          {currentData.every(item => selectedItems.has(item.id as string)) ? (
                             <CheckCircle className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                           ) : (
                             <Circle className="w-3 h-3 text-gray-400 dark:text-gray-500" />
@@ -895,14 +861,15 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                     </tr>
                   ) : (
                     currentData.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <tr key={item.id as string} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         {isSelectionMode && (
                           <td className="px-2 py-4 whitespace-nowrap w-10">
                             <button
-                              onClick={() => toggleItemSelection(item.id)}
+                              type="button"
+                              onClick={() => toggleItemSelection(item.id as string)}
                               className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                             >
-                              {selectedItems.has(item.id) ? (
+                              {selectedItems.has(item.id as string) ? (
                                 <CheckCircle className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                               ) : (
                                 <Circle className="w-3 h-3 text-gray-400 dark:text-gray-500" />
@@ -913,47 +880,50 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                         {activeTab === 'invoices' ? (
                           <>
                             <td className="px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                              {(item as any).invoice_number}
+                              {item.invoice_number as string}
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {(item as any).client?.name || clients.find(c => c.id === (item as any).client_id)?.name || 'Client inconnu'}
+                              {(item.client as Record<string, unknown>)?.name || clients.find(c => c.id === (item.client_id as string))?.name || 'Client inconnu'}
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                              {formatCurrency((item as any).subtotal || (item as any).net_amount || 0)}
+                              {formatCurrency((item.subtotal as number) || (item.net_amount as number) || 0)}
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                (item as any).status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                                (item as any).status === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                                (item as any).status === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
-                                (item as any).status === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                                (item.status as string) === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                                (item.status as string) === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                                (item.status as string) === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
+                                (item.status as string) === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
                                 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
                               }`}>
-                                {(item as any).status === 'paid' ? 'Payée' :
-                                 (item as any).status === 'sent' ? 'Envoyée' :
-                                 (item as any).status === 'draft' ? 'Brouillon' :
-                                 (item as any).status === 'overdue' ? 'En retard' :
-                                 (item as any).status}
+                                {(item.status as string) === 'paid' ? 'Payée' :
+                                 (item.status as string) === 'sent' ? 'Envoyée' :
+                                 (item.status as string) === 'draft' ? 'Brouillon' :
+                                 (item.status as string) === 'overdue' ? 'En retard' :
+                                 (item.status as string)}
                               </span>
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex items-center space-x-0.5 sm:space-x-1">
                                 <button
-                                  onClick={() => openInvoicePrintWindow(item, clients, services)}
+                                  type="button"
+                                  onClick={() => openInvoicePrintWindow(item as any, clients, services)}
                                   className="p-1 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
                                   title="Télécharger PDF"
                                 >
                                   <Download className="w-3 h-3" />
                                 </button>
                                 <button
-                                  onClick={() => handleRestoreInvoice(item.id)}
+                                  type="button"
+                                  onClick={() => handleRestoreInvoice(item.id as string)}
                                   className="p-1 text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors"
                                   title="Restaurer"
                                 >
                                   <RotateCcw className="w-3 h-3" />
                                 </button>
                                 <button
-                                  onClick={() => handleDeletePermanently('invoices', item.id)}
+                                  type="button"
+                                  onClick={() => handleDeletePermanently('invoices', item.id as string)}
                                   className="p-1 text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
                                   title="Supprimer définitivement"
                                 >
@@ -965,35 +935,37 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                         ) : (
                           <>
                             <td className="px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                              {(item as any).name}
+                              {item.name as string}
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {(item as any).email}
+                              {item.email as string}
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                (item as any).status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                                (item as any).status === 'inactive' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
-                                (item as any).status === 'prospect' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                                (item.status as string) === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                                (item.status as string) === 'inactive' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
+                                (item.status as string) === 'prospect' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
                                 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
                               }`}>
-                                {(item as any).status === 'active' ? 'Actif' :
-                                 (item as any).status === 'inactive' ? 'Inactif' :
-                                 (item as any).status === 'prospect' ? 'Prospect' :
-                                 (item as any).status}
+                                {(item.status as string) === 'active' ? 'Actif' :
+                                 (item.status as string) === 'inactive' ? 'Inactif' :
+                                 (item.status as string) === 'prospect' ? 'Prospect' :
+                                 (item.status as string)}
                               </span>
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex items-center space-x-0.5 sm:space-x-1">
                                 <button
-                                  onClick={() => handleRestoreClient(item.id)}
+                                  type="button"
+                                  onClick={() => handleRestoreClient(item.id as string)}
                                   className="p-1 text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors"
                                   title="Restaurer"
                                 >
                                   <RotateCcw className="w-3 h-3" />
                                 </button>
                                 <button
-                                  onClick={() => handleDeletePermanently('clients', item.id)}
+                                  type="button"
+                                  onClick={() => handleDeletePermanently('clients', item.id as string)}
                                   className="p-1 text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
                                   title="Supprimer définitivement"
                                 >
@@ -1012,29 +984,49 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
           </div>
 
           {/* Vue mobile - Cards */}
-          <div className="md:hidden space-y-4">
+          <div className="md:hidden space-y-4 w-full max-w-full">
             {/* Bouton Tout sélectionner pour mobile */}
             {isSelectionMode && currentData.length > 0 && (
               <div className="flex justify-center mb-4">
                 <button
+                  type="button"
                   onClick={toggleAllSelection}
                   className="inline-flex items-center px-4 py-2 rounded-full text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm font-medium"
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  {currentData.every(item => selectedItems.has(item.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
+                  {currentData.every(item => selectedItems.has(item.id as string)) ? 'Tout désélectionner' : 'Tout sélectionner'}
                 </button>
               </div>
             )}
             
-            {currentData.map((item) => (
-              <div key={item.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+            {currentData.length === 0 ? (
+              <div className="text-center py-12 w-full max-w-full">
+                <div className="flex flex-col items-center space-y-4">
+                  <Archive className="w-16 h-16 text-gray-300 dark:text-gray-600" />
+                  <div>
+                    <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      {activeTab === 'clients' ? 'Aucun client archivé' : 'Aucune facture archivée'}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {activeTab === 'clients' 
+                        ? 'Les clients archivés apparaîtront ici.' 
+                        : 'Les factures archivées apparaîtront ici.'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              currentData.map((item) => (
+              <div key={item.id as string} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-3">
                   {isSelectionMode && (
                     <button
-                      onClick={() => toggleItemSelection(item.id)}
+                      type="button"
+                      onClick={() => toggleItemSelection(item.id as string)}
                       className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors mr-2"
                     >
-                      {selectedItems.has(item.id) ? (
+                      {selectedItems.has(item.id as string) ? (
                         <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                       ) : (
                         <Circle className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500" />
@@ -1045,19 +1037,19 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                     {activeTab === 'clients' ? (
                       <>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {(item as any).name}
+                          {item.name as string}
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {(item as any).email}
+                          {item.email as string}
                         </p>
                       </>
                     ) : (
                       <>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {(item as any).invoice_number}
+                          {item.invoice_number as string}
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {(item as any).client?.name || clients.find(c => c.id === (item as any).client_id)?.name || 'Client inconnu'}
+                          {(item.client as Record<string, unknown>)?.name || clients.find(c => c.id === (item.client_id as string))?.name || 'Client inconnu'}
                         </p>
                       </>
                     )}
@@ -1066,22 +1058,24 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                     {activeTab === 'invoices' && (
                       <>
                         <button
-                          onClick={() => openInvoicePrintWindow(item, clients, services)}
+                          type="button"
+                          onClick={() => openInvoicePrintWindow(item as any, clients, services)}
                           className="p-1 sm:p-1.5 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
                           title="Télécharger PDF"
                         >
                           <Download className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => sendInvoiceEmail({
-                            to_email: activeTab === 'invoices' ? (item as any).client?.email || '' : '',
-                            to_name: activeTab === 'invoices' ? (item as any).client?.name || '' : '',
-                            subject: `Facture ${(item as any).invoice_number}`,
+                            to_email: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.email as string || '' : '',
+                            to_name: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.name as string || '' : '',
+                            subject: `Facture ${item.invoice_number as string}`,
                             message: 'Veuillez trouver ci-joint votre facture.',
-                            invoice_number: (item as any).invoice_number,
-                            invoice_date: (item as any).date,
-                            invoice_due_date: (item as any).due_date,
-                            invoice_amount: String((item as any).subtotal || (item as any).net_amount || 0),
+                            invoice_number: item.invoice_number as string,
+                            invoice_date: item.date as string,
+                            invoice_due_date: item.due_date as string,
+                            invoice_amount: String((item.subtotal as number) || (item.net_amount as number) || 0),
                             company_name: 'Votre Entreprise',
                             company_email: 'contact@votreentreprise.com'
                           })}
@@ -1093,14 +1087,16 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                       </>
                     )}
                     <button
-                      onClick={() => activeTab === 'clients' ? handleRestoreClient(item.id) : handleRestoreInvoice(item.id)}
+                      type="button"
+                      onClick={() => activeTab === 'clients' ? handleRestoreClient(item.id as string) : handleRestoreInvoice(item.id as string)}
                       className="p-1.5 text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors"
                       title="Restaurer"
                     >
                       <RotateCcw className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDeletePermanently(activeTab, item.id)}
+                      type="button"
+                      onClick={() => handleDeletePermanently(activeTab, item.id as string)}
                       className="p-1.5 text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
                       title="Supprimer définitivement"
                     >
@@ -1115,37 +1111,37 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Montant:</span>
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {formatCurrency((item as any).subtotal || (item as any).net_amount || 0)}
+                          {formatCurrency((item.subtotal as number) || (item.net_amount as number) || 0)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Statut:</span>
                         <span className={`font-medium ${
-                          (item as any).status === 'paid' ? 'text-green-600 dark:text-green-400' :
-                          (item as any).status === 'sent' ? 'text-blue-600 dark:text-blue-400' :
-                          (item as any).status === 'draft' ? 'text-gray-600 dark:text-gray-400' :
-                          (item as any).status === 'overdue' ? 'text-red-600 dark:text-red-400' :
+                          (item.status as string) === 'paid' ? 'text-green-600 dark:text-green-400' :
+                          (item.status as string) === 'sent' ? 'text-blue-600 dark:text-blue-400' :
+                          (item.status as string) === 'draft' ? 'text-gray-600 dark:text-gray-400' :
+                          (item.status as string) === 'overdue' ? 'text-red-600 dark:text-red-400' :
                           'text-gray-600 dark:text-gray-400'
                         }`}>
-                          {(item as any).status === 'paid' ? 'Payée' :
-                           (item as any).status === 'sent' ? 'Envoyée' :
-                           (item as any).status === 'draft' ? 'Brouillon' :
-                           (item as any).status === 'overdue' ? 'En retard' :
-                           (item as any).status}
+                          {(item.status as string) === 'paid' ? 'Payée' :
+                           (item.status as string) === 'sent' ? 'Envoyée' :
+                           (item.status as string) === 'draft' ? 'Brouillon' :
+                           (item.status as string) === 'overdue' ? 'En retard' :
+                           (item.status as string)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Date:</span>
-                        <span className="text-gray-900 dark:text-white">{formatDate((item as any).date)}</span>
+                        <span className="text-gray-900 dark:text-white">{formatDate(item.date as string)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Échéance:</span>
-                        <span className="text-gray-900 dark:text-white">{formatDate((item as any).due_date)}</span>
+                        <span className="text-gray-900 dark:text-white">{formatDate(item.due_date as string)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Archivé le:</span>
                         <span className="text-purple-600 dark:text-purple-400">
-                          {(item as any).archived_at ? formatDate((item as any).archived_at) : formatDate((item as any).created_at)}
+                          {(item.archived_at as string) ? formatDate(item.archived_at as string) : formatDate(item.created_at as string)}
                         </span>
                       </div>
                     </>
@@ -1153,35 +1149,36 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                     <>
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Téléphone:</span>
-                        <span className="text-gray-900 dark:text-white">{(item as any).phone || 'Non renseigné'}</span>
+                        <span className="text-gray-900 dark:text-white">{(item.phone as string) || 'Non renseigné'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Entreprise:</span>
-                        <span className="text-gray-900 dark:text-white">{(item as any).company || 'Non renseignée'}</span>
+                        <span className="text-gray-900 dark:text-white">{(item.company as string) || 'Non renseignée'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Statut:</span>
                         <span className={`font-medium ${
-                          (item as any).status === 'active' ? 'text-green-600 dark:text-green-400' :
-                          (item as any).status === 'inactive' ? 'text-gray-600 dark:text-gray-400' :
-                          (item as any).status === 'prospect' ? 'text-blue-600 dark:text-blue-400' :
+                          (item.status as string) === 'active' ? 'text-green-600 dark:text-green-400' :
+                          (item.status as string) === 'inactive' ? 'text-gray-600 dark:text-gray-400' :
+                          (item.status as string) === 'prospect' ? 'text-blue-600 dark:text-blue-400' :
                           'text-gray-600 dark:text-gray-400'
                         }`}>
-                          {(item as any).status === 'active' ? 'Actif' :
-                           (item as any).status === 'inactive' ? 'Inactif' :
-                           (item as any).status === 'prospect' ? 'Prospect' :
-                           (item as any).status}
+                          {(item.status as string) === 'active' ? 'Actif' :
+                           (item.status as string) === 'inactive' ? 'Inactif' :
+                           (item.status as string) === 'prospect' ? 'Prospect' :
+                           (item.status as string)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Créé le:</span>
-                        <span className="text-blue-600 dark:text-blue-400">{formatDate((item as any).created_at)}</span>
+                        <span className="text-blue-600 dark:text-blue-400">{formatDate(item.created_at as string)}</span>
                       </div>
                     </>
                   )}
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
 
           {/* Pagination */}
@@ -1192,6 +1189,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <button
+                  type="button"
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                   className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -1202,6 +1200,7 @@ export default function ArchivePage({ onPageChange }: ArchivePageProps) {
                   {currentPage} / {totalPages}
                 </span>
                 <button
+                  type="button"
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                   className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

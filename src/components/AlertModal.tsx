@@ -1,4 +1,3 @@
-import React from 'react';
 import { AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
 
 interface AlertModalProps {
@@ -98,6 +97,7 @@ export default function AlertModal({
             <h3 className="text-sm sm:text-lg font-semibold text-gray-900">{title}</h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1"
           >
@@ -113,12 +113,14 @@ export default function AlertModal({
         {/* Footer */}
         <div className="flex space-x-2 p-3 sm:p-6 border-t border-gray-200">
           <button
+            type="button"
             onClick={onClose}
             className={`flex-1 px-3 sm:px-4 py-2 rounded-full font-medium transition-all duration-200 text-sm sm:text-base ${colors.cancelButton}`}
           >
             {cancelText}
           </button>
           <button
+            type="button"
             onClick={() => {
               onConfirm();
               onClose();

@@ -1,24 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Clock, CheckCircle, Circle, Trash, ChevronLeft, ChevronRight, Search, Filter, X, User, Euro, Clock as ClockIcon } from 'lucide-react';
+import { CheckCircle, ChevronLeft, ChevronRight, Circle, Clock, Edit2, Euro, Filter, Plus, Search, Trash, Trash2, User, X } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { useSettings } from '../hooks/useSettings';
 import { createService, updateService as updateServiceApi, deleteService as deleteServiceApi } from '../lib/api';
 import { Service } from '../types';
 import AlertModal from './AlertModal';
-import { useSettings } from '../hooks/useSettings';
 
 export default function ServicesPage() {
   const { state, dispatch, showNotification } = useApp();
   const { services, clients } = state;
   const settings = useSettings();
   
-  // Debug: Log services and clients data
-  console.log('ServicesPage Debug:', {
-    totalServices: services.length,
-    totalClients: clients.length,
-    services: services.map(s => ({ id: s.id, client_id: s.client_id, description: s.description })),
-    clients: clients.map(c => ({ id: c.id, name: c.name })),
-    servicesWithoutClient: services.filter(s => !clients.find(c => c.id === s.client_id))
-  });
   const [showModal, setShowModal] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [alertModal, setAlertModal] = useState<{
@@ -42,7 +34,7 @@ export default function ServicesPage() {
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
+  const [itemsPerPage] = useState(10);
   const [_preselectedClient, setPreselectedClient] = useState<{ id: string; name: string } | null>(null);
   const [formData, setFormData] = useState({
     client_id: '',
@@ -88,11 +80,11 @@ export default function ServicesPage() {
         dispatch({ type: 'UPDATE_SERVICE', payload: { ...saved, client } as Service });
         showNotification('success', 'Prestation modifiée', 'La prestation a été mise à jour avec succès');
       } else {
-        const saved = await createService({ ...formData } as any);
+        const saved = await createService({ ...formData });
         dispatch({ type: 'ADD_SERVICE', payload: { ...saved, client } as Service });
         showNotification('success', 'Prestation créée', 'La prestation a été créée avec succès');
       }
-    } catch (err) {
+    } catch (_err) {
       showNotification('error', 'Erreur de sauvegarde', 'Une erreur est survenue lors de la sauvegarde de la prestation');
     }
     
@@ -136,7 +128,7 @@ export default function ServicesPage() {
           await deleteServiceApi(id);
           dispatch({ type: 'DELETE_SERVICE', payload: id });
           showNotification('success', 'Prestation supprimée', 'La prestation a été supprimée avec succès');
-        } catch (err) {
+        } catch (_err) {
           showNotification('error', 'Erreur de suppression', 'Une erreur est survenue lors de la suppression de la prestation');
         }
       }
@@ -177,7 +169,6 @@ export default function ServicesPage() {
       const amountA = Number(a.hours) * Number(a.hourly_rate);
       const amountB = Number(b.hours) * Number(b.hourly_rate);
       cmp = amountA - amountB;
-      // Debug: console.log(`Comparing amounts: ${amountA} vs ${amountB}, cmp: ${cmp}, sortDir: ${sortDir}`);
     } else if (sortBy === 'date') {
       cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
     }
@@ -189,6 +180,7 @@ export default function ServicesPage() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentServices = sortedServices.slice(startIndex, endIndex);
+  
 
   // Fonctions pour la sélection multiple
   const toggleServiceSelection = (serviceId: string) => {
@@ -235,7 +227,7 @@ export default function ServicesPage() {
           
           setSelectedServices(new Set());
           setIsSelectionMode(false);
-        } catch (err) {
+        } catch (_err) {
           showNotification('error', 'Erreur de suppression', 'Une erreur est survenue lors de la suppression des prestations');
         }
       }
@@ -269,6 +261,7 @@ export default function ServicesPage() {
           </div>
           <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end">
             <button
+              type="button"
               onClick={() => setShowModal(true)}
               className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
             >
@@ -300,6 +293,7 @@ export default function ServicesPage() {
             />
             {query && (
               <button
+                type="button"
                 onClick={() => setQuery('')}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
@@ -327,10 +321,10 @@ export default function ServicesPage() {
 
           {/* Filtre par statut */}
           <div className="relative">
-            <ClockIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'completed' | 'invoiced')}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white appearance-none"
             >
               <option value="all">Tous les statuts</option>
@@ -347,8 +341,8 @@ export default function ServicesPage() {
               value={`${sortBy}-${sortDir}`}
               onChange={(e) => {
                 const [newSortBy, newSortDir] = e.target.value.split('-');
-                setSortBy(newSortBy as any);
-                setSortDir(newSortDir as any);
+                setSortBy(newSortBy as 'name' | 'hours' | 'amount' | 'date');
+                setSortDir(newSortDir as 'asc' | 'desc');
               }}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white appearance-none"
             >
@@ -372,6 +366,7 @@ export default function ServicesPage() {
             </span>
             {(query || statusFilter !== 'all' || clientFilter) && (
               <button
+                type="button"
                 onClick={() => {
                   setQuery('');
                   setStatusFilter('all');
@@ -404,6 +399,7 @@ export default function ServicesPage() {
             </div>
             <div className="flex space-x-2">
               <button
+                type="button"
                 onClick={handleBulkDelete}
                 disabled={selectedServices.size === 0}
                 className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
@@ -412,6 +408,7 @@ export default function ServicesPage() {
                 Supprimer sélection
               </button>
               <button
+                type="button"
                 onClick={toggleSelectionMode}
                 className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
               >
@@ -426,6 +423,7 @@ export default function ServicesPage() {
       {!isSelectionMode && services.length > 0 && (
         <div className="flex justify-end">
           <button
+            type="button"
             onClick={toggleSelectionMode}
             className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm"
           >
@@ -458,12 +456,14 @@ export default function ServicesPage() {
                     </div>
                     <div className="flex space-x-2">
                       <button
+                        type="button"
                         onClick={() => handleEdit(service)}
                         className="px-3 py-1 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm"
                       >
                         Modifier
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDelete(service.id)}
                         className="px-3 py-1 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm"
                       >
@@ -487,6 +487,7 @@ export default function ServicesPage() {
           {isSelectionMode && currentServices.length > 0 && (
             <div className="flex justify-center p-4 border-b border-gray-200 dark:border-gray-600">
               <button
+                type="button"
                 onClick={() => {
                   const allSelected = currentServices.every(service => selectedServices.has(service.id));
                   if (allSelected) {
@@ -524,6 +525,7 @@ export default function ServicesPage() {
                     <div className="flex items-center space-x-2 mb-1">
                       {isSelectionMode && (
                         <button
+                          type="button"
                           onClick={() => toggleServiceSelection(service.id)}
                           className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                         >
@@ -564,6 +566,7 @@ export default function ServicesPage() {
                         </span>
                         <div className="flex items-center space-x-1">
                           <button
+                            type="button"
                             onClick={() => handleEdit(service)}
                             className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
                             title="Modifier"
@@ -571,6 +574,7 @@ export default function ServicesPage() {
                             <Edit2 className="w-3 h-3" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDelete(service.id)}
                             className="p-2 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all"
                             title="Supprimer"
@@ -588,13 +592,14 @@ export default function ServicesPage() {
         </div>
 
         {/* Vue desktop - Table */}
-        <div className="hidden sm:block overflow-hidden">
-          <table className="w-full table-fixed">
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full table-fixed" style={{ minWidth: '800px' }}>
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 {isSelectionMode && (
                   <th className="w-16 px-6 py-4 text-left">
                     <button
+                      type="button"
                       onClick={() => {
                         const allSelected = currentServices.every(service => selectedServices.has(service.id));
                         if (allSelected) {
@@ -660,6 +665,7 @@ export default function ServicesPage() {
                     {isSelectionMode && (
                       <td className="w-16 px-6 py-4 whitespace-nowrap">
                         <button
+                          type="button"
                           onClick={() => toggleServiceSelection(service.id)}
                           className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                         >
@@ -757,6 +763,7 @@ export default function ServicesPage() {
                     <td className="w-40 px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <button
+                          type="button"
                           onClick={() => handleEdit(service)}
                           className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                         >
@@ -764,6 +771,7 @@ export default function ServicesPage() {
                           Modifier
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDelete(service.id)}
                           className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                         >
@@ -779,29 +787,83 @@ export default function ServicesPage() {
         </div>
         
         {/* Pagination */}
-        {totalPages > 1 && (
+        {(
           <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700 dark:text-gray-300">
-                Affichage de {startIndex + 1} à {Math.min(endIndex, sortedServices.length)} sur {sortedServices.length} prestations
-              </div>
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center space-x-1">
+                {/* Bouton Première page */}
                 <button
+                  type="button"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Première page"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                  <ChevronLeft className="w-3 h-3 -ml-1" />
+                </button>
+                
+                {/* Bouton Page précédente */}
+                <button
+                  type="button"
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                   className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Page précédente"
                 >
                   <ChevronLeft className="w-3 h-3" />
                 </button>
-                <span className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-600/30 rounded-full">
-                  Page {currentPage} sur {totalPages}
-                </span>
+                
+                {/* Numéros de page */}
+                {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 7) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 4) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 3) {
+                    pageNum = totalPages - 6 + i;
+                  } else {
+                    pageNum = currentPage - 3 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-1.5 text-sm rounded-full transition-all font-medium ${
+                        currentPage === pageNum
+                          ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
+                          : 'text-gray-600 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-600/30 hover:bg-gray-200/50 dark:hover:bg-gray-500/50 hover:text-gray-800 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                {/* Bouton Page suivante */}
                 <button
+                  type="button"
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                   className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Page suivante"
                 >
                   <ChevronRight className="w-3 h-3" />
+                </button>
+                
+                {/* Bouton Dernière page */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Dernière page"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                  <ChevronRight className="w-3 h-3 -ml-1" />
                 </button>
               </div>
             </div>
@@ -859,8 +921,8 @@ export default function ServicesPage() {
               </div>
             </div>
             
-            {/* Scrollable content area - No visible scrollbar */}
-            <div className="overflow-y-auto scrollbar-hide max-h-[calc(95vh-120px)]">
+            {/* Scrollable content area */}
+            <div className="overflow-y-auto max-h-[calc(95vh-120px)] scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-blue-600">
               <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="lg:col-span-2">
@@ -932,7 +994,7 @@ export default function ServicesPage() {
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as 'pending' | 'completed' | 'invoiced' })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="pending">En attente</option>

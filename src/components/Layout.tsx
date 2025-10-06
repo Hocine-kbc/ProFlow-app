@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { X, Home, Users, Clock, FileText, BarChart3, Settings, User, ChevronLeft, ChevronRight, Moon, Sun, Power, Archive } from 'lucide-react';
+import { X, Home, Users, Clock, FileText, BarChart3, User, ChevronLeft, ChevronRight, Moon, Sun, Power, Archive } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import NotificationContainer from './NotificationContainer';
 import AlertModal from './AlertModal';
+import ChatBot from './ChatBot';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -83,7 +84,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -114,6 +115,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
             )}
             <div className={`flex items-center space-x-2 absolute top-1 h-auto ${sidebarCollapsed ? 'right-1' : 'right-1'}`}>
               <button
+                type="button"
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 className={`h-5 w-5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all duration-300 hidden lg:block z-10 border border-white/30 hover:border-white/50 hover:scale-110 hover:shadow-lg`}
                 title={sidebarCollapsed ? 'Agrandir le menu' : 'Réduire le menu'}
@@ -123,6 +125,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                 </div>
               </button>
               <button
+                type="button"
                 onClick={() => setSidebarOpen(false)}
                 className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors lg:hidden z-10"
               >
@@ -142,6 +145,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
             return (
               <div key={item.id} className={`${sidebarCollapsed ? 'flex justify-center' : ''}`}>
                 <button
+                  type="button"
                   onClick={() => {
                     onPageChange(item.id);
                     setSidebarOpen(false);
@@ -187,6 +191,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         <div className="hidden lg:block p-2 border-t border-gray-200 dark:border-gray-700 mt-auto">
           <div className="space-y-1">
             <button
+              type="button"
               onClick={toggleTheme}
               className={`${sidebarCollapsed ? 'w-12' : 'w-full'} flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-1.5'} text-left rounded-xl group relative text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white`}
               style={{ height: '40px', minHeight: '40px' }}
@@ -209,6 +214,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
             </button>
             
             <button
+              type="button"
               onClick={() => setShowLogoutAlert(true)}
               className={`${sidebarCollapsed ? 'w-12' : 'w-full'} flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-1.5'} text-left rounded-xl group relative text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400`}
               style={{ height: '40px', minHeight: '40px' }}
@@ -237,8 +243,9 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       {/* Main content */}
       <div className={`transition-all duration-500 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'}`}>
                 {/* Mobile header */}
-                <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-1 flex items-center justify-between" style={{ height: '50px' }}>
+                <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-1 flex items-center justify-between fixed top-0 left-0 right-0 z-50" style={{ height: '50px' }}>
                   <button
+                    type="button"
                     onClick={() => setSidebarOpen(true)}
                     className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
@@ -249,6 +256,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                   <img src="/ProFlowlogo.png" alt="ProFlow" className="h-48 w-auto invert dark:invert-0" />
                   <div className="flex items-center space-x-2">
                     <button
+                      type="button"
                       onClick={toggleTheme}
                       className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       title={isDark ? 'Mode clair' : 'Mode sombre'}
@@ -256,6 +264,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                       {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                     </button>
                     <button
+                      type="button"
                       onClick={() => setShowLogoutAlert(true)}
                       className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                       title="Se déconnecter"
@@ -266,13 +275,16 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                 </div>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6 lg:pt-6 overflow-y-auto scrollbar-hide max-h-screen">
+        <main className="p-4 lg:p-6 min-h-screen pb-12 pt-[66px] lg:pt-6">
           {children}
         </main>
       </div>
       
       {/* Notification Container */}
       <NotificationContainer />
+
+      {/* ChatBot */}
+      <ChatBot />
 
       {/* Modal de confirmation de déconnexion */}
       <AlertModal

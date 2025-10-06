@@ -1,7 +1,7 @@
 // Exemple d'intégration de la vue détaillée client dans l'application principale
-import React, { useState } from 'react';
-import ClientDetailView from './ClientDetailView';
+import { useState } from 'react';
 import { ClientDetail } from '../types/clientDetail';
+import ClientDetailView from './ClientDetailView';
 
 interface ClientDetailIntegrationProps {
   clientId: string;
@@ -9,38 +9,20 @@ interface ClientDetailIntegrationProps {
 }
 
 export default function ClientDetailIntegration({ clientId, onBack }: ClientDetailIntegrationProps) {
-  const [loading, setLoading] = useState(false);
 
   // Gestionnaires d'événements
-  const handleEditClient = async (client: ClientDetail) => {
+  const handleEditClient = (client: ClientDetail) => {
     console.log('Modifier le client:', client);
     // Implémenter la logique de modification
   };
 
-  const handleCreateInvoice = async (clientId: string) => {
+  const handleCreateInvoice = (clientId: string) => {
     console.log('Créer une facture pour le client:', clientId);
     // Rediriger vers la page de création de facture
     // ou ouvrir un modal de création
   };
 
-  const handleSendInvoice = async (invoiceId: string) => {
-    setLoading(true);
-    try {
-      console.log('Envoyer la facture:', invoiceId);
-      // Implémenter l'envoi de facture
-      // await sendInvoice(invoiceId);
-    } catch (error) {
-      console.error('Erreur lors de l\'envoi de la facture:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleViewInvoice = async (invoiceId: string) => {
-    console.log('Voir la facture:', invoiceId);
-    // Ouvrir la facture dans un nouvel onglet ou modal
-    // window.open(`/invoice/${invoiceId}`, '_blank');
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -49,8 +31,6 @@ export default function ClientDetailIntegration({ clientId, onBack }: ClientDeta
         onBack={onBack}
         onEditClient={handleEditClient}
         onCreateInvoice={handleCreateInvoice}
-        onSendInvoice={handleSendInvoice}
-        onViewInvoice={handleViewInvoice}
       />
     </div>
   );

@@ -156,13 +156,14 @@ app.post('/api/send-invoice', async (req, res) => {
     
     // Utiliser les paramètres stockés dans la facture en priorité, sinon les paramètres globaux
     const companyData = {
-      name: companySettings?.companyName || 'ProFlow',
-      owner: companySettings?.ownerName || 'Votre flux professionnel simplifié',
-      address: companySettings?.address || '',
-      email: companySettings?.email || '',
-      phone: companySettings?.phone || '',
-      siret: companySettings?.siret || '',
-      logoUrl: companySettings?.logoUrl || null,
+      // Utiliser les données sauvegardées dans la facture en priorité, sinon les paramètres globaux
+      name: invoice.company_name !== null ? invoice.company_name : (companySettings?.companyName || 'ProFlow'),
+      owner: invoice.company_owner !== null ? invoice.company_owner : (companySettings?.ownerName || 'Votre flux professionnel simplifié'),
+      address: invoice.company_address !== null ? invoice.company_address : (companySettings?.address || ''),
+      email: invoice.company_email !== null ? invoice.company_email : (companySettings?.email || ''),
+      phone: invoice.company_phone !== null ? invoice.company_phone : (companySettings?.phone || ''),
+      siret: invoice.company_siret !== null ? invoice.company_siret : (companySettings?.siret || ''),
+      logoUrl: invoice.company_logo_url !== null ? invoice.company_logo_url : (companySettings?.logoUrl || null),
       // Utiliser les paramètres spécifiques de la facture en priorité
       invoiceTerms: invoice.invoice_terms || companySettings?.invoiceTerms || null,
       paymentTerms: invoice.payment_terms || companySettings?.paymentTerms || null,
