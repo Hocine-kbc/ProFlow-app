@@ -1,5 +1,7 @@
 // Service pour communiquer avec le backend Express
-import { fetchSettings } from './api';
+import {
+  fetchSettings,
+} from './api';
 
 const BACKEND_URL = 'http://localhost:3001/api';
 
@@ -12,7 +14,7 @@ export interface BackendResponse {
 }
 
 // Envoyer une facture via le backend
-export const sendInvoiceViaBackend = async (invoiceId: string, invoiceData?: any): Promise<BackendResponse> => {
+export const sendInvoiceViaBackend = async (invoiceId: string, invoiceData?: unknown, customEmailData?: unknown): Promise<BackendResponse> => {
   try {
     console.log(`📧 Envoi de la facture ${invoiceId} via le backend...`);
     
@@ -45,6 +47,11 @@ export const sendInvoiceViaBackend = async (invoiceId: string, invoiceData?: any
       console.warn('⚠️ Impossible de récupérer les services de la facture:', error);
     }
     
+    // Log des données personnalisées
+    if (customEmailData) {
+      console.log('📧 Données email personnalisées envoyées au backend:', customEmailData);
+    }
+    
     const response = await fetch(`${BACKEND_URL}/send-invoice`, {
       method: 'POST',
       headers: {
@@ -54,7 +61,8 @@ export const sendInvoiceViaBackend = async (invoiceId: string, invoiceData?: any
         invoiceId,
         companySettings,
         invoiceData,
-        services: invoiceServices
+        services: invoiceServices,
+        customEmailData
       }),
     });
 
@@ -70,7 +78,7 @@ export const sendInvoiceViaBackend = async (invoiceId: string, invoiceData?: any
     console.error('❌ Erreur lors de l\'envoi de la facture:', error);
     return {
       success: false,
-      message: error.message
+      message: error instanceof Error ? error.message : 'Erreur inconnue'
     };
   }
 };

@@ -131,7 +131,7 @@ export default function InvoicesPage() {
             localStorage.setItem('business-settings', JSON.stringify(remote));
             return;
           }
-        } catch (_) {
+        } catch {
           // ignore and fallback to local
         }
         try {
@@ -143,7 +143,7 @@ export default function InvoicesPage() {
               setBillingSettings(prev => ({ ...prev, ...parsed }));
             }
           }
-        } catch (_) {
+        } catch {
           // ignore malformed localStorage
         }
       })();
@@ -222,6 +222,7 @@ export default function InvoicesPage() {
       // Nettoyer le localStorage
       localStorage.removeItem('preselectedClientId');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clients]);
   
   const [formData, setFormData] = useState({
@@ -436,7 +437,7 @@ export default function InvoicesPage() {
           type: 'UPDATE_INVOICE',
           payload: { ...invoice, ...saved }
         });
-      } catch (_err) {
+      } catch {
         // eslint-disable-next-line no-alert
         showNotification('error', 'Erreur', 'Erreur lors de la mise à jour de la facture');
       }
@@ -596,6 +597,8 @@ export default function InvoicesPage() {
   };
 
   const handleSendEmail = async () => {
+    console.log('📧 handleSendEmail appelé avec:', { emailModal, emailData });
+    
     if (!emailModal || !emailData.to.trim()) {
       setAlertModal({
         isOpen: true,
@@ -632,6 +635,8 @@ export default function InvoicesPage() {
         company_phone: settings?.phone,
         company_address: settings?.address,
       };
+      
+      console.log('📧 Données email préparées:', emailDataToSend);
 
       // Send email via Backend (nouveau système)
       const emailSent = await sendInvoiceEmail(emailDataToSend, emailModal.id);
@@ -1784,7 +1789,7 @@ export default function InvoicesPage() {
                         </div>
                       ) : (
                         <div className="divide-y divide-gray-100 dark:divide-gray-600">
-                          {selectableServices.filter(s => s.client_id === formData.client_id).map((service, _index) => (
+                          {selectableServices.filter(s => s.client_id === formData.client_id).map((service) => (
                             <label key={service.id} className="flex items-center space-x-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
                               <input
                                 type="checkbox"
@@ -2267,7 +2272,7 @@ export default function InvoicesPage() {
               <form onSubmit={(e) => { e.preventDefault(); handleSendEmail(); }} className="space-y-6">
                 {/* Email Address */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Adresse email du client
                   </label>
                   <input
@@ -2282,7 +2287,7 @@ export default function InvoicesPage() {
 
                 {/* Subject */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Objet de l'email
                   </label>
                   <input
@@ -2296,7 +2301,7 @@ export default function InvoicesPage() {
 
                 {/* Message */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Message personnalisé
                   </label>
                   <textarea

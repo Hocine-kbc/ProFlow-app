@@ -320,7 +320,7 @@ Posez-moi une question plus spécifique ! 😊`;
         <button
           type="button"
           onClick={toggleChat}
-          className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+          className="fixed bottom-20 right-4 sm:bottom-20 sm:right-6 z-50 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
           title="Ouvrir l'assistant"
         >
           <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -329,7 +329,7 @@ Posez-moi une question plus spécifique ! 😊`;
 
       {/* Interface du chat */}
       {chatState.isOpen && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 lg:top-auto lg:left-auto lg:bottom-6 lg:right-6 lg:transform-none lg:w-96 lg:h-[500px] z-50 w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col">
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 lg:top-auto lg:left-auto lg:bottom-20 lg:right-6 lg:transform-none lg:w-96 lg:h-[500px] z-50 w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl">
             <div className="flex items-center space-x-2">
@@ -449,9 +449,9 @@ Posez-moi une question plus spécifique ! 😊`;
               <button
                 type="submit"
                 disabled={chatState.isLoading}
-                className="p-2 sm:p-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
               >
-                <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </form>
           </div>

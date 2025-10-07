@@ -1,7 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Building2, Edit3, Hash, Mail, MapPin, Phone, Save, Trash2, Upload, User } from 'lucide-react';
-import { useApp } from '../contexts/AppContext';
-import { deleteUserAccount, fetchSettings as fetchSettingsApi, uploadLogo, upsertSettings } from '../lib/api';
+import {
+  AlertTriangle,
+  Building2,
+  Edit3,
+  Hash,
+  Mail,
+  MapPin,
+  Phone,
+  Save,
+  Trash2,
+  Upload,
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
+import {
+  useApp,
+} from '../contexts/AppContext';
+import {
+  deleteUserAccount,
+  fetchSettings as fetchSettingsApi,
+  uploadLogo,
+  upsertSettings,
+} from '../lib/api';
+import {
+  supabase,
+} from '../lib/supabase';
 
 export default function ProfilePage() {
   const { showNotification } = useApp();
@@ -18,6 +43,21 @@ export default function ProfilePage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  
+  // États pour la modification de mot de passe
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -46,19 +86,148 @@ export default function ProfilePage() {
           localStorage.setItem('business-settings', JSON.stringify({ ...(remote as Record<string, unknown>), ...picked }));
           return;
         }
-      } catch {}
+      } catch {
+        // Ignore errors when fetching remote settings
+      }
       try {
         const raw = localStorage.getItem('business-settings');
         if (raw) {
           const parsed = JSON.parse(raw);
           setSettings(prev => ({ ...prev, ...parsed }));
         }
-      } catch {}
+      } catch {
+        // Ignore errors when fetching local settings
+      }
     })();
   }, []);
 
   const handleInputChange = (key: string, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Fonctions pour la gestion du mot de passe
+  const handlePasswordInputChange = (key: string, value: string) => {
+    setPasswordData(prev => ({ ...prev, [key]: value }));
+    // Effacer l'erreur pour ce champ
+    if (passwordErrors[key]) {
+      setPasswordErrors(prev => ({ ...prev, [key]: '' }));
+    }
+  };
+
+  const togglePasswordVisibility = (field: 'current' | 'new' | 'confirm') => {
+    setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const validatePasswordForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (!passwordData.currentPassword) {
+      errors.currentPassword = 'Le mot de passe actuel est requis';
+    }
+
+    if (!passwordData.newPassword) {
+      errors.newPassword = 'Le nouveau mot de passe est requis';
+    } else if (passwordData.newPassword.length < 8) {
+      errors.newPassword = 'Le mot de passe doit contenir au moins 8 caractères';
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(passwordData.newPassword)) {
+      errors.newPassword = 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre';
+    }
+
+    if (!passwordData.confirmPassword) {
+      errors.confirmPassword = 'La confirmation du mot de passe est requise';
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      errors.confirmPassword = 'Les mots de passe ne correspondent pas';
+    }
+
+    // Vérifier que le nouveau mot de passe est différent de l'actuel
+    if (passwordData.currentPassword && passwordData.newPassword && 
+        passwordData.currentPassword === passwordData.newPassword) {
+      errors.newPassword = 'Le nouveau mot de passe doit être différent de l\'actuel';
+    }
+
+    setPasswordErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    console.log('🔐 Début de la modification du mot de passe');
+    
+    if (!validatePasswordForm()) {
+      console.log('❌ Validation du formulaire échouée');
+      return;
+    }
+
+    setChangingPassword(true);
+    setPasswordErrors({});
+
+    try {
+      console.log('👤 Vérification de l\'utilisateur connecté...');
+      // Vérifier que l'utilisateur est connecté
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user?.email) {
+        console.error('❌ Erreur utilisateur:', userError);
+        throw new Error('Utilisateur non connecté');
+      }
+      console.log('✅ Utilisateur trouvé:', user.email);
+
+      console.log('🔍 Vérification du mot de passe actuel...');
+      // Vérifier le mot de passe actuel en tentant une reconnexion
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: passwordData.currentPassword
+      });
+
+      if (signInError) {
+        console.error('❌ Mot de passe actuel incorrect:', signInError.message);
+        setPasswordErrors({ currentPassword: 'Mot de passe actuel incorrect' });
+        setChangingPassword(false);
+        return;
+      }
+      console.log('✅ Mot de passe actuel vérifié');
+
+      console.log('🔄 Mise à jour du mot de passe...');
+      // Mettre à jour le mot de passe
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (updateError) {
+        console.error('❌ Erreur de mise à jour:', updateError);
+        throw new Error(updateError.message || 'Erreur lors de la mise à jour du mot de passe');
+      }
+      console.log('✅ Mot de passe mis à jour avec succès');
+
+      // Réinitialiser le formulaire
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setShowPasswordChange(false);
+      setShowPasswords({ current: false, new: false, confirm: false });
+
+      showNotification('success', 'Mot de passe modifié', 'Votre mot de passe a été mis à jour avec succès');
+
+    } catch (error: unknown) {
+      console.error('❌ Erreur lors de la modification du mot de passe:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Impossible de modifier le mot de passe. Veuillez réessayer.';
+      showNotification('error', 'Erreur', errorMessage);
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const cancelPasswordChange = () => {
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    setPasswordErrors({});
+    setShowPasswords({ current: false, new: false, confirm: false });
+    setShowPasswordChange(false);
   };
 
   const handleDeleteAccount = async () => {
@@ -87,7 +256,7 @@ export default function ProfilePage() {
       const next = { ...settings, logoUrl: publicUrl };
       setSettings(next);
       localStorage.setItem('business-settings', JSON.stringify(next));
-    } catch (err) {
+    } catch {
       showNotification('error', 'Échec du téléversement', 'Impossible de téléverser le logo. Vérifiez votre connexion.');
     } finally {
       setUploadingLogo(false);
@@ -104,7 +273,7 @@ export default function ProfilePage() {
       
       // Optionnel : supprimer le fichier du bucket Supabase
       // await deleteLogo(settings.logoUrl);
-    } catch (err) {
+    } catch {
       showNotification('error', 'Erreur de suppression', 'Impossible de supprimer le logo.');
     }
   };
@@ -140,7 +309,7 @@ export default function ProfilePage() {
       
       // Afficher la notification de succès
       showNotification('success', 'Profil sauvegardé', 'Vos informations ont été mises à jour avec succès');
-    } catch (err) {
+    } catch {
       // Combiner le prénom et le nom pour le localStorage
       const settingsToSave = {
         ...settings,
@@ -389,7 +558,210 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Bouton de suppression */}
+      </form>
+
+      {/* Section de modification de mot de passe - EN DEHORS du formulaire principal */}
+      <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8">
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Lock className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                Sécurité du compte
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Gérez la sécurité de votre compte
+              </p>
+            </div>
+          </div>
+          {!showPasswordChange && (
+            <button
+              type="button"
+              onClick={() => setShowPasswordChange(true)}
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-full font-semibold transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl text-sm"
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              Modifier le mot de passe
+            </button>
+          )}
+        </div>
+
+        {showPasswordChange && (
+          <div className="relative">
+            {/* Effet de fond animé */}
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl animate-pulse"></div>
+            
+            <form onSubmit={handlePasswordChange} className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 dark:border-gray-700/50 p-6 sm:p-8 shadow-xl">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <Lock className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                    Modification du mot de passe
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Pour des raisons de sécurité, confirmez votre mot de passe actuel
+                  </p>
+                </div>
+              </div>
+                
+              <div className="space-y-6">
+                {/* Mot de passe actuel */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full mr-2"></div>
+                    Mot de passe actuel
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type={showPasswords.current ? 'text' : 'password'}
+                      className="w-full px-4 py-4 pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-indigo-300 dark:group-hover:border-indigo-500"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => handlePasswordInputChange('currentPassword', e.target.value)}
+                      placeholder="Saisissez votre mot de passe actuel"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('current')}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+                    >
+                      {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {passwordErrors.currentPassword && (
+                    <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-sm">
+                      <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                      <span>{passwordErrors.currentPassword}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Nouveau mot de passe */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    Nouveau mot de passe
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type={showPasswords.new ? 'text' : 'password'}
+                      className="w-full px-4 py-4 pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-green-300 dark:group-hover:border-green-500"
+                      value={passwordData.newPassword}
+                      onChange={(e) => handlePasswordInputChange('newPassword', e.target.value)}
+                      placeholder="Saisissez votre nouveau mot de passe"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('new')}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-green-600 dark:text-gray-500 dark:hover:text-green-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+                    >
+                      {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {passwordErrors.newPassword && (
+                    <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-sm">
+                      <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                      <span>{passwordErrors.newPassword}</span>
+                    </div>
+                  )}
+                  
+                  {/* Critères de sécurité avec design amélioré */}
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-xl p-4">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center">
+                        <Lock className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-sm font-semibold text-green-800 dark:text-green-200">
+                        Critères de sécurité
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="flex items-center space-x-2 text-xs text-green-700 dark:text-green-300">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                        <span>8+ caractères</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-green-700 dark:text-green-300">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                        <span>Majuscule + minuscule</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-green-700 dark:text-green-300">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                        <span>Au moins un chiffre</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Confirmation du mot de passe */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                    Confirmer le nouveau mot de passe
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type={showPasswords.confirm ? 'text' : 'password'}
+                      className="w-full px-4 py-4 pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-purple-300 dark:group-hover:border-purple-500"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => handlePasswordInputChange('confirmPassword', e.target.value)}
+                      placeholder="Confirmez votre nouveau mot de passe"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('confirm')}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-purple-600 dark:text-gray-500 dark:hover:text-purple-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+                    >
+                      {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {passwordErrors.confirmPassword && (
+                    <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-sm">
+                      <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                      <span>{passwordErrors.confirmPassword}</span>
+                    </div>
+                  )}
+                </div>
+                </div>
+
+              {/* Boutons d'action en pilule */}
+              <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 justify-center">
+                <button
+                  type="button"
+                  onClick={cancelPasswordChange}
+                  className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full font-semibold transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 text-sm"
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
+                    <span>Annuler</span>
+                  </div>
+                </button>
+                <button
+                  type="submit"
+                  disabled={changingPassword}
+                  className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white rounded-full font-semibold transition-all duration-300 flex items-center justify-center hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:shadow-none text-sm"
+                >
+                  {changingPassword ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      <span>Modification...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Lock className="w-4 h-4" />
+                      <span>Modifier</span>
+                    </div>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+      </div>
+
+      {/* Bouton de suppression */}
         <div className="flex justify-end">
           <button
             type="button"
@@ -400,8 +772,6 @@ export default function ProfilePage() {
             Supprimer le compte définitivement
           </button>
         </div>
-
-      </form>
 
       {/* Modal de suppression personnalisée */}
       {showDeleteModal && (
@@ -469,6 +839,7 @@ export default function ProfilePage() {
             {/* Boutons en pilule */}
             <div className="flex space-x-4">
               <button
+              type="button"
                 onClick={() => {
                   setShowDeleteModal(false);
                   setDeleteConfirmation('');
@@ -477,7 +848,8 @@ export default function ProfilePage() {
               >
                 Annuler
               </button>
-              <button
+              <button 
+                type="button"
                 onClick={handleDeleteAccount}
                 disabled={deleteConfirmation !== 'supprimer'}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white rounded-full font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg disabled:shadow-none"

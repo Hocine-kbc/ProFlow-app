@@ -1,6 +1,12 @@
-import React from 'react';
-import { useApp } from '../contexts/AppContext';
-import Notification from './Notification';
+import {
+  default as React,
+} from 'react';
+import {
+  useApp,
+} from '../contexts/AppContext';
+import {
+  default as Notification,
+} from './Notification';
 
 const NotificationContainer: React.FC = () => {
   const { state, dispatch } = useApp();

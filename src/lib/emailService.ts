@@ -24,7 +24,20 @@ export const sendInvoiceEmail = async (emailData: EmailData, invoiceId?: string,
     
     // Utiliser l'ID UUID si fourni, sinon utiliser le numéro de facture
     const idToSend = invoiceId || emailData.invoice_number;
-    const result = await sendInvoiceViaBackend(idToSend, invoiceData);
+    
+    // Préparer les données personnalisées pour le backend
+    const customEmailData = {
+      to_email: emailData.to_email,
+      to_name: emailData.to_name,
+      subject: emailData.subject,
+      message: emailData.message,
+      company_name: emailData.company_name,
+      company_email: emailData.company_email,
+      company_phone: emailData.company_phone,
+      company_address: emailData.company_address
+    };
+    
+    const result = await sendInvoiceViaBackend(idToSend, invoiceData, customEmailData);
     
     if (result.success) {
       console.log('✅ Facture envoyée avec succès:', result);
