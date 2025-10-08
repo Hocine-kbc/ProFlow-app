@@ -22,7 +22,9 @@ import {
   BarChart3,
   Edit2,
   Trash2,
-  Archive
+  Archive,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { ClientDetail } from '../types/clientDetail';
 import { supabase } from '../lib/supabase';
@@ -92,6 +94,14 @@ export default function ClientDetailView({
   const [activeTab, setActiveTab] = useState<'overview' | 'invoices' | 'services' | 'payments' | 'notes'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  
+  // États de pagination pour les factures
+  const [invoicesCurrentPage, setInvoicesCurrentPage] = useState(1);
+  const invoicesItemsPerPage = 10;
+  
+  // États de pagination pour les prestations
+  const [servicesCurrentPage, setServicesCurrentPage] = useState(1);
+  const servicesItemsPerPage = 10;
   
   // États pour les notes
   const [notes, setNotes] = useState<ClientNote[]>([]);
@@ -359,30 +369,27 @@ export default function ClientDetailView({
     return hours * hourlyRate;
   };
 
-  // Fonction pour gérer l'aperçu des factures
+  // Fonction pour gérer l'aperçu des factures (identique à InvoicesPage)
   const handleViewInvoiceLocal = (invoice: any) => {
-    console.log('🔍 Invoice pour aperçu:', invoice);
-    console.log('🔍 Services dans l\'invoice:', invoice.services);
-    console.log('🔍 Nombre de services:', invoice.services?.length || 0);
+    console.log('🔍 Invoice reçu pour aperçu:', invoice);
+    console.log('🔍 Champs disponibles:', Object.keys(invoice));
+    console.log('🔍 invoice.invoice_number:', invoice.invoice_number);
+    console.log('🔍 invoice.number:', invoice.number);
+    console.log('🔍 invoice.id:', invoice.id);
     
     // Convertir l'invoice du ClientDetail vers le format attendu par le modal
     const invoiceForPreview = {
-      id: invoice.id,
-      invoice_number: invoice.invoice_number || invoice.number,
-      date: invoice.date,
-      due_date: invoice.due_date || invoice.dueDate,
+      ...invoice,
+      invoice_number: invoice.number || invoice.invoice_number || `FAC-${invoice.id}`,
+      due_date: invoice.dueDate || invoice.due_date,
       client_id: clientId,
-      subtotal: invoice.subtotal || invoice.amount,
-      net_amount: invoice.net_amount || invoice.amount,
-      status: invoice.status,
-      payment_method: invoice.payment_method || invoice.paymentMethod || '',
-      services: invoice.services || []
+      subtotal: invoice.amount || invoice.subtotal,
+      net_amount: invoice.amount || invoice.net_amount,
+      payment_method: invoice.paymentMethod || invoice.payment_method || '',
+      client: client // Ajouter les infos du client
     };
     
     console.log('🔍 InvoiceForPreview créé:', invoiceForPreview);
-    console.log('🔍 Services dans previewInvoice:', invoiceForPreview.services);
-    console.log('🔍 Nombre de services dans previewInvoice:', invoiceForPreview.services?.length || 0);
-    
     setPreviewInvoice(invoiceForPreview);
   };
 
@@ -1055,6 +1062,20 @@ export default function ClientDetailView({
     return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
+  // Logique de pagination pour les factures
+  const filteredInvoices = getFilteredInvoices();
+  const invoicesTotalPages = Math.ceil(filteredInvoices.length / invoicesItemsPerPage);
+  const invoicesStartIndex = (invoicesCurrentPage - 1) * invoicesItemsPerPage;
+  const invoicesEndIndex = invoicesStartIndex + invoicesItemsPerPage;
+  const currentInvoices = filteredInvoices.slice(invoicesStartIndex, invoicesEndIndex);
+
+  // Logique de pagination pour les prestations
+  const filteredServices = client?.services || [];
+  const servicesTotalPages = Math.ceil(filteredServices.length / servicesItemsPerPage);
+  const servicesStartIndex = (servicesCurrentPage - 1) * servicesItemsPerPage;
+  const servicesEndIndex = servicesStartIndex + servicesItemsPerPage;
+  const currentServices = filteredServices.slice(servicesStartIndex, servicesEndIndex);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -1533,25 +1554,25 @@ export default function ClientDetailView({
                     Historique des factures
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                    {getFilteredInvoices().length} facture{getFilteredInvoices().length !== 1 ? 's' : ''} 
+                    {filteredInvoices.length} facture{filteredInvoices.length !== 1 ? 's' : ''} 
                     {searchTerm || statusFilter !== 'all' ? ' trouvée(s)' : ''}
                   </p>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-3">
+                  <div className="relative flex-1">
                     <Search className="w-3 h-3 sm:w-4 sm:h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <input
                       type="text"
                       placeholder="Rechercher..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:w-auto w-full"
                   >
                     <option value="all">Tous les statuts</option>
                     <option value="paid">Payées</option>
@@ -1563,7 +1584,196 @@ export default function ClientDetailView({
                 </div>
               </div>
             </div>
-            <div className="overflow-x-auto">
+            
+            {/* Vue mobile/tablette - Cards */}
+            <div className="block lg:hidden">
+              {currentInvoices.length === 0 ? (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                  <div className="flex flex-col items-center space-y-2">
+                    <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+                    <p className="text-lg font-medium">Aucune facture trouvée</p>
+                    <p className="text-sm">
+                      {searchTerm || statusFilter !== 'all' 
+                        ? 'Aucune facture ne correspond aux critères de recherche.'
+                        : 'Ce client n\'a pas encore de factures.'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 space-y-4">
+                  {currentInvoices.map((invoice) => (
+                    <div key={invoice.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="font-semibold text-gray-900 dark:text-white">
+                            {invoice.number || 'N/A'}
+                          </h4>
+                          {invoice.description && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                              {invoice.description}
+                            </p>
+                          )}
+                        </div>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          invoice.status === 'paid' 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                            : invoice.status === 'sent'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                            : invoice.status === 'overdue'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                            : invoice.status === 'draft'
+                            ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                        }`}>
+                          {invoice.status === 'paid' ? 'Payée' : 
+                           invoice.status === 'sent' ? 'Envoyée' : 
+                           invoice.status === 'overdue' ? 'En retard' : 
+                           invoice.status === 'draft' ? 'Brouillon' : 
+                           invoice.status === 'partial' ? 'Partielle' : 'Inconnu'}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Date émission:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">{formatDate(invoice.date)}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Montant:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(invoice.amount)}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Échéance:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {invoice.dueDate ? formatDate(invoice.dueDate) : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Date paiement:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {invoice.paidDate ? formatDate(invoice.paidDate) : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                        <button
+                          type="button"
+                          onClick={() => handleViewInvoiceLocal(invoice)}
+                          className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                          title="Voir la facture"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSendEmailLocal(invoice)}
+                          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title="Envoyer par email"
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadPDF(invoice)}
+                          className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                          title="Télécharger"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Pagination mobile pour les factures */}
+            {invoicesTotalPages > 0 && (
+              <div className="block lg:hidden px-4 py-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center space-x-1">
+                    {/* Bouton Première page */}
+                    <button
+                      type="button"
+                      onClick={() => setInvoicesCurrentPage(1)}
+                      disabled={invoicesCurrentPage === 1}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Première page"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                      <ChevronLeft className="w-3 h-3 -ml-1" />
+                    </button>
+                    
+                    {/* Bouton Page précédente */}
+                    <button
+                      type="button"
+                      onClick={() => setInvoicesCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={invoicesCurrentPage === 1}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Page précédente"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                    </button>
+                    
+                    {/* Numéros de page */}
+                    {Array.from({ length: Math.min(7, invoicesTotalPages) }, (_, i) => {
+                      let pageNum;
+                      if (invoicesTotalPages <= 7) {
+                        pageNum = i + 1;
+                      } else if (invoicesCurrentPage <= 4) {
+                        pageNum = i + 1;
+                      } else if (invoicesCurrentPage >= invoicesTotalPages - 3) {
+                        pageNum = invoicesTotalPages - 6 + i;
+                      } else {
+                        pageNum = invoicesCurrentPage - 3 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => setInvoicesCurrentPage(pageNum)}
+                          className={`px-3 py-1.5 text-sm rounded-full transition-all font-medium ${
+                            invoicesCurrentPage === pageNum
+                              ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
+                              : 'text-gray-600 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-600/30 hover:bg-gray-200/50 dark:hover:bg-gray-500/50 hover:text-gray-800 dark:hover:text-gray-200'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    
+                    {/* Bouton Page suivante */}
+                    <button
+                      type="button"
+                      onClick={() => setInvoicesCurrentPage(prev => Math.min(prev + 1, invoicesTotalPages))}
+                      disabled={invoicesCurrentPage === invoicesTotalPages}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Page suivante"
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                    
+                    {/* Bouton Dernière page */}
+                    <button
+                      type="button"
+                      onClick={() => setInvoicesCurrentPage(invoicesTotalPages)}
+                      disabled={invoicesCurrentPage === invoicesTotalPages}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Dernière page"
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                      <ChevronRight className="w-3 h-3 -ml-1" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Vue desktop - Table */}
+            <div className="hidden lg:block overflow-x-auto">
               <table className="w-full" style={{ minWidth: '800px' }}>
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
@@ -1591,7 +1801,7 @@ export default function ClientDetailView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {getFilteredInvoices().length === 0 ? (
+                  {currentInvoices.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-6 py-12 text-center">
                         <div className="flex flex-col items-center">
@@ -1608,7 +1818,7 @@ export default function ClientDetailView({
                       </td>
                     </tr>
                   ) : (
-                    getFilteredInvoices().map((invoice) => (
+                    currentInvoices.map((invoice) => (
                     <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <div className="font-medium text-gray-900 dark:text-white">
@@ -1714,6 +1924,90 @@ export default function ClientDetailView({
                 </tbody>
               </table>
             </div>
+            
+            {/* Pagination pour les factures - Desktop uniquement */}
+            {invoicesTotalPages > 0 && (
+              <div className="hidden lg:block px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center space-x-1">
+                    {/* Bouton Première page */}
+                    <button
+                      type="button"
+                      onClick={() => setInvoicesCurrentPage(1)}
+                      disabled={invoicesCurrentPage === 1}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Première page"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                      <ChevronLeft className="w-3 h-3 -ml-1" />
+                    </button>
+                    
+                    {/* Bouton Page précédente */}
+                    <button
+                      type="button"
+                      onClick={() => setInvoicesCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={invoicesCurrentPage === 1}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Page précédente"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                    </button>
+                    
+                    {/* Numéros de page */}
+                    {Array.from({ length: Math.min(7, invoicesTotalPages) }, (_, i) => {
+                      let pageNum;
+                      if (invoicesTotalPages <= 7) {
+                        pageNum = i + 1;
+                      } else if (invoicesCurrentPage <= 4) {
+                        pageNum = i + 1;
+                      } else if (invoicesCurrentPage >= invoicesTotalPages - 3) {
+                        pageNum = invoicesTotalPages - 6 + i;
+                      } else {
+                        pageNum = invoicesCurrentPage - 3 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => setInvoicesCurrentPage(pageNum)}
+                          className={`px-3 py-1.5 text-sm rounded-full transition-all font-medium ${
+                            invoicesCurrentPage === pageNum
+                              ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
+                              : 'text-gray-600 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-600/30 hover:bg-gray-200/50 dark:hover:bg-gray-500/50 hover:text-gray-800 dark:hover:text-gray-200'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    
+                    {/* Bouton Page suivante */}
+                    <button
+                      type="button"
+                      onClick={() => setInvoicesCurrentPage(prev => Math.min(prev + 1, invoicesTotalPages))}
+                      disabled={invoicesCurrentPage === invoicesTotalPages}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Page suivante"
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                    
+                    {/* Bouton Dernière page */}
+                    <button
+                      type="button"
+                      onClick={() => setInvoicesCurrentPage(invoicesTotalPages)}
+                      disabled={invoicesCurrentPage === invoicesTotalPages}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Dernière page"
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                      <ChevronRight className="w-3 h-3 -ml-1" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1724,7 +2018,146 @@ export default function ClientDetailView({
                 Historique des prestations
               </h3>
             </div>
-            <div className="overflow-x-auto">
+            {/* Vue mobile/tablette - Cards */}
+            <div className="block lg:hidden">
+              {currentServices.length === 0 ? (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                  <div className="flex flex-col items-center space-y-2">
+                    <Clock className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+                    <p className="text-lg font-medium">Aucune prestation</p>
+                    <p className="text-sm">Ce client n'a pas encore de prestations enregistrées.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 space-y-4">
+                  {currentServices.map((service) => (
+                    <div key={service.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="font-semibold text-gray-900 dark:text-white">
+                            {service.description}
+                          </h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {formatDate(service.date)}
+                          </p>
+                        </div>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          service.status === 'completed' 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                            : service.status === 'in_progress'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                        }`}>
+                          {service.status === 'completed' ? 'Terminé' : service.status === 'in_progress' ? 'En cours' : 'Planifié'}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Heures:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">{service.hours}h</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Tarif/h:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(service.hourlyRate)}/h</p>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-gray-500 dark:text-gray-400">Montant total:</span>
+                          <p className="font-medium text-gray-900 dark:text-white text-lg">{formatCurrency(service.amount)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Pagination mobile pour les prestations */}
+            {servicesTotalPages > 0 && (
+              <div className="block lg:hidden px-4 py-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center space-x-1">
+                    {/* Bouton Première page */}
+                    <button
+                      type="button"
+                      onClick={() => setServicesCurrentPage(1)}
+                      disabled={servicesCurrentPage === 1}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Première page"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                      <ChevronLeft className="w-3 h-3 -ml-1" />
+                    </button>
+                    
+                    {/* Bouton Page précédente */}
+                    <button
+                      type="button"
+                      onClick={() => setServicesCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={servicesCurrentPage === 1}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Page précédente"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                    </button>
+                    
+                    {/* Numéros de page */}
+                    {Array.from({ length: Math.min(7, servicesTotalPages) }, (_, i) => {
+                      let pageNum;
+                      if (servicesTotalPages <= 7) {
+                        pageNum = i + 1;
+                      } else if (servicesCurrentPage <= 4) {
+                        pageNum = i + 1;
+                      } else if (servicesCurrentPage >= servicesTotalPages - 3) {
+                        pageNum = servicesTotalPages - 6 + i;
+                      } else {
+                        pageNum = servicesCurrentPage - 3 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => setServicesCurrentPage(pageNum)}
+                          className={`px-3 py-1.5 text-sm rounded-full transition-all font-medium ${
+                            servicesCurrentPage === pageNum
+                              ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
+                              : 'text-gray-600 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-600/30 hover:bg-gray-200/50 dark:hover:bg-gray-500/50 hover:text-gray-800 dark:hover:text-gray-200'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    
+                    {/* Bouton Page suivante */}
+                    <button
+                      type="button"
+                      onClick={() => setServicesCurrentPage(prev => Math.min(prev + 1, servicesTotalPages))}
+                      disabled={servicesCurrentPage === servicesTotalPages}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Page suivante"
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                    
+                    {/* Bouton Dernière page */}
+                    <button
+                      type="button"
+                      onClick={() => setServicesCurrentPage(servicesTotalPages)}
+                      disabled={servicesCurrentPage === servicesTotalPages}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Dernière page"
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                      <ChevronRight className="w-3 h-3 -ml-1" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Vue desktop - Table */}
+            <div className="hidden lg:block overflow-x-auto">
               <table className="w-full" style={{ minWidth: '800px' }}>
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
@@ -1749,7 +2182,7 @@ export default function ClientDetailView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {client.services.map((service) => (
+                  {currentServices.map((service) => (
                     <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white">
                         {formatDate(service.date)}
@@ -1783,6 +2216,90 @@ export default function ClientDetailView({
                 </tbody>
               </table>
             </div>
+            
+            {/* Pagination pour les prestations - Desktop uniquement */}
+            {servicesTotalPages > 0 && (
+              <div className="hidden lg:block px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center space-x-1">
+                    {/* Bouton Première page */}
+                    <button
+                      type="button"
+                      onClick={() => setServicesCurrentPage(1)}
+                      disabled={servicesCurrentPage === 1}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Première page"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                      <ChevronLeft className="w-3 h-3 -ml-1" />
+                    </button>
+                    
+                    {/* Bouton Page précédente */}
+                    <button
+                      type="button"
+                      onClick={() => setServicesCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={servicesCurrentPage === 1}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Page précédente"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                    </button>
+                    
+                    {/* Numéros de page */}
+                    {Array.from({ length: Math.min(7, servicesTotalPages) }, (_, i) => {
+                      let pageNum;
+                      if (servicesTotalPages <= 7) {
+                        pageNum = i + 1;
+                      } else if (servicesCurrentPage <= 4) {
+                        pageNum = i + 1;
+                      } else if (servicesCurrentPage >= servicesTotalPages - 3) {
+                        pageNum = servicesTotalPages - 6 + i;
+                      } else {
+                        pageNum = servicesCurrentPage - 3 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => setServicesCurrentPage(pageNum)}
+                          className={`px-3 py-1.5 text-sm rounded-full transition-all font-medium ${
+                            servicesCurrentPage === pageNum
+                              ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
+                              : 'text-gray-600 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-600/30 hover:bg-gray-200/50 dark:hover:bg-gray-500/50 hover:text-gray-800 dark:hover:text-gray-200'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    
+                    {/* Bouton Page suivante */}
+                    <button
+                      type="button"
+                      onClick={() => setServicesCurrentPage(prev => Math.min(prev + 1, servicesTotalPages))}
+                      disabled={servicesCurrentPage === servicesTotalPages}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Page suivante"
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                    
+                    {/* Bouton Dernière page */}
+                    <button
+                      type="button"
+                      onClick={() => setServicesCurrentPage(servicesTotalPages)}
+                      disabled={servicesCurrentPage === servicesTotalPages}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      title="Dernière page"
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                      <ChevronRight className="w-3 h-3 -ml-1" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1868,16 +2385,16 @@ export default function ClientDetailView({
           <div className="space-y-6">
             {/* Formulaire d'ajout de note */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                   Ajouter une note
                 </h3>
                 <button
                   type="button"
                   onClick={() => setIsAddingNote(!isAddingNote)}
-                  className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-full shadow-sm hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
+                  className="inline-flex items-center space-x-2 px-3 py-2 sm:px-4 sm:py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs sm:text-sm font-medium rounded-full shadow-sm hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 w-fit"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>Nouvelle note</span>
                 </button>
               </div>
@@ -1888,7 +2405,7 @@ export default function ClientDetailView({
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Type de note
                     </label>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
                       {[
                         { value: 'general', label: 'Générale', icon: '📝', activeColor: 'bg-slate-500', textColor: 'text-white' },
                         { value: 'call', label: 'Appel', icon: '📞', activeColor: 'bg-emerald-500', textColor: 'text-white' },
@@ -1899,14 +2416,14 @@ export default function ClientDetailView({
                           type="button"
                           key={type.value}
                           onClick={() => setNoteType(type.value as 'general' | 'call' | 'email' | 'meeting')}
-                          className={`inline-flex items-center space-x-2 px-4 py-1.5 text-sm font-medium rounded-full border-2 transition-all duration-200 hover:scale-105 ${
+                          className={`inline-flex items-center justify-center space-x-1 sm:space-x-2 px-3 py-2 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-medium rounded-full border-2 transition-all duration-200 hover:scale-105 ${
                             noteType === type.value
                               ? `${type.activeColor} ${type.textColor} border-transparent shadow-lg`
                               : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                           }`}
                         >
-                          <span className="text-lg">{type.icon}</span>
-                          <span>{type.label}</span>
+                          <span className="text-sm sm:text-lg">{type.icon}</span>
+                          <span className="truncate">{type.label}</span>
                         </button>
                       ))}
                     </div>
@@ -1921,25 +2438,25 @@ export default function ClientDetailView({
                       onChange={(e) => setNewNote(e.target.value)}
                       placeholder="Saisissez votre note..."
                       rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                      className="w-full px-3 py-3 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none text-sm sm:text-base"
                     />
                   </div>
                   
-                  <div className="flex space-x-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
                       type="button"
                       onClick={addNote}
                       disabled={!newNote.trim() || notesLoading}
-                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-medium rounded-full shadow-sm hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 disabled:transform-none"
+                      className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs sm:text-sm font-medium rounded-full shadow-sm hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 disabled:transform-none"
                     >
                       {notesLoading ? (
                         <>
-                          <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <div className="w-3 h-3 sm:w-4 sm:h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           Ajout...
                         </>
                       ) : (
                         <>
-                          <CheckCircle className="w-4 h-4 mr-2" />
+                          <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                           Ajouter
                         </>
                       )}
@@ -1950,7 +2467,7 @@ export default function ClientDetailView({
                         setIsAddingNote(false);
                         setNewNote('');
                       }}
-                      className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
+                      className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
                     >
                       Annuler
                     </button>
@@ -1961,11 +2478,11 @@ export default function ClientDetailView({
 
             {/* Liste des notes */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                   Historique des notes
                 </h3>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 w-fit">
                   {notes.length} note{notes.length > 1 ? 's' : ''}
                 </span>
               </div>
@@ -1997,15 +2514,15 @@ export default function ClientDetailView({
               ) : (
                 <div className="space-y-3">
                   {notes.map((note) => (
-                    <div key={note.id} className="group relative bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200">
+                    <div key={note.id} className="group relative bg-gray-50 dark:bg-gray-700/30 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-3 mb-3">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                              note.type === 'general' ? 'bg-gray-100 text-gray-800' :
-                              note.type === 'call' ? 'bg-green-100 text-green-800' :
-                              note.type === 'email' ? 'bg-blue-100 text-blue-800' :
-                              'bg-purple-100 text-purple-800'
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0 mb-3">
+                            <span className={`inline-flex items-center px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs font-medium w-fit ${
+                              note.type === 'general' ? 'bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200' :
+                              note.type === 'call' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
+                              note.type === 'email' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300' :
+                              'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
                             }`}>
                               {note.type === 'general' && '📝 Générale'}
                               {note.type === 'call' && '📞 Appel'}
@@ -2029,9 +2546,9 @@ export default function ClientDetailView({
                         <button
                           type="button"
                           onClick={() => deleteNote(note.id)}
-                          className="opacity-0 group-hover:opacity-100 ml-4 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all duration-200"
+                          className="opacity-0 group-hover:opacity-100 ml-3 sm:ml-4 p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all duration-200"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                       </div>
                     </div>
@@ -2062,10 +2579,7 @@ export default function ClientDetailView({
               <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
+                    <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-lg sm:text-xl font-bold truncate">Aperçu de la facture</h3>
@@ -2084,23 +2598,23 @@ export default function ClientDetailView({
                          previewInvoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
                       </span>
                       <span className="text-white/60 text-xs">
-                        {previewInvoice.net_amount?.toFixed(2)}€
+                        {calculateInvoiceAmount(previewInvoice).toFixed(2)}€
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="flex space-x-1 sm:space-x-2">
                   <button
+                    type="button"
                     onClick={() => openInvoicePrintWindow(previewInvoice, state.clients, state.services)}
-                    className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 flex items-center space-x-1 sm:space-x-2 font-medium hover:scale-105 hover:shadow-lg text-xs sm:text-sm"
+                    className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 flex items-center space-x-1 sm:space-x-2 font-medium hover:scale-105 hover:shadow-lg text-sm"
                   >
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                    <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">Télécharger PDF</span>
                     <span className="sm:hidden">PDF</span>
                   </button>
                   <button
+                    type="button"
                     onClick={() => setPreviewInvoice(null)}
                     className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200 hover:scale-110"
                     title="Fermer"
@@ -2174,11 +2688,11 @@ export default function ClientDetailView({
                         </h3>
                         <div className="text-gray-900 dark:text-white space-y-2">
                           <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-                            {client?.name || 'Client inconnu'}
+                            {previewInvoice.client?.name || state.clients.find(c => c.id === previewInvoice.client_id)?.name || 'Client inconnu'}
                           </p>
-                          <p className="text-xs sm:text-sm sm:text-base text-gray-700 dark:text-gray-300">{client?.email || ''}</p>
-                          <p className="text-xs sm:text-sm sm:text-base text-gray-700 dark:text-gray-300">{client?.phone || ''}</p>
-                          <p className="text-xs sm:text-sm sm:text-base text-gray-700 dark:text-gray-300">{client?.address || ''}</p>
+                          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300">{previewInvoice.client?.email || state.clients.find(c => c.id === previewInvoice.client_id)?.email || ''}</p>
+                          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300">{previewInvoice.client?.phone || state.clients.find(c => c.id === previewInvoice.client_id)?.phone || ''}</p>
+                          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300">{previewInvoice.client?.address || state.clients.find(c => c.id === previewInvoice.client_id)?.address || ''}</p>
                         </div>
                       </div>
                       <div className="bg-green-50 dark:bg-green-900/20 rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-green-200 dark:border-green-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
@@ -2235,11 +2749,7 @@ export default function ClientDetailView({
                   {(() => {
                     // Get services for this invoice - try from invoice.services first, then from global services
                     // Utiliser les services stockés dans la facture si disponibles
-                    let invoiceServices = previewInvoice.services || [];
-                    
-                    console.log('🔍 Dans l\'aperçu - previewInvoice:', previewInvoice);
-                    console.log('🔍 Dans l\'aperçu - invoiceServices:', invoiceServices);
-                    console.log('🔍 Dans l\'aperçu - nombre de services:', invoiceServices.length);
+                    const invoiceServices = previewInvoice.services || [];
                     
                     // Si pas de services stockés dans la facture, ne pas afficher tous les services du client
                     // car cela fausse l'aperçu. L'aperçu doit montrer seulement les services de cette facture.
@@ -2250,26 +2760,70 @@ export default function ClientDetailView({
                     }
                     
                     return (
-                      <div className="overflow-x-auto rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800">
-                        <table className="min-w-full border-0 rounded-xl sm:rounded-2xl overflow-hidden">
+                      <>
+                        {/* Vue mobile/tablette - Cards */}
+                        <div className="block lg:hidden space-y-3">
+                          {invoiceServices.length > 0 ? (
+                            invoiceServices.map((service: any, index: number) => (
+                              <div key={service.id || index} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                                <div className="flex justify-between items-start mb-2">
+                                  <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                                    {service.description || 'N/A'}
+                                  </h4>
+                                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                    {(service.hours * service.hourly_rate).toFixed(2)}€
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                  <div>
+                                    <span className="font-medium">Date:</span> {new Date(service.date).toLocaleDateString('fr-FR')}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Heures:</span> {service.hours}h
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Tarif:</span> {service.hourly_rate}€/h
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Total:</span> {(service.hours * service.hourly_rate).toFixed(2)}€
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8">
+                              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <p className="text-gray-500 dark:text-gray-400 font-medium">Aucune prestation trouvée pour cette facture</p>
+                              <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Les prestations seront affichées ici une fois ajoutées</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Vue desktop - Table */}
+                        <div className="hidden sm:block overflow-x-auto rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800">
+                          <table className="min-w-full border-0 rounded-xl sm:rounded-2xl overflow-hidden" style={{ minWidth: '600px' }}>
                           <thead className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
                             <tr>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 first:rounded-tl-xl sm:first:rounded-tl-2xl last:rounded-tr-xl sm:last:rounded-tr-2xl">Description</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Heures</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Tarif/h</th>
-                              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 last:rounded-tr-xl sm:last:rounded-tr-2xl">Total</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 first:rounded-tl-xl sm:first:rounded-tl-2xl last:rounded-tr-xl sm:last:rounded-tr-2xl">Description</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Heures</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Tarif/h</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 last:rounded-tr-xl sm:last:rounded-tr-2xl">Total</th>
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-600">
                             {invoiceServices.length > 0 ? (
                               invoiceServices.map((service: any, index: number) => (
                                 <tr key={service.id || index} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${index === invoiceServices.length - 1 ? 'last:rounded-b-xl sm:last:rounded-b-2xl' : ''}`}>
-                                  <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-xs sm:text-sm text-gray-900 dark:text-white font-medium ${index === invoiceServices.length - 1 ? 'first:rounded-bl-xl sm:first:rounded-bl-2xl' : ''}`}>{service.description || 'N/A'}</td>
-                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-xs sm:text-sm text-gray-700 dark:text-gray-300">{new Date(service.date).toLocaleDateString('fr-FR')}</td>
-                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hours}h</td>
-                                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hourly_rate}€</td>
-                                  <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-xs sm:text-sm text-gray-900 dark:text-white font-bold ${index === invoiceServices.length - 1 ? 'last:rounded-br-xl sm:last:rounded-br-2xl' : ''}`}>{(service.hours * service.hourly_rate).toFixed(2)}€</td>
+                                    <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-medium ${index === invoiceServices.length - 1 ? 'first:rounded-bl-xl sm:first:rounded-bl-2xl' : ''}`}>{service.description || 'N/A'}</td>
+                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{new Date(service.date).toLocaleDateString('fr-FR')}</td>
+                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hours}h</td>
+                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hourly_rate}€</td>
+                                    <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-bold ${index === invoiceServices.length - 1 ? 'last:rounded-br-xl sm:last:rounded-br-2xl' : ''}`}>{(service.hours * service.hourly_rate).toFixed(2)}€</td>
                                 </tr>
                               ))
                             ) : (
@@ -2282,7 +2836,7 @@ export default function ClientDetailView({
                                       </svg>
                                     </div>
                                     <p className="text-gray-500 dark:text-gray-400 font-medium">Aucune prestation trouvée pour cette facture</p>
-                                    <p className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm mt-1">Les prestations seront affichées ici une fois ajoutées</p>
+                                      <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Les prestations seront affichées ici une fois ajoutées</p>
                                   </div>
                                 </td>
                               </tr>
@@ -2290,6 +2844,7 @@ export default function ClientDetailView({
                           </tbody>
                         </table>
                       </div>
+                      </>
                     );
                   })()}
                 </div>

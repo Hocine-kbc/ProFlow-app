@@ -88,20 +88,20 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed top-0 left-0 right-0 bottom-0 w-full h-full z-40 bg-black bg-opacity-50 lg:hidden"
+          className="fixed top-0 left-0 right-0 bottom-0 w-full h-full z-30 bg-black bg-opacity-50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 ${sidebarCollapsed ? 'w-16' : 'w-72'} bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg transform lg:translate-x-0 ${
+      <div className={`fixed inset-y-0 left-0 z-30 ${sidebarCollapsed ? 'w-16' : 'w-72'} bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg transform lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } flex flex-col`} style={{
         transition: 'width 300ms ease-in-out, transform 300ms ease-in-out',
-        zIndex: 50
+        zIndex: 30
       }}>
-        {/* Header avec gradient */}
-        <div className="relative h-20 p-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700">
+        {/* Header avec gradient - Masqué sur mobile */}
+        <div className="hidden lg:block relative h-20 p-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700">
           <div className="flex items-center justify-between h-full">
             {!sidebarCollapsed && (
               <div className="flex items-center justify-center w-full h-full">
@@ -136,7 +136,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         </div>
         
         {/* Navigation moderne */}
-        <nav className="p-4 space-y-2 flex-1 overflow-y-auto scrollbar-hide">
+        <nav className="p-4 pt-[60px] lg:pt-4 space-y-2 flex-1 overflow-y-auto scrollbar-hide">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
@@ -243,7 +243,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       {/* Main content */}
       <div className={`transition-all duration-500 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'}`}>
                 {/* Mobile header */}
-                <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-1 flex items-center justify-between fixed top-0 left-0 right-0 z-50" style={{ height: '50px' }}>
+                <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-1 flex items-center justify-between fixed top-0 left-0 right-0 z-40" style={{ height: '50px', zIndex: 40 }}>
                   <button
                     type="button"
                     onClick={() => setSidebarOpen(true)}
@@ -275,7 +275,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                 </div>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6 min-h-screen pb-12 pt-[66px] lg:pt-6">
+        <main className="p-4 md:p-6 lg:p-8 min-h-screen pb-12 pt-[70px] md:pt-[70px] lg:pt-6">
           {children}
         </main>
       </div>

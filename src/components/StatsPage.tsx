@@ -359,7 +359,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 md:p-6 lg:p-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
           <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
@@ -417,7 +417,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       )}
 
       {/* Cartes KPI - Version améliorée et responsive */}
-      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 animate-fadeIn" role="region" aria-label="Indicateurs clés de performance">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 animate-fadeIn" role="region" aria-label="Indicateurs clés de performance">
         {/* Chiffre d'affaires total */}
         <div 
           className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
@@ -491,7 +491,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       </div>
 
       {/* Graphiques - Version améliorée et responsive */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6" role="region" aria-label="Graphiques et analyses">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6" role="region" aria-label="Graphiques et analyses">
         {/* Évolution du CA mensuel */}
         <div 
           className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6"
@@ -834,7 +834,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         </div>
 
       {/* Suivi des factures - Version améliorée et responsive */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Factures en attente */}
         <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6 hover:shadow-md transition-shadow duration-300">
           <div className="flex items-center justify-between mb-4">

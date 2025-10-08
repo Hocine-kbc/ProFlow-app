@@ -1,10 +1,35 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-import { Archive, CheckCircle, ChevronLeft, ChevronRight, Circle, Download, Edit2, Euro, Eye, FileText, Percent, Plus, Save, Send, Settings, Trash, Trash2, X } from 'lucide-react';
+import {
+  Archive,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Circle,
+  Download,
+  Edit2,
+  Euro,
+  Eye,
+  FileText,
+  Percent,
+  Plus,
+  Save,
+  Send,
+  Settings,
+  Trash,
+  Trash2,
+  X,
+} from 'lucide-react';
 
 import { useApp } from '../contexts/AppContext';
 import { useSettings } from '../hooks/useSettings';
-import { createInvoice, deleteInvoice as deleteInvoiceApi, fetchSettings as fetchSettingsApi, updateInvoice as updateInvoiceApi, upsertSettings } from '../lib/api';
+import {
+  createInvoice,
+  deleteInvoice as deleteInvoiceApi,
+  fetchSettings as fetchSettingsApi,
+  updateInvoice as updateInvoiceApi,
+  upsertSettings,
+} from '../lib/api';
 import { EmailData, sendInvoiceEmail } from '../lib/emailService';
 import { openInvoicePrintWindow } from '../lib/print';
 import { supabase } from '../lib/supabase';
@@ -356,7 +381,6 @@ export default function InvoicesPage() {
       }
     } catch (err) {
       console.error('Error in handleSubmit:', err);
-      // eslint-disable-next-line no-alert
       showNotification('error', 'Erreur', editingInvoice ? 'Erreur lors de la modification de la facture' : 'Erreur lors de la création de la facture');
       return;
     }
@@ -438,7 +462,6 @@ export default function InvoicesPage() {
           payload: { ...invoice, ...saved }
         });
       } catch {
-        // eslint-disable-next-line no-alert
         showNotification('error', 'Erreur', 'Erreur lors de la mise à jour de la facture');
       }
     }
@@ -753,7 +776,7 @@ export default function InvoicesPage() {
     <div className="space-y-6">
       {/* Header de la page Facture - seulement visible quand on est dans la vue factures */}
       {currentView === 'invoices' && (
-        <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+        <div className="relative rounded-2xl p-4 md:p-6 lg:p-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -819,7 +842,7 @@ export default function InvoicesPage() {
       {currentView === 'invoices' && (
         <>
           {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
           <div className="text-xs text-gray-500 dark:text-gray-300">Total facturé</div>
           <div className="text-xl font-bold text-gray-900 dark:text-white">{totalHT.toFixed(2)}€</div>
@@ -837,7 +860,7 @@ export default function InvoicesPage() {
       {/* Statut des factures */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Statut des factures</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 w-full">
           {[
             { 
               label: 'Payées', 
@@ -910,25 +933,28 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* Contrôles de filtrage et tri - Design simple */}
+      {/* Contrôles de filtrage et tri - Design responsive */}
       {!isSelectionMode && invoices.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          {/* Barre de recherche et filtres - Tout sur la même ligne */}
+          <div className="flex flex-wrap gap-4 items-end">
             {/* Barre de recherche */}
-            <div className="flex-1 min-w-0">
-              <input
-                type="text"
-                placeholder="Rechercher par numéro, date, statut ou client..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              />
-            </div>
-            
-            {/* Filtre par statut - Boutons en pilule */}
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Statut:</label>
-              <div className="flex space-x-1">
+            <div className="flex-1 min-w-64">
+            <input
+              type="text"
+              placeholder="Rechercher par numéro, date, statut ou client..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+          
+            {/* Filtres et tri - Sur la même ligne */}
+            <div className="flex flex-wrap gap-4 items-end">
+            {/* Filtres par statut */}
+              <div className="min-w-0">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Filtrer par statut:</label>
+              <div className="flex flex-wrap gap-2">
                 {[
                   { value: 'all', label: 'Tous' },
                   { value: 'draft', label: 'Brouillon' },
@@ -939,7 +965,7 @@ export default function InvoicesPage() {
                     type="button"
                     key={option.value}
                     onClick={() => setStatusFilter(option.value as 'all' | 'draft' | 'sent' | 'paid')}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                       statusFilter === option.value
                         ? 'bg-blue-500 text-white shadow-md'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -951,60 +977,55 @@ export default function InvoicesPage() {
               </div>
             </div>
             
-            {/* Tri - Boutons en pilule */}
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Trier par:</label>
-              <div className="flex space-x-1">
-                {[
-                  { value: 'invoice_number', label: 'Numéro' },
-                  { value: 'date', label: 'Date' },
-                  { value: 'status', label: 'Statut' }
-                ].map((option) => (
-                  <button
-                    type="button"
-                    key={option.value}
-                    onClick={() => setSortBy(option.value as 'invoice_number' | 'date' | 'status')}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                      sortBy === option.value
-                        ? 'bg-green-500 text-white shadow-md'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+            {/* Tri */}
+              <div className="min-w-0">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Trier par:</label>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: 'invoice_number', label: 'Numéro' },
+                    { value: 'date', label: 'Date' },
+                    { value: 'status', label: 'Statut' }
+                  ].map((option) => (
+                    <button
+                      type="button"
+                      key={option.value}
+                      onClick={() => setSortBy(option.value as 'invoice_number' | 'date' | 'status')}
+                      className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                        sortBy === option.value
+                          ? 'bg-green-500 text-white shadow-md'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  className={`w-8 h-8 rounded-full text-sm font-medium transition-all duration-200 flex items-center justify-center ${
+                    sortOrder === 'asc'
+                      ? 'bg-purple-500 text-white shadow-md'
+                      : 'bg-indigo-500 text-white shadow-md'
+                  }`}
+                  title={sortOrder === 'asc' ? 'Ordre croissant' : 'Ordre décroissant'}
+                >
+                  {sortOrder === 'asc' ? '↑' : '↓'}
+                </button>
               </div>
-              
-              <button
-                type="button"
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  sortOrder === 'asc'
-                    ? 'bg-blue-500 text-white shadow-md'
-                    : 'bg-indigo-500 text-white shadow-md'
-                }`}
-                title={`Tri ${sortOrder === 'asc' ? 'croissant' : 'décroissant'}`}
-              >
-                {sortOrder === 'asc' ? '↑' : '↓'}
-              </button>
             </div>
             
-            {/* Bouton mode sélection - Pilule */}
-            <button
-              type="button"
-              onClick={toggleSelectionMode}
-              className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
-            >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Mode sélection
-            </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* En-tête avec nombre de factures filtrées - Design simple */}
+
+      {/* En-tête avec nombre de factures et bouton mode sélection sur la même ligne */}
       {!isSelectionMode && invoices.length > 0 && (
-        <div className="mb-4 flex justify-between items-center">
+        <div className="mb-2 flex justify-between items-center">
           <div className="text-sm text-gray-600 dark:text-gray-400">
             {activeInvoices.length === invoices.filter(invoice => !invoice.archived_at).length ? (
               `${activeInvoices.length} facture${activeInvoices.length > 1 ? 's' : ''}`
@@ -1016,7 +1037,6 @@ export default function InvoicesPage() {
                 (filtrées)
               </span>
             )}
-          </div>
           {(searchTerm || statusFilter !== 'all') && (
             <button
               type="button"
@@ -1024,18 +1044,28 @@ export default function InvoicesPage() {
                 setSearchTerm('');
                 setStatusFilter('all');
               }}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                className="ml-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
             >
               Effacer les filtres
             </button>
           )}
+          </div>
+          
+          <button
+            type="button"
+            onClick={toggleSelectionMode}
+            className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Mode sélection
+          </button>
         </div>
       )}
 
       {/* Invoices table */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {/* Vue mobile - Cards */}
-        <div className="block sm:hidden">
+        {/* Vue mobile/tablette - Cards */}
+        <div className="block lg:hidden">
           {currentInvoices.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
               <div className="flex flex-col items-center space-y-2">
@@ -1254,12 +1284,12 @@ export default function InvoicesPage() {
         )}
 
         {/* Vue desktop - Table */}
-        <div className="hidden sm:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full divide-y divide-gray-200 dark:divide-gray-600 table-fixed">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                {isSelectionMode && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-6 px-1 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  {isSelectionMode ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -1289,30 +1319,32 @@ export default function InvoicesPage() {
                         <Circle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                       )}
                     </button>
-                  </th>
+                  ) : (
+                    <span aria-hidden="true">&nbsp;</span>
                 )}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                </th>
+                <th className="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   N° Facture
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-32 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Client
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-28 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Montant à payer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-28 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Date d'échéance
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Statut
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-28 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Date de paiement
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-32 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -1331,8 +1363,8 @@ export default function InvoicesPage() {
               ) : (
                 currentInvoices.map((invoice) => (
                 <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  {isSelectionMode && (
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="w-6 px-1 py-4 whitespace-nowrap">
+                    {isSelectionMode ? (
                       <button
                         type="button"
                         onClick={() => toggleInvoiceSelection(invoice.id)}
@@ -1344,24 +1376,26 @@ export default function InvoicesPage() {
                           <Circle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                         )}
                       </button>
-                    </td>
+                    ) : (
+                      <span aria-hidden="true">&nbsp;</span>
                   )}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                  </td>
+                  <td className="w-20 px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white truncate">
                     {invoice.invoice_number}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  <td className="w-32 px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white truncate">
                     {invoice.client?.name || clients.find(c => c.id === invoice.client_id)?.name || 'Client inconnu'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  <td className="w-24 px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {new Date(invoice.date).toLocaleDateString('fr-FR')}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                  <td className="w-28 px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
                     {calculateInvoiceAmount(invoice).toFixed(2)}€
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  <td className="w-28 px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {new Date(invoice.due_date).toLocaleDateString('fr-FR')}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="w-20 px-3 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                       invoice.status === 'paid' 
                         ? 'bg-green-100 dark:bg-green-900/30 dark:bg-green-900/20 text-green-800 dark:text-green-300'
@@ -1373,12 +1407,12 @@ export default function InvoicesPage() {
                        invoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  <td className="w-28 px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {invoice.status === 'paid' && invoice.updated_at 
                       ? new Date(invoice.updated_at).toLocaleDateString('fr-FR')
                       : '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="w-32 px-3 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       {invoice.status === 'draft' && (
                         <button
@@ -1556,29 +1590,29 @@ export default function InvoicesPage() {
       {/* Modal */}
       {showModal && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 sm:p-6 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}
               <div className="absolute inset-0 opacity-20">
                 {/* Traits horizontaux qui traversent */}
-                <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
-                <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
-                <div className="absolute top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
-                <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
-                <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
+                <div className="absolute top-6 sm:top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
+                <div className="absolute top-12 sm:top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
+                <div className="absolute top-18 sm:top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
+                <div className="absolute bottom-16 sm:bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
+                <div className="absolute bottom-8 sm:bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
               </div>
               
               <div className="flex items-center justify-between relative z-10">
-                <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-lg sm:text-xl font-bold truncate">
+                    <h3 className="text-base sm:text-lg lg:text-xl font-bold truncate">
                       {editingInvoice ? 'Modifier la facture' : 'Nouvelle facture'}
                       {preselectedClient && !editingInvoice && (
-                        <span className="text-sm font-normal text-white/80 ml-2">
+                        <span className="text-xs sm:text-sm font-normal text-white/80 ml-1 sm:ml-2">
                           pour {preselectedClient.name}
                         </span>
                       )}
@@ -1596,10 +1630,10 @@ export default function InvoicesPage() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+                  className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 sm:p-2 transition-colors"
                   title="Fermer"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -1607,28 +1641,28 @@ export default function InvoicesPage() {
             </div>
             
             {/* Scrollable content */}
-            <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
-              <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+            <div className="overflow-y-auto max-h-[calc(95vh-180px)] sm:max-h-[calc(95vh-200px)]">
+              <form onSubmit={handleSubmit} className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 lg:space-y-8">
                 {/* Client and Invoice Number Section */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 sm:p-6">
-                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
+                  <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+                        <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
                     Informations générales
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">
                         Client *
                       </label>
                       <select
                         required
                         value={formData.client_id}
                         onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                       >
                         <option value="">Sélectionner un client</option>
                         {clients.map(client => (
@@ -1640,7 +1674,7 @@ export default function InvoicesPage() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">
                         N° Facture
                       </label>
                       <input
@@ -1648,25 +1682,25 @@ export default function InvoicesPage() {
                         value={formData.invoice_number}
                         onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
                         placeholder={generateInvoiceNumber()}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                       />
                     </div>
                   </div>
                 </div>
               
                 {/* Dates and Payment Section */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-4 h-4 text-green-600 dark:text-green-400 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
+                  <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+                      <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                     Dates et paiement
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">
                         Date de facture *
                       </label>
                       <input
@@ -1692,7 +1726,7 @@ export default function InvoicesPage() {
                             setFormData(prev => ({ ...prev, date: newDate, due_date: dueDateString }));
                           }
                         }}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                       />
                     </div>
                     
@@ -2004,7 +2038,7 @@ export default function InvoicesPage() {
 
                   {/* Client Info */}
                   <div className="mb-8 sm:mb-12">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                         <h3 className="text-lg sm:text-xl font-bold text-blue-900 dark:text-blue-100 mb-4 sm:mb-6 flex items-center">
                           <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
@@ -2090,8 +2124,8 @@ export default function InvoicesPage() {
                     
                     return (
                       <>
-                        {/* Vue mobile - Cards */}
-                        <div className="block sm:hidden space-y-3">
+                        {/* Vue mobile/tablette - Cards */}
+                        <div className="block lg:hidden space-y-3">
                           {invoiceServices.length > 0 ? (
                             invoiceServices.map((service: Service, index: number) => (
                               <div key={service.id || index} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
@@ -2378,7 +2412,7 @@ export default function InvoicesPage() {
       {currentView === 'settings' && (
         <div className="space-y-4 sm:space-y-6">
           {/* Header de la page Paramètres */}
-          <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+          <div className="relative rounded-2xl p-4 md:p-6 lg:p-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
             {/* Traits décoratifs */}
             <div className="absolute inset-0 opacity-20">
               <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
@@ -2418,7 +2452,7 @@ export default function InvoicesPage() {
                 </h3>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Tarif horaire par défaut (€)

@@ -280,7 +280,7 @@ export default function ServicesPage() {
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Filtres et recherche</h3>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {/* Recherche */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -482,7 +482,7 @@ export default function ServicesPage() {
       {/* Tableau des prestations */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
         {/* Vue mobile - Cards */}
-        <div className="block sm:hidden">
+        <div className="block lg:hidden">
           {/* Bouton Tout sélectionner pour mobile */}
           {isSelectionMode && currentServices.length > 0 && (
             <div className="flex justify-center p-4 border-b border-gray-200 dark:border-gray-600">
@@ -592,7 +592,7 @@ export default function ServicesPage() {
         </div>
 
         {/* Vue desktop - Table */}
-        <div className="hidden sm:block overflow-x-auto">
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full table-fixed" style={{ minWidth: '800px' }}>
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
@@ -886,7 +886,7 @@ export default function ServicesPage() {
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 sm:p-6 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}
               <div className="absolute inset-0 opacity-20">
                 {/* Traits horizontaux qui traversent */}
@@ -924,7 +924,7 @@ export default function ServicesPage() {
             {/* Scrollable content area */}
             <div className="overflow-y-auto max-h-[calc(95vh-120px)] scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-blue-600">
               <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="lg:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Client *
@@ -973,7 +973,7 @@ export default function ServicesPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Tarif/h (€) *

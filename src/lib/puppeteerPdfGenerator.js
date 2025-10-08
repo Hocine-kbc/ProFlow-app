@@ -3,6 +3,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { generateSharedInvoiceHTML } from './sharedInvoiceTemplate.js';
 import { browserPool } from './browserPool.js';
 
@@ -20,11 +21,16 @@ export async function generateInvoicePDFWithPuppeteer(invoiceData, companyData) 
     console.log('⏱️ Début génération PDF...');
     const startTime = Date.now();
     
-    // Créer le répertoire temp s'il n'existe pas
-    const tempDir = path.join(process.cwd(), 'temp');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
+    // Utiliser le dossier "Factures ProFlow" dans Downloads
+    const downloadsDir = path.join(os.homedir(), 'Downloads');
+    const facturesDir = path.join(downloadsDir, 'Factures ProFlow');
+    
+    // Créer le dossier s'il n'existe pas
+    if (!fs.existsSync(facturesDir)) {
+      fs.mkdirSync(facturesDir, { recursive: true });
     }
+    
+    const tempDir = facturesDir;
 
     // Générer le nom de fichier
     const fileName = `facture_${invoiceData.invoice_number}_${Date.now()}.pdf`;
@@ -120,10 +126,16 @@ export async function generateInvoicePDFWithPuppeteerAdvanced(invoiceData, compa
     console.log('⏱️ Début génération PDF avancé...');
     const startTime = Date.now();
     
-    const tempDir = path.join(process.cwd(), 'temp');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
+    // Utiliser le dossier "Factures ProFlow" dans Downloads
+    const downloadsDir = path.join(os.homedir(), 'Downloads');
+    const facturesDir = path.join(downloadsDir, 'Factures ProFlow');
+    
+    // Créer le dossier s'il n'existe pas
+    if (!fs.existsSync(facturesDir)) {
+      fs.mkdirSync(facturesDir, { recursive: true });
     }
+    
+    const tempDir = facturesDir;
 
     const fileName = `facture_${invoiceData.invoice_number}_${Date.now()}.pdf`;
     const filePath = path.join(tempDir, fileName);

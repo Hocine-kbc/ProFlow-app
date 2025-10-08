@@ -325,7 +325,7 @@ export default function ProfilePage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header amélioré et responsive */}
-      <div className="relative rounded-xl sm:rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-xl sm:rounded-2xl p-4 md:p-6 lg:p-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
         {/* Traits décoratifs - Version responsive */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux */}
@@ -435,7 +435,7 @@ export default function ProfilePage() {
             Informations de l'entreprise
           </h3>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                 <Building2 className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
@@ -450,7 +450,7 @@ export default function ProfilePage() {
               />
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                   <User className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
@@ -488,7 +488,7 @@ export default function ProfilePage() {
             Coordonnées de contact
           </h3>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                 <Mail className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
@@ -540,7 +540,7 @@ export default function ProfilePage() {
             Informations légales
           </h3>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
                 <Hash className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
@@ -561,17 +561,17 @@ export default function ProfilePage() {
       </form>
 
       {/* Section de modification de mot de passe - EN DEHORS du formulaire principal */}
-      <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8">
-        <div className="flex items-center justify-between mb-6 sm:mb-8">
+      <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 lg:mb-8 space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Lock className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+              <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-white">
                 Sécurité du compte
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 Gérez la sécurité de votre compte
               </p>
             </div>
@@ -580,10 +580,10 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setShowPasswordChange(true)}
-              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-full font-semibold transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl text-sm"
+              className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-full font-semibold transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl text-xs sm:text-sm w-fit"
             >
-              <Lock className="w-4 h-4 mr-2" />
-              Modifier le mot de passe
+              <Lock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span>Modifier le mot de passe</span>
             </button>
           )}
         </div>
@@ -593,32 +593,32 @@ export default function ProfilePage() {
             {/* Effet de fond animé */}
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl animate-pulse"></div>
             
-            <form onSubmit={handlePasswordChange} className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 dark:border-gray-700/50 p-6 sm:p-8 shadow-xl">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                  <Lock className="w-5 h-5 text-white" />
+            <form onSubmit={handlePasswordChange} className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl sm:rounded-2xl border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 lg:p-8 shadow-xl">
+              <div className="flex items-center space-x-3 mb-4 sm:mb-6">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <h4 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                     Modification du mot de passe
                   </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     Pour des raisons de sécurité, confirmez votre mot de passe actuel
                   </p>
                 </div>
               </div>
                 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Mot de passe actuel */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
-                    <div className="w-2 h-2 bg-indigo-500 rounded-full mr-2"></div>
+                <div className="space-y-2 sm:space-y-3">
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-indigo-500 rounded-full mr-2"></div>
                     Mot de passe actuel
                   </label>
                   <div className="relative group">
                     <input
                       type={showPasswords.current ? 'text' : 'password'}
-                      className="w-full px-4 py-4 pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-indigo-300 dark:group-hover:border-indigo-500"
+                      className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-10 sm:pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-indigo-300 dark:group-hover:border-indigo-500 text-sm sm:text-base"
                       value={passwordData.currentPassword}
                       onChange={(e) => handlePasswordInputChange('currentPassword', e.target.value)}
                       placeholder="Saisissez votre mot de passe actuel"
@@ -626,13 +626,13 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => togglePasswordVisibility('current')}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
-                      {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPasswords.current ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                     </button>
                   </div>
                   {passwordErrors.currentPassword && (
-                    <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-sm">
+                    <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-xs sm:text-sm">
                       <div className="w-1 h-1 bg-red-500 rounded-full"></div>
                       <span>{passwordErrors.currentPassword}</span>
                     </div>
@@ -640,15 +640,15 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Nouveau mot de passe */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                <div className="space-y-2 sm:space-y-3">
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mr-2"></div>
                     Nouveau mot de passe
                   </label>
                   <div className="relative group">
                     <input
                       type={showPasswords.new ? 'text' : 'password'}
-                      className="w-full px-4 py-4 pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-green-300 dark:group-hover:border-green-500"
+                      className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-10 sm:pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-green-300 dark:group-hover:border-green-500 text-sm sm:text-base"
                       value={passwordData.newPassword}
                       onChange={(e) => handlePasswordInputChange('newPassword', e.target.value)}
                       placeholder="Saisissez votre nouveau mot de passe"
@@ -656,29 +656,29 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => togglePasswordVisibility('new')}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-green-600 dark:text-gray-500 dark:hover:text-green-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-green-600 dark:text-gray-500 dark:hover:text-green-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
-                      {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPasswords.new ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                     </button>
                   </div>
                   {passwordErrors.newPassword && (
-                    <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-sm">
+                    <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-xs sm:text-sm">
                       <div className="w-1 h-1 bg-red-500 rounded-full"></div>
                       <span>{passwordErrors.newPassword}</span>
                     </div>
                   )}
                   
                   {/* Critères de sécurité avec design amélioré */}
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-xl p-4">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center">
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                    <div className="flex items-center space-x-2 mb-2 sm:mb-3">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 bg-green-500 rounded-lg flex items-center justify-center">
                         <Lock className="w-3 h-3 text-white" />
                       </div>
-                      <span className="text-sm font-semibold text-green-800 dark:text-green-200">
+                      <span className="text-xs sm:text-sm font-semibold text-green-800 dark:text-green-200">
                         Critères de sécurité
                       </span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-2">
                       <div className="flex items-center space-x-2 text-xs text-green-700 dark:text-green-300">
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                         <span>8+ caractères</span>
@@ -696,15 +696,15 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Confirmation du mot de passe */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                <div className="space-y-2 sm:space-y-3">
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mr-2"></div>
                     Confirmer le nouveau mot de passe
                   </label>
                   <div className="relative group">
                     <input
                       type={showPasswords.confirm ? 'text' : 'password'}
-                      className="w-full px-4 py-4 pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-purple-300 dark:group-hover:border-purple-500"
+                      className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-10 sm:pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-purple-300 dark:group-hover:border-purple-500 text-sm sm:text-base"
                       value={passwordData.confirmPassword}
                       onChange={(e) => handlePasswordInputChange('confirmPassword', e.target.value)}
                       placeholder="Confirmez votre nouveau mot de passe"
@@ -712,13 +712,13 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => togglePasswordVisibility('confirm')}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-purple-600 dark:text-gray-500 dark:hover:text-purple-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-purple-600 dark:text-gray-500 dark:hover:text-purple-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
-                      {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPasswords.confirm ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                     </button>
                   </div>
                   {passwordErrors.confirmPassword && (
-                    <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-sm">
+                    <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-xs sm:text-sm">
                       <div className="w-1 h-1 bg-red-500 rounded-full"></div>
                       <span>{passwordErrors.confirmPassword}</span>
                     </div>
@@ -727,11 +727,11 @@ export default function ProfilePage() {
                 </div>
 
               {/* Boutons d'action en pilule */}
-              <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 justify-center">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700 justify-center">
                 <button
                   type="button"
                   onClick={cancelPasswordChange}
-                  className="px-6 py-2.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full font-semibold transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 text-sm"
+                  className="px-4 py-2.5 sm:px-6 sm:py-2.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full font-semibold transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 text-xs sm:text-sm"
                 >
                   <div className="flex items-center justify-center space-x-2">
                     <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
@@ -741,16 +741,16 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={changingPassword}
-                  className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white rounded-full font-semibold transition-all duration-300 flex items-center justify-center hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:shadow-none text-sm"
+                  className="px-4 py-2.5 sm:px-6 sm:py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white rounded-full font-semibold transition-all duration-300 flex items-center justify-center hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:shadow-none text-xs sm:text-sm"
                 >
                   {changingPassword ? (
                     <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent"></div>
                       <span>Modification...</span>
                     </div>
                   ) : (
                     <div className="flex items-center space-x-2">
-                      <Lock className="w-4 h-4" />
+                      <Lock className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>Modifier</span>
                     </div>
                   )}
