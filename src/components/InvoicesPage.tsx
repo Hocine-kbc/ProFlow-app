@@ -1229,7 +1229,7 @@ export default function InvoicesPage() {
           )}
         </div>
         
-        {/* Pagination mobile uniquement */}
+        {/* Pagination mobile uniquement - v2 */}
         {totalPages > 0 && (
           <div className="block lg:hidden bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-center">
@@ -1532,7 +1532,7 @@ export default function InvoicesPage() {
           </table>
         </div>
         
-        {/* Pagination desktop uniquement */}
+        {/* Pagination desktop uniquement - v2 */}
         {totalPages > 0 && (
           <div className="hidden lg:block bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-center">
