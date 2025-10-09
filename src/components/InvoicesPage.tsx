@@ -1044,8 +1044,10 @@ export default function InvoicesPage() {
                 setSearchTerm('');
                 setStatusFilter('all');
               }}
-                className="ml-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
+              className="ml-3 inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-700 transition-all duration-200 shadow-sm hover:shadow-md"
+              title="Effacer tous les filtres"
             >
+              <X className="w-3 h-3 mr-1" />
               Effacer les filtres
             </button>
           )}
@@ -1227,7 +1229,89 @@ export default function InvoicesPage() {
           )}
         </div>
         
-        {/* Pagination mobile supprimée - utilisation de la pagination desktop pour tous les écrans */}
+        {/* Pagination pour mobile */}
+        {totalPages > 0 && (
+          <div className="block lg:hidden bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center space-x-1">
+                {/* Bouton Première page */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Première page"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                  <ChevronLeft className="w-3 h-3 -ml-1" />
+                </button>
+                
+                {/* Bouton Page précédente */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Page précédente"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </button>
+                
+                {/* Numéros de page */}
+                {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 7) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 4) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 3) {
+                    pageNum = totalPages - 6 + i;
+                  } else {
+                    pageNum = currentPage - 3 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-1.5 text-sm rounded-full transition-all font-medium ${
+                        currentPage === pageNum
+                          ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600'
+                          : 'text-gray-600 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-600/30 hover:bg-gray-200/50 dark:hover:bg-gray-500/50 hover:text-gray-800 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                {/* Bouton Page suivante */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Page suivante"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+                
+                {/* Bouton Dernière page */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-400 bg-gray-50/50 hover:bg-gray-100/50 dark:text-gray-500 dark:bg-gray-600/30 dark:hover:bg-gray-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Dernière page"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                  <ChevronRight className="w-3 h-3 -ml-1" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Vue desktop - Table */}
         <div className="hidden lg:block overflow-x-auto">
@@ -1448,9 +1532,9 @@ export default function InvoicesPage() {
           </table>
         </div>
         
-        {/* Pagination */}
-        {(
-          <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+        {/* Pagination pour desktop */}
+        {totalPages > 0 && (
+          <div className="hidden lg:block bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-1">
                 {/* Bouton Première page */}
