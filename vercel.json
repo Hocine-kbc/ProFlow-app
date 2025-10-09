@@ -18,7 +18,6 @@
         }
       ],
       "destination": "https://proflow-biz.vercel.app/$1",
-      "permanent": false,
       "statusCode": 302
     },
     {
@@ -30,7 +29,6 @@
         }
       ],
       "destination": "https://proflow-biz.vercel.app/$1",
-      "permanent": false,
       "statusCode": 302
     }
   ]
