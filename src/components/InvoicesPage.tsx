@@ -1448,7 +1448,7 @@ export default function InvoicesPage() {
           </table>
         </div>
         
-        {/* Pagination */}
+        {/* Pagination - Version corrigée */}
         {totalPages > 0 && (
           <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-center">
