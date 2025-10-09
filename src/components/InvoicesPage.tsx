@@ -1228,8 +1228,8 @@ export default function InvoicesPage() {
         </div>
         
         {/* Pagination pour mobile */}
-        {(
-          <div className="block sm:hidden bg-gray-50 dark:bg-gray-700 px-4 py-3 border-t border-gray-200 dark:border-gray-600">
+        {totalPages > 0 && (
+          <div className="block lg:hidden bg-gray-50 dark:bg-gray-700 px-4 py-3 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-1">
                 <button
@@ -1502,9 +1502,9 @@ export default function InvoicesPage() {
           </table>
         </div>
         
-        {/* Pagination */}
-        {(
-          <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+        {/* Pagination pour desktop */}
+        {totalPages > 0 && (
+          <div className="hidden lg:block bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-1">
                 {/* Bouton Première page */}
