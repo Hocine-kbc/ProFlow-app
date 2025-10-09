@@ -15,12 +15,14 @@ import { supabase } from './lib/supabase.ts';
 
 
 function AppContent() {
-  // Redirection automatique vers le domaine court
+  // Forcer l'utilisation du domaine court
   useEffect(() => {
     const currentHost = window.location.hostname;
     if (currentHost.includes('projectautoentreprise') && currentHost.includes('kebcis-projects')) {
-      const newUrl = window.location.href.replace(currentHost, 'proflow-biz.vercel.app');
-      window.location.replace(newUrl);
+      // Remplacer l'URL complète par le domaine court
+      const currentPath = window.location.pathname + window.location.search + window.location.hash;
+      const newUrl = `https://proflow-biz.vercel.app${currentPath}`;
+      window.location.href = newUrl;
     }
   }, []);
 
