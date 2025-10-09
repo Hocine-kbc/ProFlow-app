@@ -15,6 +15,15 @@ import { supabase } from './lib/supabase.ts';
 
 
 function AppContent() {
+  // Redirection automatique vers le domaine court
+  useEffect(() => {
+    const currentHost = window.location.hostname;
+    if (currentHost.includes('projectautoentreprise') && currentHost.includes('kebcis-projects')) {
+      const newUrl = window.location.href.replace(currentHost, 'proflow-biz.vercel.app');
+      window.location.replace(newUrl);
+    }
+  }, []);
+
   // Récupérer la page sauvegardée depuis localStorage ou utiliser 'dashboard' par défaut
   const [currentPage, setCurrentPage] = useState(() => {
     try {
