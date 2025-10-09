@@ -17,16 +17,16 @@ import {
 } from 'lucide-react';
 import {
   useApp,
-} from '../contexts/AppContext';
+} from '../contexts/AppContext.tsx';
 import {
   deleteUserAccount,
   fetchSettings as fetchSettingsApi,
   uploadLogo,
   upsertSettings,
-} from '../lib/api';
+} from '../lib/api.ts';
 import {
   supabase,
-} from '../lib/supabase';
+} from '../lib/supabase.ts';
 
 export default function ProfilePage() {
   const { showNotification } = useApp();
@@ -67,23 +67,24 @@ export default function ProfilePage() {
         console.log('🔍 ProfilePage: Paramètres récupérés:', remote);
         if (remote) {
           // Séparer le nom complet en prénom et nom
-          const fullName = (remote as Record<string, unknown>).ownerName as string || '';
+          const remoteData = remote as unknown as Record<string, unknown>;
+          const fullName = remoteData.ownerName as string || '';
           const nameParts = fullName.split(' ');
           const firstName = nameParts[0] || '';
           const lastName = nameParts.slice(1).join(' ') || '';
           
           const picked = {
-            companyName: (remote as Record<string, unknown>).companyName as string || '',
+            companyName: remoteData.companyName as string || '',
             ownerFirstName: firstName,
             ownerLastName: lastName,
-            email: (remote as Record<string, unknown>).email as string || '',
-            phone: (remote as Record<string, unknown>).phone as string || '',
-            address: (remote as Record<string, unknown>).address as string || '',
-            siret: (remote as Record<string, unknown>).siret as string || '',
-            logoUrl: (remote as Record<string, unknown>).logoUrl as string || '',
+            email: remoteData.email as string || '',
+            phone: remoteData.phone as string || '',
+            address: remoteData.address as string || '',
+            siret: remoteData.siret as string || '',
+            logoUrl: remoteData.logoUrl as string || '',
           };
           setSettings(picked);
-          localStorage.setItem('business-settings', JSON.stringify({ ...(remote as Record<string, unknown>), ...picked }));
+          localStorage.setItem('business-settings', JSON.stringify({ ...remoteData, ...picked }));
           return;
         }
       } catch {
@@ -304,7 +305,7 @@ export default function ProfilePage() {
         ownerName: `${settings.ownerFirstName} ${settings.ownerLastName}`.trim()
       };
       
-      const saved = await upsertSettings(settingsToSave as Record<string, unknown>);
+      const saved = await upsertSettings(settingsToSave as any);
       localStorage.setItem('business-settings', JSON.stringify(saved));
       
       // Afficher la notification de succès

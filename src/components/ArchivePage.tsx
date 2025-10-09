@@ -15,11 +15,25 @@ import {
   Trash2, 
   Users
 } from 'lucide-react';
-import AlertModal from './AlertModal';
-import { useApp } from '../contexts/AppContext';
-import { sendInvoiceEmail } from '../lib/emailService';
-import { openInvoicePrintWindow } from '../lib/print';
-import { supabase } from '../lib/supabase';
+import AlertModal from './AlertModal.tsx';
+import { useApp } from '../contexts/AppContext.tsx';
+
+// Type Client depuis le contexte
+type Client = {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  status?: 'active' | 'inactive' | 'archived';
+  created_at: string;
+  updated_at: string;
+};
+import { sendInvoiceEmail } from '../lib/emailService.ts';
+import { openInvoicePrintWindow } from '../lib/print.ts';
+import { supabase } from '../lib/supabase.ts';
+import { Invoice } from '../types/index.ts';
 
 interface ArchivePageProps {
   onPageChange: (page: string) => void;
@@ -112,7 +126,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
 
   // Fonction pour obtenir les clients archivés
   const getArchivedClients = () => {
-    return clients.filter(client => (client as Record<string, unknown>).status === 'archived');
+    return clients.filter(client => (client as unknown as Record<string, unknown>).status === 'archived');
   };
 
   // Fonction pour obtenir les factures archivées
@@ -127,7 +141,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
 
   // Fonction pour filtrer les données
   const getFilteredData = () => {
-    let data: Record<string, unknown>[] = activeTab === 'clients' ? getArchivedClients() : getArchivedInvoices();
+    let data: Record<string, unknown>[] = activeTab === 'clients' ? (getArchivedClients() as unknown as Record<string, unknown>[]) : (getArchivedInvoices() as unknown as Record<string, unknown>[]);
     
     // Filtre par recherche
     if (searchTerm) {
@@ -233,9 +247,8 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
 
           dispatch({ type: 'UPDATE_CLIENT', payload: {
             ...client,
-            status: 'active',
-            archived_at: null
-          } });
+            status: 'active'
+          } as Client });
           showNotification('success', 'Client restauré', 'Le client a été restauré avec succès');
         } catch (error) {
           console.error('Error restoring client:', error);
@@ -268,7 +281,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
           dispatch({ type: 'UPDATE_INVOICE', payload: {
             ...invoice,
             archived_at: null
-          } as any });
+          } as unknown as Invoice });
           showNotification('success', 'Facture restaurée', 'La facture a été restaurée avec succès');
         } catch (error) {
           console.error('Error restoring invoice:', error);
@@ -282,7 +295,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
   // Fonction pour supprimer définitivement
   const handleDeletePermanently = (type: string, id: string) => {
     const item = type === 'clients' ? clients.find(c => c.id === id) : invoices.find(i => i.id === id);
-    const itemName = type === 'clients' ? (item as Record<string, unknown>)?.name : `#${(item as Record<string, unknown>)?.invoice_number}`;
+    const itemName = type === 'clients' ? (item as unknown as Record<string, unknown>)?.name : `#${(item as unknown as Record<string, unknown>)?.invoice_number}`;
     
     setAlertModal({
       isOpen: true,
@@ -654,7 +667,10 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                             {item.invoice_number as string}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {(item.client as Record<string, unknown>)?.name || clients.find(c => c.id === (item.client_id as string))?.name || 'Client inconnu'}
+                            {(() => {
+                              const clientName = (item.client as Record<string, unknown>)?.name || clients.find(c => c.id === (item.client_id as string))?.name;
+                              return clientName ? String(clientName) : 'Client inconnu';
+                            })()}
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                             {formatDate(item.date as string)}
@@ -687,7 +703,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                             <div className="flex items-center space-x-0.5 sm:space-x-1">
                               <button
                                 type="button"
-                                onClick={() => openInvoicePrintWindow(item as any, clients, services)}
+                                onClick={() => openInvoicePrintWindow(item as unknown as Invoice, clients, services)}
                                 className="p-1 sm:p-1.5 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
                                 title="Télécharger PDF"
                               >
@@ -883,7 +899,10 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                               {item.invoice_number as string}
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {(item.client as Record<string, unknown>)?.name || clients.find(c => c.id === (item.client_id as string))?.name || 'Client inconnu'}
+                              {(() => {
+                              const clientName = (item.client as Record<string, unknown>)?.name || clients.find(c => c.id === (item.client_id as string))?.name;
+                              return clientName ? String(clientName) : 'Client inconnu';
+                            })()}
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                               {formatCurrency((item.subtotal as number) || (item.net_amount as number) || 0)}
@@ -907,7 +926,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                               <div className="flex items-center space-x-0.5 sm:space-x-1">
                                 <button
                                   type="button"
-                                  onClick={() => openInvoicePrintWindow(item as any, clients, services)}
+                                  onClick={() => openInvoicePrintWindow(item as unknown as Invoice, clients, services)}
                                   className="p-1 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
                                   title="Télécharger PDF"
                                 >
@@ -1049,7 +1068,10 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                           {item.invoice_number as string}
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {(item.client as Record<string, unknown>)?.name || clients.find(c => c.id === (item.client_id as string))?.name || 'Client inconnu'}
+                          {(() => {
+                            const clientName = (item.client as Record<string, unknown>)?.name || clients.find(c => c.id === (item.client_id as string))?.name;
+                            return clientName ? String(clientName) : 'Client inconnu';
+                          })()}
                         </p>
                       </>
                     )}
@@ -1059,7 +1081,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                       <>
                         <button
                           type="button"
-                          onClick={() => openInvoicePrintWindow(item as any, clients, services)}
+                          onClick={() => openInvoicePrintWindow(item as unknown as Invoice, clients, services)}
                           className="p-1 sm:p-1.5 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
                           title="Télécharger PDF"
                         >

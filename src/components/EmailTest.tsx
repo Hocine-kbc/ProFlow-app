@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { testEmailConfiguration, sendInvoiceEmail } from '../lib/emailService';
+import { testEmailConfiguration, sendInvoiceEmail } from '../lib/emailService.ts';
 
 const EmailTest: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
@@ -64,6 +64,7 @@ const EmailTest: React.FC = () => {
         <div className="border border-gray-200 rounded-lg p-4">
           <h4 className="font-medium text-gray-700 mb-2">1. Test de connexion au backend</h4>
           <button
+            type="button"
             onClick={testConnection}
             disabled={isLoading}
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed mr-2"
@@ -87,6 +88,7 @@ const EmailTest: React.FC = () => {
               className="flex-1 border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <button
+              type="button"
               onClick={testSendInvoice}
               disabled={isLoading}
               className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"

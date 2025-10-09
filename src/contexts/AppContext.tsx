@@ -1,7 +1,28 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
-import { Client, Service, Invoice, BusinessStats } from '../types';
-import { NotificationData, NotificationType } from '../components/Notification';
-import { fetchSettings } from '../lib/api';
+import { Service, Invoice } from '../types/index.ts';
+import { NotificationData, NotificationType } from '../components/Notification.tsx';
+import { fetchSettings } from '../lib/api.ts';
+
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  status?: 'active' | 'inactive' | 'archived';
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+}
+
+interface BusinessStats {
+  monthly_revenue: number;
+  quarterly_revenue: number;
+  annual_revenue: number;
+  total_clients: number;
+  total_hours: number;
+  pending_invoices: number;
+}
 
 interface AppState {
   clients: Client[];

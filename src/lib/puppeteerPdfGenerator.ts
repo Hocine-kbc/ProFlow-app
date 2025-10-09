@@ -5,7 +5,8 @@ import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { generateInvoiceHTML, InvoiceData, CompanyData } from './invoiceTemplate';
+import { Buffer } from 'node:buffer';
+import { generateInvoiceHTML, InvoiceData, CompanyData } from './invoiceTemplate.ts';
 
 /**
  * Génère un PDF de facture avec Puppeteer à partir d'un template HTML
@@ -40,7 +41,7 @@ export async function generateInvoicePDFWithPuppeteer(
 
     // Lancer Puppeteer
     browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -60,10 +61,10 @@ export async function generateInvoicePDFWithPuppeteer(
     });
 
     // Attendre que TailwindCSS soit chargé
-    await page.waitForTimeout(1000);
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Générer le PDF
-    const pdfBuffer = await page.pdf({
+    const pdfBuffer = Buffer.from(await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: {
@@ -74,7 +75,7 @@ export async function generateInvoicePDFWithPuppeteer(
       },
       displayHeaderFooter: false,
       preferCSSPageSize: true
-    });
+    }));
 
     // Sauvegarder le fichier
     fs.writeFileSync(filePath, pdfBuffer);
@@ -89,7 +90,7 @@ export async function generateInvoicePDFWithPuppeteer(
 
   } catch (error) {
     console.error('❌ Erreur lors de la génération du PDF:', error);
-    throw new Error(`Erreur génération PDF: ${error.message}`);
+    throw new Error(`Erreur génération PDF: ${error instanceof Error ? error.message : String(error)}`);
   } finally {
     if (browser) {
       await browser.close();
@@ -106,7 +107,7 @@ export async function generateInvoicePDFWithPuppeteer(
 export async function generateInvoicePDFWithPuppeteerAdvanced(
   invoiceData: InvoiceData, 
   companyData: CompanyData,
-  options: {
+  _options: {
     format?: 'A4' | 'A3' | 'Letter';
     margin?: {
       top?: string;
@@ -139,7 +140,7 @@ export async function generateInvoicePDFWithPuppeteerAdvanced(
     const htmlContent = generateInvoiceHTML(invoiceData, companyData);
 
     browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -156,12 +157,12 @@ export async function generateInvoicePDFWithPuppeteerAdvanced(
     // Injecter des styles CSS personnalisés si nécessaire
     await page.evaluateOnNewDocument(() => {
       const style = document.createElement('style');
-      style.textContent = \`
+      style.textContent = `
         @media print {
           body { -webkit-print-color-adjust: exact; }
           .print-break { page-break-inside: avoid; }
         }
-      \`;
+      `;
       document.head.appendChild(style);
     });
 
@@ -169,22 +170,22 @@ export async function generateInvoicePDFWithPuppeteerAdvanced(
       waitUntil: 'networkidle0'
     });
 
-    await page.waitForTimeout(1000);
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const pdfBuffer = await page.pdf({
-      format: options.format || 'A4',
+    const pdfBuffer = Buffer.from(await page.pdf({
+      format: _options.format || 'A4',
       printBackground: true,
-      margin: options.margin || {
+      margin: _options.margin || {
         top: '0.5in',
         right: '0.5in',
         bottom: '0.5in',
         left: '0.5in'
       },
-      displayHeaderFooter: options.displayHeaderFooter || false,
-      headerTemplate: options.headerTemplate || '',
-      footerTemplate: options.footerTemplate || '',
+      displayHeaderFooter: _options.displayHeaderFooter || false,
+      headerTemplate: _options.headerTemplate || '',
+      footerTemplate: _options.footerTemplate || '',
       preferCSSPageSize: true
-    });
+    }));
 
     fs.writeFileSync(filePath, pdfBuffer);
 
@@ -194,11 +195,11 @@ export async function generateInvoicePDFWithPuppeteerAdvanced(
       buffer: pdfBuffer,
       filePath,
       fileName
-    };
+    } as { buffer: Buffer; filePath: string; fileName: string };
 
   } catch (error) {
     console.error('❌ Erreur lors de la génération du PDF avancé:', error);
-    throw new Error(`Erreur génération PDF avancé: ${error.message}`);
+    throw new Error(`Erreur génération PDF avancé: ${error instanceof Error ? error.message : String(error)}`);
   } finally {
     if (browser) {
       await browser.close();

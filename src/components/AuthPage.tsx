@@ -1,6 +1,6 @@
-import React, { useState, } from 'react';
-import { supabase, } from '../lib/supabase';
-import { upsertSettings, } from '../lib/api';
+import React, { useState } from 'react';
+import { supabase } from '../lib/supabase.ts';
+import { upsertSettings } from '../lib/api.ts';
 import { Building2, User, Mail, Phone, MapPin, Hash, Lock, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function AuthPage() {
@@ -100,8 +100,7 @@ export default function AuthPage() {
               invoicePrefix: 'FAC',
               paymentTerms: 30,
               logoUrl: '',
-              invoiceTerms: 'Paiement à 30 jours net.',
-              includeLatePaymentPenalties: false
+              invoiceTerms: 'Paiement à 30 jours net.'
             });
             setSuccess('Compte créé avec succès ! Vérifiez votre email pour confirmer votre compte.');
           } catch (profileError) {

@@ -63,7 +63,7 @@ function AppContent() {
           } else {
             console.log('🔑 Connexion détectée mais page déjà sauvegardée, pas de redirection');
           }
-        } catch (error) {
+        } catch (_error) {
           console.log('🔑 Connexion détectée, redirection vers dashboard (erreur localStorage)');
           handlePageChange('dashboard');
         }

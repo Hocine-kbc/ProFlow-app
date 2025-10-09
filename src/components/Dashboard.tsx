@@ -120,7 +120,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   // Top clients par chiffre d'affaires
   const topClients = clients.map(client => {
     const clientInvoices = invoices.filter(inv => inv.client_id === client.id);
-    const revenue = clientInvoices.reduce((acc, inv) => acc + inv.subtotal, 0);
+    const revenue = clientInvoices.reduce((acc, inv) => acc + (inv.subtotal || 0), 0);
     return { client, revenue };
   }).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
@@ -267,7 +267,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
           <div className="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm">
             <span className="text-gray-500 dark:text-gray-300">
-              {pendingInvoices.reduce((acc, inv) => acc + inv.subtotal, 0).toFixed(2)}€ en attente
+              {pendingInvoices.reduce((acc, inv) => acc + (inv.subtotal || 0), 0).toFixed(2)}€ en attente
             </span>
           </div>
         </div>
@@ -584,7 +584,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
                         </div>
                         <div className="text-right">
                           <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
-                            {invoice.subtotal.toFixed(2)}€
+                            {(invoice.subtotal || 0).toFixed(2)}€
                           </p>
                           <span className={`inline-flex px-1.5 sm:px-2 py-1 text-xs font-medium rounded-full ${
                             invoice.status === 'paid' 

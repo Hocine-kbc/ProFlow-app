@@ -3,10 +3,10 @@ import {
 } from 'react';
 import {
   useApp,
-} from '../contexts/AppContext';
+} from '../contexts/AppContext.tsx';
 import {
   default as Notification,
-} from './Notification';
+} from './Notification.tsx';
 
 const NotificationContainer: React.FC = () => {
   const { state, dispatch } = useApp();

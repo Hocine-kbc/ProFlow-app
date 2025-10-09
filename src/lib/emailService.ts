@@ -1,4 +1,4 @@
-import { sendInvoiceViaBackend, testBackendConnection } from './backendService';
+import { sendInvoiceViaBackend, testBackendConnection } from './backendService.ts';
 
 // Service email moderne pour l'envoi de factures PDF via backend
 export interface EmailData {

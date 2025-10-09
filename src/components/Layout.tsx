@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { X, Home, Users, Clock, FileText, BarChart3, User, ChevronLeft, ChevronRight, Moon, Sun, Power, Archive } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
-import { supabase } from '../lib/supabase';
-import NotificationContainer from './NotificationContainer';
-import AlertModal from './AlertModal';
-import ChatBot from './ChatBot';
+import { useTheme } from '../contexts/ThemeContext.tsx';
+import { supabase } from '../lib/supabase.ts';
+import NotificationContainer from './NotificationContainer.tsx';
+import AlertModal from './AlertModal.tsx';
+import ChatBot from './ChatBot.tsx';
 
 interface LayoutProps {
   children: React.ReactNode;

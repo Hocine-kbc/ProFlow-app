@@ -21,21 +21,21 @@ import {
   X,
 } from 'lucide-react';
 
-import { useApp } from '../contexts/AppContext';
-import { useSettings } from '../hooks/useSettings';
+import { useApp } from '../contexts/AppContext.tsx';
+import { useSettings } from '../hooks/useSettings.ts';
 import {
   createInvoice,
   deleteInvoice as deleteInvoiceApi,
   fetchSettings as fetchSettingsApi,
   updateInvoice as updateInvoiceApi,
   upsertSettings,
-} from '../lib/api';
-import { EmailData, sendInvoiceEmail } from '../lib/emailService';
-import { openInvoicePrintWindow } from '../lib/print';
-import { supabase } from '../lib/supabase';
-import { Invoice, Service } from '../types';
+} from '../lib/api.ts';
+import { EmailData, sendInvoiceEmail } from '../lib/emailService.ts';
+import { openInvoicePrintWindow } from '../lib/print.ts';
+import { supabase } from '../lib/supabase.ts';
+import { Invoice, Service } from '../types/index.ts';
 
-import AlertModal from './AlertModal';
+import AlertModal from './AlertModal.tsx';
 
 export default function InvoicesPage() {
   const { state, dispatch, showNotification } = useApp();

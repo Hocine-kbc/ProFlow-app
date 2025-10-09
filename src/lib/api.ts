@@ -1,5 +1,39 @@
 import { supabase } from './supabase.ts';
-import { Client, Service, Invoice, Settings } from '../types/index.ts';
+import { Service, Invoice } from '../types/index.ts';
+
+// Define interfaces locally since they're not exported from types
+interface Client {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  status?: 'active' | 'inactive' | 'archived';
+  created_at: string;
+  updated_at: string;
+}
+
+interface Settings {
+  id: string;
+  companyName: string;
+  ownerName: string;
+  email: string;
+  phone: string;
+  address: string;
+  siret: string;
+  defaultHourlyRate: number;
+  invoicePrefix: string;
+  paymentTerms: number;
+  logoUrl: string;
+  invoiceTerms: string;
+  paymentMethod?: string;
+  additionalTerms?: string;
+  showLegalRate?: boolean;
+  showFixedFee?: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 // Interfaces pour les données de la base de données
 interface DatabaseSettings {

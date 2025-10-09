@@ -1,12 +1,25 @@
 import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, Mail, Phone, Users, Search, ChevronLeft, ChevronRight, CheckCircle, Circle, Trash, X, Eye, Archive } from 'lucide-react';
-import { useApp } from '../contexts/AppContext';
-import { createClient, updateClient as updateClientApi, deleteClient as deleteClientApi } from '../lib/api';
-import { Client } from '../types';
-import AlertModal from './AlertModal';
-import { supabase } from '../lib/supabase';
-import ClientDetailView from './ClientDetailView';
-import { ClientDetail } from '../types/clientDetail';
+import { useApp } from '../contexts/AppContext.tsx';
+
+// Import du type Client depuis le contexte
+type Client = {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  status?: 'active' | 'inactive' | 'archived';
+  created_at: string;
+  updated_at: string;
+};
+import { createClient, updateClient as updateClientApi, deleteClient as deleteClientApi } from '../lib/api.ts';
+import AlertModal from './AlertModal.tsx';
+import { supabase } from '../lib/supabase.ts';
+import ClientDetailView from './ClientDetailView.tsx';
+import ClientModal from './ClientModal.tsx';
+import { ClientDetail } from '../types/clientDetail.ts';
 
 interface ClientsPageProps {
   onPageChange?: (page: string) => void;
@@ -158,9 +171,10 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
           await deleteClientApi(id);
           dispatch({ type: 'DELETE_CLIENT', payload: id });
           showNotification('success', 'Client supprimé', 'Le client et ses prestations ont été supprimés avec succès. Les factures ont été conservées.');
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('Error deleting client:', err);
-          showNotification('error', 'Impossible de supprimer le client', err.message || 'Ce client a des factures associées. Supprimez d\'abord les factures avant de supprimer le client.');
+          const errorMessage = err instanceof Error ? err.message : 'Ce client a des factures associées. Supprimez d\'abord les factures avant de supprimer le client.';
+          showNotification('error', 'Impossible de supprimer le client', errorMessage);
         }
       }
     });
@@ -187,7 +201,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
           dispatch({ type: 'UPDATE_CLIENT', payload: { 
             ...client, 
             status: 'archived'
-          } });
+          } as Client });
           showNotification('success', 'Client archivé', 'Le client a été archivé avec succès');
         } catch (error) {
           console.error('Error archiving client:', error);
@@ -283,6 +297,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
     // Créer un objet Client à partir des données ClientDetail
     const clientToEdit: Client = {
       id: client.id,
+      user_id: '', // Will be set by the API
       name: client.name || '',
       email: client.email || '',
       phone: client.phone || '',
@@ -339,7 +354,6 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
     
     setEditingClient(clientToEdit);
     setShowModal(true);
-    showNotification('info', 'Modification du client', 'Vous pouvez maintenant modifier les informations du client.');
   };
 
   const handleCreateInvoiceForClient = (clientId: string) => {
@@ -356,26 +370,11 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
     }
   };
 
-  const handleCreateServiceForClient = (clientId: string) => {
-    // La création de prestation est maintenant gérée directement dans ClientDetailView
-    // Cette fonction ne fait plus rien car la modal s'ouvre localement
-    console.log('Création de prestation pour le client:', clientId, '- Gérée localement dans ClientDetailView');
-  };
-
-  const handleSendInvoiceToClient = (_invoiceId: string) => {
-    // TODO: Implémenter l'envoi de facture
-    showNotification('success', 'Envoi en développement', 'L\'envoi de facture sera bientôt disponible.');
-  };
-
-  const handleViewInvoiceDetail = (_invoiceId: string) => {
-    // TODO: Ouvrir la facture
-    showNotification('success', 'Ouverture en développement', 'L\'ouverture de facture sera bientôt disponible.');
-  };
 
 
   // Filtrer les clients (exclure les clients archivés)
   const filteredClients = clients.filter(client =>
-    client.status !== 'archived' && (
+    (client.status !== 'archived') && (
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (client.phone && client.phone.includes(searchTerm))
@@ -400,157 +399,14 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
         />
         
         {/* Modal d'édition par-dessus la vue détaillée */}
-        {showModal && (
-          <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200 fixed inset-0">
-            <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
-              {/* Header with gradient */}
-              <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden flex-shrink-0">
-                {/* Decorative lines - consistent with other page headers */}
-                <div className="absolute inset-0 opacity-20">
-                  {/* Traits horizontaux qui traversent */}
-                  <div className="absolute top-6 sm:top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
-                  <div className="absolute top-12 sm:top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
-                  <div className="absolute top-18 sm:top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
-                  <div className="absolute bottom-16 sm:bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
-                  <div className="absolute bottom-8 sm:bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
-                </div>
-                
-                <div className="flex items-center justify-between relative z-10">
-                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-base sm:text-lg lg:text-xl font-bold truncate">
-                        {editingClient ? 'Modifier le client' : 'Nouveau client'}
-                      </h3>
-                      <p className="text-white/80 text-xs sm:text-sm truncate">
-                        {editingClient ? 'Mettre à jour les informations' : 'Ajouter un nouveau client à votre portefeuille'}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg sm:rounded-xl p-1.5 sm:p-2 transition-colors flex-shrink-0 ml-2"
-                  >
-                    <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto">
-                <form onSubmit={handleSubmit} className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                        Nom complet *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                        Email *
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                        Téléphone
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                      />
-                    </div>
-                  
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                        Rue
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.street}
-                        onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                        className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                        Code postal
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.postalCode}
-                        onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                        className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                        Commune
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.city}
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                        Pays
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.country}
-                        onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                        className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col space-y-2 pt-3 sm:pt-4">
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="w-full px-4 py-2.5 sm:py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="submit"
-                      className="w-full px-4 py-2.5 sm:py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-xs sm:text-sm font-medium"
-                    >
-                      {editingClient ? 'Modifier' : 'Créer'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
+        <ClientModal
+          isOpen={showModal}
+          onSubmit={handleSubmit}
+          formData={formData}
+          setFormData={setFormData}
+          editingClient={editingClient}
+          resetForm={resetForm}
+        />
       </>
     );
   }
@@ -581,6 +437,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
           </div>
           <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end">
             <button
+              type="button"
               onClick={() => setShowModal(true)}
               className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
             >
@@ -618,6 +475,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
       {!isSelectionMode && clients.length > 0 && (
         <div className="flex justify-end">
           <button
+            type="button"
             onClick={toggleSelectionMode}
             className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm"
           >
@@ -638,6 +496,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
             </div>
             <div className="flex space-x-2">
               <button
+                type="button"
                 onClick={handleBulkDelete}
                 disabled={selectedClients.size === 0}
                 className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
@@ -646,6 +505,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                 Supprimer sélection
               </button>
               <button
+                type="button"
                 onClick={toggleSelectionMode}
                 className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
               >
@@ -666,6 +526,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
           {isSelectionMode && currentClients.length > 0 && (
             <div className="flex justify-center p-4 border-b border-gray-200 dark:border-gray-600">
               <button
+                type="button"
                 onClick={toggleAllClientsSelection}
                 className="inline-flex items-center px-4 py-2 rounded-full text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm font-medium"
               >
@@ -714,6 +575,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                   <div className="flex items-center space-x-3 flex-1 min-w-0">
                     {isSelectionMode && (
                       <button
+                        type="button"
                         onClick={() => toggleClientSelection(client.id)}
                         className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                       >
@@ -755,6 +617,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                   </div>
                   <div className="flex items-center space-x-1 ml-2">
                     <button
+                      type="button"
                       onClick={() => handleOpenClientDetail(client.id)}
                       className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
                       title="Tableau de bord client"
@@ -762,6 +625,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleEdit(client)}
                       className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
                       title="Modifier"
@@ -769,6 +633,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleArchive(client.id)}
                       className="p-2 rounded-full text-gray-500 hover:text-orange-600 bg-gray-50/50 hover:bg-orange-50/50 dark:text-gray-400 dark:hover:text-orange-400 dark:bg-gray-700/30 dark:hover:bg-orange-900/20 border border-gray-200/50 hover:border-orange-200/50 dark:border-gray-600/50 dark:hover:border-orange-700/50 shadow-sm hover:shadow-md transition-all"
                       title="Archiver"
@@ -776,6 +641,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                       <Archive className="w-4 h-4" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleDelete(client.id)}
                       className="p-2 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all"
                       title="Supprimer"
@@ -797,6 +663,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                 {isSelectionMode && (
                   <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     <button
+                      type="button"
                       onClick={() => {
                         const allSelected = currentClients.every(client => selectedClients.has(client.id));
                         if (allSelected) {
@@ -849,6 +716,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                   {isSelectionMode && (
                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <button
+                        type="button"
                         onClick={() => toggleClientSelection(client.id)}
                         className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                       >
@@ -939,6 +807,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-1">
                       <button
+                        type="button"
                         onClick={() => handleOpenClientDetail(client.id)}
                         className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                       >
@@ -946,6 +815,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                         <span className="hidden sm:inline">Dashboard</span>
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleEdit(client)}
                         className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                       >
@@ -953,12 +823,14 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                         <span className="hidden sm:inline">Modifier</span>
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleArchive(client.id)}
                         className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-orange-600 bg-gray-50/50 hover:bg-orange-50/50 dark:text-gray-400 dark:hover:text-orange-400 dark:bg-gray-700/30 dark:hover:bg-orange-900/20 border border-gray-200/50 hover:border-orange-200/50 dark:border-gray-600/50 dark:hover:border-orange-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                       >
                         <Archive className="w-3 h-3" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDelete(client.id)}
                         className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                       >
@@ -1074,157 +946,14 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
       )}
 
       {/* Modal */}
-      {showModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
-            {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden flex-shrink-0">
-              {/* Decorative lines - consistent with other page headers */}
-              <div className="absolute inset-0 opacity-20">
-                {/* Traits horizontaux qui traversent */}
-                <div className="absolute top-6 sm:top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
-                <div className="absolute top-12 sm:top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
-                <div className="absolute top-18 sm:top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
-                <div className="absolute bottom-16 sm:bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
-                <div className="absolute bottom-8 sm:bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
-              </div>
-              
-              <div className="flex items-center justify-between relative z-10">
-                <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-base sm:text-lg lg:text-xl font-bold truncate">
-                      {editingClient ? 'Modifier le client' : 'Nouveau client'}
-                    </h3>
-                    <p className="text-white/80 text-xs sm:text-sm truncate">
-                      {editingClient ? 'Mettre à jour les informations' : 'Ajouter un nouveau client à votre portefeuille'}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg sm:rounded-xl p-1.5 sm:p-2 transition-colors flex-shrink-0 ml-2"
-                >
-                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto">
-              <form onSubmit={handleSubmit} className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                      Nom complet *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                      Téléphone
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                    />
-                  </div>
-                
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                      Rue
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.street}
-                      onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                      className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                      Code postal
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.postalCode}
-                      onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                      className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                      Commune
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                      Pays
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.country}
-                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                      className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex flex-col space-y-2 pt-3 sm:pt-4">
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="w-full px-4 py-2.5 sm:py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    className="w-full px-4 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm"
-                  >
-                    {editingClient ? 'Modifier' : 'Ajouter'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <ClientModal
+        isOpen={showModal}
+        onSubmit={handleSubmit}
+        formData={formData}
+        setFormData={setFormData}
+        editingClient={editingClient}
+        resetForm={resetForm}
+      />
 
 
       {/* Alert Modal */}

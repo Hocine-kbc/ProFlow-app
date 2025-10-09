@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, MessageCircle, Send, Sparkles, User, X } from 'lucide-react';
-import { useApp } from '../contexts/AppContext';
-import { ChatBotState, ChatMessage, ChatSuggestion } from '../types';
+import { useApp } from '../contexts/AppContext.tsx';
+import { ChatBotState, ChatMessage, ChatSuggestion } from '../types/index.ts';
 
 const ChatBot: React.FC = () => {
   const { state } = useApp();

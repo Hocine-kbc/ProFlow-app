@@ -1,7 +1,7 @@
 // Générateur de PDF pour les factures
 // Ce fichier crée une route API pour servir les PDFs directement
 
-export const generateInvoicePDF = async (invoiceId: string) => {
+export const generateInvoicePDF = (invoiceId: string) => {
   try {
     // Cette fonction sera appelée par l'API route
     // Elle génère le PDF de la facture et le retourne

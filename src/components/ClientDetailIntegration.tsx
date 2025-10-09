@@ -1,7 +1,7 @@
 // Exemple d'intégration de la vue détaillée client dans l'application principale
 import { useState } from 'react';
-import { ClientDetail } from '../types/clientDetail';
-import ClientDetailView from './ClientDetailView';
+import { ClientDetail } from '../types/clientDetail.ts';
+import ClientDetailView from './ClientDetailView.tsx';
 
 interface ClientDetailIntegrationProps {
   clientId: string;
@@ -63,7 +63,8 @@ export const ExampleUsage = () => {
   return (
     <div>
       {/* Votre liste de clients ici */}
-      <button 
+      <button
+        type="button"
         onClick={() => handleViewClient('client-123')}
         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
       >

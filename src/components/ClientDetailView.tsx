@@ -26,14 +26,14 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { ClientDetail } from '../types/clientDetail';
-import { supabase } from '../lib/supabase';
-import { openInvoicePrintWindow } from '../lib/print';
-import { sendInvoiceEmail, EmailData } from '../lib/emailService';
-import { useSettings } from '../hooks/useSettings';
-import { updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi, fetchClientNotes, createClientNote, deleteClientNote, ClientNote } from '../lib/api';
-import { useApp } from '../contexts/AppContext';
-import AlertModal from './AlertModal';
+import { ClientDetail } from '../types/clientDetail.ts';
+import { supabase } from '../lib/supabase.ts';
+import { openInvoicePrintWindow } from '../lib/print.ts';
+import { sendInvoiceEmail, EmailData } from '../lib/emailService.ts';
+import { useSettings } from '../hooks/useSettings.ts';
+import { updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi, fetchClientNotes, createClientNote, deleteClientNote, ClientNote } from '../lib/api.ts';
+import { useApp } from '../contexts/AppContext.tsx';
+import AlertModal from './AlertModal.tsx';
 
 interface ClientDetailViewProps {
   clientId: string;
@@ -162,7 +162,7 @@ export default function ClientDetailView({
       // Fallback vers localStorage
       setNotes(prev => prev.filter(note => note.id !== noteId));
       const existingNotes = JSON.parse(localStorage.getItem(`client-notes-${clientId}`) || '[]');
-      const updatedNotes = existingNotes.filter((note: any) => note.id !== noteId);
+        const updatedNotes = existingNotes.filter((note: any) => note.id !== noteId);
       localStorage.setItem(`client-notes-${clientId}`, JSON.stringify(updatedNotes));
     }
   };
@@ -309,7 +309,7 @@ export default function ClientDetailView({
     
     try {
       // Importer les fonctions depuis l'API (même logique que ServicesPage)
-      const { createService, updateService: updateServiceApi } = await import('../lib/api');
+      const { createService, updateService: updateServiceApi } = await import('../lib/api.ts');
       
       // Préparer les données au bon format pour l'API (snake_case)
       const serviceData = {

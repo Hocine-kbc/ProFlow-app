@@ -1,5 +1,5 @@
-import { Invoice } from '../types';
-import { generateSharedInvoiceHTML } from './sharedInvoiceTemplate';
+import { Invoice } from '../types/index.ts';
+import { generateSharedInvoiceHTML } from './sharedInvoiceTemplate.ts';
 
 export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], services?: any[]) {
   // Read saved business settings (from SettingsPage)
