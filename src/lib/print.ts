@@ -94,7 +94,7 @@ export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], servic
     console.log('Mobile detected, attempting to open window...');
     try {
       // Try to open in new window first
-      const win = window.open('', '_blank');
+      const win = globalThis.open('', '_blank');
       console.log('Window opened:', !!win);
       if (win) {
         win.document.open();
@@ -153,7 +153,7 @@ export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], servic
               link.click();
               document.body.removeChild(link);
               console.log('Data URL download attempted');
-            } catch (dataError) {
+            } catch (_dataError) {
               console.log('Data URL failed, showing content in current window...');
               // Method 3: Show content in current window with print button
             const printWindow = document.createElement('div');
@@ -188,7 +188,7 @@ export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], servic
               box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             `;
             printBtn.onclick = () => {
-              window.print();
+              globalThis.print();
               document.body.removeChild(printWindow);
             };
             
@@ -230,7 +230,7 @@ export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], servic
   } else {
     // For desktop, use the original method
     console.log('Desktop detected, opening window...');
-    const win = window.open('', '_blank');
+    const win = globalThis.open('', '_blank');
     if (!win) {
       console.log('Window.open failed on desktop, trying fallback...');
       // Fallback for desktop too

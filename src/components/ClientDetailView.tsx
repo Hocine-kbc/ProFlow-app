@@ -34,6 +34,7 @@ import { useSettings } from '../hooks/useSettings.ts';
 import { updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi, fetchClientNotes, createClientNote, deleteClientNote, ClientNote } from '../lib/api.ts';
 import { useApp } from '../contexts/AppContext.tsx';
 import AlertModal from './AlertModal.tsx';
+import CustomSelect from './CustomSelect.tsx';
 
 interface ClientDetailViewProps {
   clientId: string;
@@ -1569,18 +1570,20 @@ export default function ClientDetailView({
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
-                  <select
+                  <CustomSelect
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:w-auto w-full"
-                  >
-                    <option value="all">Tous les statuts</option>
-                    <option value="paid">Payées</option>
-                    <option value="sent">Envoyées</option>
-                    <option value="overdue">En retard</option>
-                    <option value="draft">Brouillons</option>
-                    <option value="partial">Partielles</option>
-                  </select>
+                    onChange={(value) => setStatusFilter(value)}
+                    placeholder="Tous les statuts"
+                    options={[
+                      { value: "all", label: "Tous les statuts" },
+                      { value: "paid", label: "Payées" },
+                      { value: "sent", label: "Envoyées" },
+                      { value: "overdue", label: "En retard" },
+                      { value: "draft", label: "Brouillons" },
+                      { value: "partial", label: "Partielles" }
+                    ]}
+                    className="sm:w-auto w-full"
+                  />
                 </div>
               </div>
             </div>
@@ -3055,22 +3058,21 @@ export default function ClientDetailView({
               <form onSubmit={handleServiceSubmit} className="p-4 sm:p-6 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="lg:col-span-2">
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Client *
-                    </label>
-                    <select
+                    <CustomSelect
+                      label="Client"
                       required
                       value={serviceFormData.client_id}
-                      onChange={(e) => setServiceFormData({ ...serviceFormData, client_id: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="">Sélectionner un client</option>
-                      {clients.map(client => (
-                        <option key={client.id} value={client.id}>
-                          {client.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(value) => setServiceFormData({ ...serviceFormData, client_id: value })}
+                      placeholder="Sélectionner un client"
+                      options={[
+                        { value: "", label: "Sélectionner un client" },
+                        ...clients.map(client => ({
+                          value: client.id,
+                          label: client.name
+                        }))
+                      ]}
+                      className="text-xs sm:text-sm"
+                    />
                   </div>
                   
                   <div>
@@ -3095,8 +3097,8 @@ export default function ClientDetailView({
                       step="0.5"
                       min="0"
                       required
-                      value={serviceFormData.hours}
-                      onChange={(e) => setServiceFormData({ ...serviceFormData, hours: parseFloat(e.target.value) })}
+                      value={serviceFormData.hours || ''}
+                      onChange={(e) => setServiceFormData({ ...serviceFormData, hours: parseFloat(e.target.value) || 0 })}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
@@ -3111,25 +3113,25 @@ export default function ClientDetailView({
                       type="number"
                       min="0"
                       required
-                      value={serviceFormData.hourly_rate}
-                      onChange={(e) => setServiceFormData({ ...serviceFormData, hourly_rate: parseFloat(e.target.value) })}
+                      value={serviceFormData.hourly_rate || ''}
+                      onChange={(e) => setServiceFormData({ ...serviceFormData, hourly_rate: parseFloat(e.target.value) || 0 })}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Statut
-                    </label>
-                    <select
+                    <CustomSelect
+                      label="Statut"
                       value={serviceFormData.status}
-                      onChange={(e) => setServiceFormData({ ...serviceFormData, status: e.target.value as any })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="pending">En attente</option>
-                      <option value="completed">Terminée</option>
-                      <option value="invoiced">Facturée</option>
-                    </select>
+                      onChange={(value) => setServiceFormData({ ...serviceFormData, status: value as any })}
+                      placeholder="Sélectionner un statut"
+                      options={[
+                        { value: "pending", label: "En attente" },
+                        { value: "completed", label: "Terminée" },
+                        { value: "invoiced", label: "Facturée" }
+                      ]}
+                      className="text-xs sm:text-sm"
+                    />
                   </div>
                 </div>
                 
@@ -3247,22 +3249,22 @@ export default function ClientDetailView({
                     </div>
                     
                     <div>
-                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                        Mode de paiement
-                      </label>
-                      <select
+                      <CustomSelect
+                        label="Mode de paiement"
                         value={invoiceFormData.payment_method}
-                        onChange={(e) => setInvoiceFormData({ ...invoiceFormData, payment_method: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      >
-                        <option value="">Sélectionner un mode de paiement</option>
-                        <option value="Virement bancaire">Virement bancaire</option>
-                        <option value="Chèque">Chèque</option>
-                        <option value="Espèces">Espèces</option>
-                        <option value="Carte bancaire">Carte bancaire</option>
-                        <option value="PayPal">PayPal</option>
-                        <option value="Autre">Autre</option>
-                      </select>
+                        onChange={(value) => setInvoiceFormData({ ...invoiceFormData, payment_method: value })}
+                        placeholder="Sélectionner un mode de paiement"
+                        options={[
+                          { value: "", label: "Sélectionner un mode de paiement" },
+                          { value: "Virement bancaire", label: "Virement bancaire" },
+                          { value: "Chèque", label: "Chèque" },
+                          { value: "Espèces", label: "Espèces" },
+                          { value: "Carte bancaire", label: "Carte bancaire" },
+                          { value: "PayPal", label: "PayPal" },
+                          { value: "Autre", label: "Autre" }
+                        ]}
+                        className="text-xs sm:text-sm"
+                      />
                     </div>
                   </div>
                 </div>

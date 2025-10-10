@@ -25,7 +25,7 @@ import {
   ResponsiveContainer,
   Sector 
 } from 'recharts';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase.ts';
 
 interface KPIData {
   totalRevenue: number;
@@ -199,7 +199,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         .select('*')
         .order('date', { ascending: false });
 
-      let invoices = invoicesData;
+      const invoices = invoicesData;
       let clients = null;
 
       if (invoicesError) {
@@ -310,7 +310,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         }))
         .sort((a, b) => b.revenue - a.revenue);
 
-      let clientRevenueArray = sorted.slice(0, 5);
+      const clientRevenueArray = sorted.slice(0, 5);
       if (sorted.length > 5) {
         const others = sorted.slice(5).reduce((sum, c) => sum + c.revenue, 0);
         clientRevenueArray.push({ name: 'Autres', revenue: others, percentage: 0 });
@@ -395,22 +395,26 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Commencez par créer des clients et des factures pour voir vos statistiques ici.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <button
+              type="button"
               onClick={() => onPageChange?.('clients')}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center justify-center px-2 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm sm:text-base font-medium shadow-sm hover:shadow-md"
             >
-              <Users className="w-4 h-4 mr-2" />
-              Gérer les clients
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              <span className="hidden sm:inline">Gérer les clients</span>
+              <span className="sm:hidden">Gérer clients</span>
             </button>
             <button
+              type="button"
               onClick={() => onPageChange?.('invoices')}
-              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
+              className="inline-flex items-center justify-center px-2 py-2 sm:px-6 sm:py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors text-sm sm:text-base font-medium shadow-sm hover:shadow-md"
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Créer des factures
+              <span className="hidden sm:inline">Créer des factures</span>
+              <span className="sm:hidden">Créer factures</span>
             </button>
           </div>
         </div>
@@ -625,6 +629,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             </div>
             <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 w-fit" role="tablist" aria-label="Type de graphique">
               <button
+                type="button"
                 onClick={() => setChartView('bar')}
                 role="tab"
                 aria-selected={chartView === 'bar'}
@@ -638,6 +643,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                 Barres
               </button>
               <button
+                type="button"
                 onClick={() => setChartView('pie')}
                 role="tab"
                 aria-selected={chartView === 'pie'}
@@ -909,6 +915,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
               Créez votre première facture pour commencer à suivre vos revenus.
             </p>
             <button
+              type="button"
               onClick={() => onPageChange?.('invoices')}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
             >

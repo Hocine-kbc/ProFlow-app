@@ -36,6 +36,7 @@ import { supabase } from '../lib/supabase.ts';
 import { Invoice, Service } from '../types/index.ts';
 
 import AlertModal from './AlertModal.tsx';
+import CustomSelect from './CustomSelect.tsx';
 
 export default function InvoicesPage() {
   const { state, dispatch, showNotification } = useApp();
@@ -807,8 +808,7 @@ export default function InvoicesPage() {
                 className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
               >
                 <Settings className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Paramètres</span>
-                <span className="sm:hidden">Param.</span>
+                <span>Paramètres</span>
               </button>
               <button
                 type="button"
@@ -1685,22 +1685,21 @@ export default function InvoicesPage() {
                   </h4>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
                     <div>
-                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">
-                        Client *
-                      </label>
-                      <select
+                      <CustomSelect
+                        label="Client"
                         required
                         value={formData.client_id}
-                        onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
-                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                      >
-                        <option value="">Sélectionner un client</option>
-                        {clients.map(client => (
-                          <option key={client.id} value={client.id}>
-                            {client.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(value) => setFormData({ ...formData, client_id: value })}
+                        placeholder="Sélectionner un client"
+                        options={[
+                          { value: "", label: "Sélectionner un client" },
+                          ...clients.map(client => ({
+                            value: client.id,
+                            label: client.name
+                          }))
+                        ]}
+                        className="text-xs sm:text-sm"
+                      />
                     </div>
                     
                     <div>
@@ -1785,7 +1784,7 @@ export default function InvoicesPage() {
                           min="0"
                           value={originalPaymentTerms || 30}
                           onChange={(e) => {
-                            const newPaymentTerms = parseInt(e.target.value);
+                            const newPaymentTerms = parseInt(e.target.value) || 30;
                             setOriginalPaymentTerms(newPaymentTerms);
                             
                             // Recalculer la date d'échéance avec les nouveaux termes
@@ -1804,57 +1803,109 @@ export default function InvoicesPage() {
                     )}
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                        Mode de paiement
-                      </label>
-                      <select
+                      <CustomSelect
+                        label="Mode de paiement"
                         value={formData.payment_method || ''}
-                        onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      >
-                        <option value="">Sélectionner un mode de paiement</option>
-                        <option value="Virement bancaire">Virement bancaire</option>
-                        <option value="Chèque">Chèque</option>
-                        <option value="Espèces">Espèces</option>
-                        <option value="Carte bancaire">Carte bancaire</option>
-                        <option value="PayPal">PayPal</option>
-                        <option value="Autre">Autre</option>
-                      </select>
+                        onChange={(value) => setFormData({ ...formData, payment_method: value })}
+                        placeholder="Sélectionner un mode de paiement"
+                        options={[
+                          { value: "", label: "Sélectionner un mode de paiement" },
+                          { value: "Virement bancaire", label: "Virement bancaire" },
+                          { value: "Chèque", label: "Chèque" },
+                          { value: "Espèces", label: "Espèces" },
+                          { value: "Carte bancaire", label: "Carte bancaire" },
+                          { value: "PayPal", label: "PayPal" },
+                          { value: "Autre", label: "Autre" }
+                        ]}
+                        className="[&>div>button]:py-2 [&>div>button]:text-sm"
+                      />
                     </div>
                   </div>
                 </div>
               
                 {/* Services selection */}
                 {(formData.client_id || editingInvoice) && (
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3">
-                        <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 sm:p-4 lg:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
+                      <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-2 sm:mb-0">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <span className="text-sm sm:text-base">Prestations à facturer *</span>
+                      </h4>
+                      <div className="flex items-center justify-center sm:justify-end">
+                        <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded-full">
+                          {selectedServices.length} sélectionnée{selectedServices.length > 1 ? 's' : ''}
+                        </span>
                       </div>
-                      Prestations à facturer *
-                    </h4>
-                    <div className="border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 max-h-80 overflow-y-auto">
+                    </div>
+                    <div className="border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 max-h-60 sm:max-h-80 overflow-y-auto">
                       {(() => {
                         const clientServices = selectableServices.filter(s => s.client_id === formData.client_id);
                         console.log('🔄 Services pour le client', formData.client_id, ':', clientServices.length);
                         console.log('🔄 Tous les selectableServices:', selectableServices.length);
                         return clientServices.length === 0;
                       })() ? (
-                        <div className="p-8 text-center">
-                          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="p-4 sm:p-6 lg:p-8 text-center">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                           </div>
-                          <p className="text-gray-500 dark:text-gray-400 font-medium">Aucune prestation terminée disponible pour ce client.</p>
-                          <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Terminez d'abord des prestations pour ce client.</p>
+                          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 font-medium">Aucune prestation terminée disponible pour ce client.</p>
+                          <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 mt-1">Terminez d'abord des prestations pour ce client.</p>
                         </div>
                       ) : (
-                        <div className="divide-y divide-gray-100 dark:divide-gray-600">
+                        <>
+                          {/* Boutons de sélection en masse */}
+                          <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
+                            <div className="flex flex-col space-y-3">
+                              {/* Boutons en pillule sur mobile, horizontaux sur desktop */}
+                              <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const clientServices = selectableServices.filter(s => s.client_id === formData.client_id);
+                                    const allServiceIds = clientServices.map(s => s.id);
+                                    setSelectedServices(allServiceIds);
+                                  }}
+                                  className="w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors border border-blue-200 dark:border-blue-800"
+                                >
+                                  ✓ Tout sélectionner
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedServices([])}
+                                  className="w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors border border-gray-300 dark:border-gray-500"
+                                >
+                                  ✕ Tout désélectionner
+                                </button>
+                              </div>
+                              
+                              {/* Total sélectionné - centré sur mobile */}
+                              <div className="text-center">
+                                <div className="inline-flex items-center space-x-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm">
+                                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total:</span>
+                                  <span className="text-lg font-bold text-gray-900 dark:text-white">
+                                    {(() => {
+                                      const clientServices = selectableServices.filter(s => s.client_id === formData.client_id);
+                                      const totalAmount = clientServices
+                                        .filter(s => selectedServices.includes(s.id))
+                                        .reduce((acc, s) => acc + (s.hours * s.hourly_rate), 0);
+                                      return `${totalAmount.toFixed(2)}€`;
+                                    })()}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Liste des prestations */}
+                          <div className="divide-y divide-gray-100 dark:divide-gray-600">
                           {selectableServices.filter(s => s.client_id === formData.client_id).map((service) => (
-                            <label key={service.id} className="flex items-center space-x-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                            <label key={service.id} className="flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer group">
                               <input
                                 type="checkbox"
                                 checked={selectedServices.includes(service.id)}
@@ -1865,33 +1916,52 @@ export default function InvoicesPage() {
                                     setSelectedServices(selectedServices.filter(id => id !== service.id));
                                   }
                                 }}
-                                className="w-5 h-5 rounded-full border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 focus:ring-2"
+                                className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 focus:ring-2 group-hover:border-blue-400 dark:group-hover:border-blue-500 mt-0.5 sm:mt-0"
                               />
                               <div className="flex-1">
                                 <div className="flex justify-between items-start">
-                                  <div>
-                                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                                      {new Date(service.date).toLocaleDateString('fr-FR')}
-                                    </span>
-                                    {service.description && (
-                                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                        {service.description}
-                                      </p>
-                                    )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-2 sm:space-y-0">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
+                                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                          {new Date(service.date).toLocaleDateString('fr-FR')}
+                                        </span>
+                                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                                          service.status === 'completed' 
+                                            ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                                            : service.status === 'invoiced'
+                                            ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+                                            : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400'
+                                        }`}>
+                                          {service.status === 'completed' ? 'Terminée' : 
+                                           service.status === 'invoiced' ? 'Facturée' : 'En attente'}
+                                        </span>
+                                      </div>
+                                      {service.description && (
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 sm:mt-2 line-clamp-2">
+                                          {service.description}
+                                        </p>
+                                      )}
+                                      <div className="flex items-center space-x-3 sm:space-x-4 text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-2">
+                                        <span>{service.hours}h</span>
+                                        <span>×</span>
+                                        <span>{service.hourly_rate}€/h</span>
+                                      </div>
+                                    </div>
+                                    <div className="text-left sm:text-right mt-2 sm:mt-0">
+                                      <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                                        {(service.hours * service.hourly_rate).toFixed(2)}€
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="text-right">
-                                    <span className="text-sm font-bold text-gray-900 dark:text-white">
-                                      {(service.hours * service.hourly_rate).toFixed(2)}€
-                                    </span>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                      {service.hours}h × {service.hourly_rate}€
-                                    </p>
-                                  </div>
+                                </div>
                                 </div>
                               </div>
                             </label>
                           ))}
-                        </div>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
@@ -2491,8 +2561,8 @@ export default function InvoicesPage() {
                     type="number"
                     min="0"
                     step="0.5"
-                    value={billingSettings.defaultHourlyRate}
-                    onChange={(e) => handleSettingsChange('defaultHourlyRate', parseFloat(e.target.value))}
+                    value={billingSettings.defaultHourlyRate || ''}
+                    onChange={(e) => handleSettingsChange('defaultHourlyRate', parseFloat(e.target.value) || 0)}
                     className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                     placeholder="25.00"
                   />
@@ -2518,8 +2588,8 @@ export default function InvoicesPage() {
                   <input
                     type="number"
                     min="0"
-                    value={billingSettings.paymentTerms}
-                    onChange={(e) => handleSettingsChange('paymentTerms', parseInt(e.target.value))}
+                    value={billingSettings.paymentTerms || ''}
+                    onChange={(e) => handleSettingsChange('paymentTerms', parseInt(e.target.value) || 30)}
                     className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                     placeholder="30"
                   />

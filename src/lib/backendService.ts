@@ -1,9 +1,11 @@
 // Service pour communiquer avec le backend Express
 import {
   fetchSettings,
-} from './api';
+} from './api.ts';
 
-const BACKEND_URL = 'http://localhost:3001/api';
+// Détecter l'environnement et utiliser l'URL appropriée
+const isProduction = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('proflow-biz');
+const BACKEND_URL = isProduction ? '/api' : 'http://localhost:3001/api';
 
 export interface BackendResponse {
   success: boolean;

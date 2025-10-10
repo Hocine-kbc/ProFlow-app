@@ -1,6 +1,6 @@
 // API pour récupérer les détails complets d'un client
 import { supabase } from './supabase';
-import { ClientDetail, InvoiceDetail, ServiceDetail, ContactEntry } from '../types/clientDetail';
+import { ClientDetail, ContactEntry } from '../types/clientDetail';
 
 export interface ClientDetailResponse {
   success: boolean;
@@ -336,7 +336,7 @@ export async function getClientDetail(clientId: string): Promise<ClientDetailRes
 // Fonction pour mettre à jour les informations d'un client
 export async function updateClientDetail(clientId: string, updates: Partial<ClientDetail>): Promise<ClientDetailResponse> {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('clients')
       .update({
         name: updates.name,

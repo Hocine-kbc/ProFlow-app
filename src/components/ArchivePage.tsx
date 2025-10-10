@@ -16,6 +16,7 @@ import {
   Users
 } from 'lucide-react';
 import AlertModal from './AlertModal.tsx';
+import CustomSelect from './CustomSelect.tsx';
 import { useApp } from '../contexts/AppContext.tsx';
 
 // Type Client depuis le contexte
@@ -438,33 +439,37 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
               </div>
               
               <div>
-                <select
+                <CustomSelect
                   value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full px-3 py-2.5 sm:py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="" className="text-xs">Toutes les périodes</option>
-                  <option value="today" className="text-xs">Aujourd'hui</option>
-                  <option value="week" className="text-xs">Cette semaine</option>
-                  <option value="month" className="text-xs">Ce mois</option>
-                  <option value="year" className="text-xs">Cette année</option>
-                  <option value="older" className="text-xs">Plus ancien</option>
-                </select>
+                  onChange={(value) => setDateFilter(value)}
+                  placeholder="Toutes les périodes"
+                  options={[
+                    { value: "", label: "Toutes les périodes" },
+                    { value: "today", label: "Aujourd'hui" },
+                    { value: "week", label: "Cette semaine" },
+                    { value: "month", label: "Ce mois" },
+                    { value: "year", label: "Cette année" },
+                    { value: "older", label: "Plus ancien" }
+                  ]}
+                  className="w-full text-xs"
+                />
               </div>
 
               {/* Statut pour les factures */}
               {activeTab === 'invoices' && (
                 <div>
-                  <select
+                  <CustomSelect
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-3 py-2.5 sm:py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  >
-                    <option value="" className="text-xs">Tous les statuts</option>
-                    <option value="paid" className="text-xs">Payées</option>
-                    <option value="sent" className="text-xs">Envoyées</option>
-                    <option value="draft" className="text-xs">Brouillons</option>
-                  </select>
+                    onChange={(value) => setStatusFilter(value)}
+                    placeholder="Tous les statuts"
+                    options={[
+                      { value: "", label: "Tous les statuts" },
+                      { value: "paid", label: "Payées" },
+                      { value: "sent", label: "Envoyées" },
+                      { value: "draft", label: "Brouillons" }
+                    ]}
+                    className="w-full text-xs"
+                  />
                 </div>
               )}
 

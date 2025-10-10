@@ -1,5 +1,17 @@
 // ... existing code ...
 
+// Article type
+export interface Article {
+  id: string;
+  name: string;
+  description: string;
+  hourly_rate: number;
+  category?: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Service type
 export interface Service {
   id: string;
@@ -9,6 +21,7 @@ export interface Service {
   hourly_rate: number;
   description: string;
   status: 'pending' | 'completed' | 'invoiced';
+  article_id?: string; // Référence vers l'article utilisé
   client?: {
     id: string;
     name: string;
