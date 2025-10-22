@@ -7,29 +7,5 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "projectautoentreprise-.*-kebcis-projects.vercel.app"
-        }
-      ],
-      "destination": "https://proflow-biz.vercel.app/$1",
-      "statusCode": 302
-    },
-    {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "projectautoentreprise-kebcis-projects.vercel.app"
-        }
-      ],
-      "destination": "https://proflow-biz.vercel.app/$1",
-      "statusCode": 302
-    }
   ]
 }
