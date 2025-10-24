@@ -11,6 +11,7 @@ import { AppProvider, useApp } from './contexts/AppContext.tsx';
 import { ThemeProvider } from './contexts/ThemeContext.tsx';
 import { fetchClients, fetchServices, fetchInvoices } from './lib/api.ts';
 import AuthPage from './components/AuthPage.tsx';
+import ResetPasswordPage from './components/ResetPasswordPage.tsx';
 import { supabase } from './lib/supabase.ts';
 
 
@@ -38,6 +39,7 @@ function AppContent() {
     }
   });
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isResettingPassword, setIsResettingPassword] = useState<boolean>(false);
   const { dispatch } = useApp();
 
   // Fonction pour changer de page et sauvegarder dans localStorage
@@ -52,6 +54,11 @@ function AppContent() {
     }
   };
 
+  // Fonction pour sortir du mode de réinitialisation
+  const handleExitResetMode = () => {
+    setIsResettingPassword(false);
+  };
+
   // Auth session
   useEffect(() => {
     let isMounted = true;
@@ -59,6 +66,22 @@ function AppContent() {
       const { data } = await supabase.auth.getSession();
       if (!isMounted) return;
       setIsAuthenticated(!!data.session);
+      
+      // Vérifier si l'utilisateur est en train de réinitialiser son mot de passe
+      if (data.session) {
+        const { data: user } = await supabase.auth.getUser();
+        if (user.user && user.user.email_confirmed_at && user.user.last_sign_in_at) {
+          // Vérifier si l'URL contient un token de réinitialisation de mot de passe
+          const urlParams = new URLSearchParams(window.location.search);
+          const accessToken = urlParams.get('access_token');
+          const refreshToken = urlParams.get('refresh_token');
+          
+          // Si l'URL contient des tokens de réinitialisation, c'est une réinitialisation de mot de passe
+          if (accessToken && refreshToken) {
+            setIsResettingPassword(true);
+          }
+        }
+      }
     })();
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('🔐 Auth state change:', _event, 'Session:', !!session);
@@ -201,6 +224,11 @@ function AppContent() {
 
   if (!isAuthenticated) {
     return <AuthPage />;
+  }
+
+  // Si l'utilisateur est en train de réinitialiser son mot de passe
+  if (isResettingPassword) {
+    return <ResetPasswordPage onExitResetMode={handleExitResetMode} />;
   }
 
   return (

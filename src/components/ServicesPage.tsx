@@ -24,27 +24,34 @@ export default function ServicesPage() {
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
     
+    // Créer un tableau de 42 jours (6 semaines)
     const days = [];
     
-    // Ajouter les jours du mois précédent (en flou)
-    const prevMonth = new Date(year, month - 1, 0);
-    const daysInPrevMonth = prevMonth.getDate();
-    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-      days.push(new Date(year, month - 1, daysInPrevMonth - i));
+    // Trouver le premier jour du mois et le convertir pour la semaine française
+    const firstDay = new Date(year, month, 1);
+    const firstDayOfWeek = firstDay.getDay(); // 0 = Dimanche, 1 = Lundi, etc.
+    const adjustedFirstDay = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // Convertir pour Lundi = 0
+    
+    // Calculer le nombre de jours dans le mois précédent
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    
+    // Ajouter les jours du mois précédent si nécessaire
+    if (adjustedFirstDay > 0) {
+      for (let i = adjustedFirstDay; i > 0; i--) {
+        const dayNumber = daysInPrevMonth - i + 1;
+        days.push(new Date(year, month - 1, dayNumber));
+      }
     }
     
     // Ajouter les jours du mois courant
-    for (let day = 1; day <= daysInMonth; day++) {
+    const daysInCurrentMonth = new Date(year, month + 1, 0).getDate();
+    for (let day = 1; day <= daysInCurrentMonth; day++) {
       days.push(new Date(year, month, day));
     }
     
-    // Ajouter les jours du mois suivant pour compléter la grille (en flou)
-    const remainingDays = 42 - days.length; // 6 semaines * 7 jours = 42 cases
+    // Ajouter les jours du mois suivant pour compléter 42 jours
+    const remainingDays = 42 - days.length;
     for (let day = 1; day <= remainingDays; day++) {
       days.push(new Date(year, month + 1, day));
     }
@@ -65,6 +72,21 @@ export default function ServicesPage() {
     return services.filter(service => service.date === dateString);
   };
 
+  // Fonction pour calculer le total mensuel des prestations
+  const getMonthlyTotal = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    const monthlyServices = services.filter(service => {
+      const serviceDate = new Date(service.date);
+      return serviceDate.getFullYear() === year && serviceDate.getMonth() === month;
+    });
+    
+    return monthlyServices.reduce((total, service) => {
+      return total + (service.hours * service.hourly_rate);
+    }, 0);
+  };
+
   const handleDayClick = (date: Date) => {
     const dayServices = getServicesForDate(date);
     setSelectedDayServices(dayServices);
@@ -80,11 +102,9 @@ export default function ServicesPage() {
 
   const slideToNext = (date: Date, dayServices: Service[]) => {
     const key = getDayKey(date);
-    console.log('slideToNext - before:', key, slidingStates[key]);
     setSlidingStates(prev => {
       const currentState = prev[key] || { currentIndex: 0, isSliding: false };
       const nextIndex = (currentState.currentIndex + 1) % dayServices.length;
-      console.log('slideToNext - updating to:', nextIndex);
       return {
         ...prev,
         [key]: { currentIndex: nextIndex, isSliding: true }
@@ -1298,72 +1318,106 @@ export default function ServicesPage() {
           ) : (
             /* Vue Calendrier */
             <div 
-              className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden"
+              className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              {/* Header du calendrier avec gradient */}
-              <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-700 dark:via-teal-700 dark:to-cyan-700 px-3 sm:px-6 py-3 sm:py-4 text-white relative overflow-hidden">
-                {/* Traits décoratifs */}
+              {/* Header du calendrier - Design moderne */}
+              <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-6 py-4 text-white relative overflow-hidden">
+                {/* Motifs décoratifs comme le header principal */}
                 <div className="absolute inset-0 opacity-20">
-                  <div className="absolute top-4 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
-                  <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
-                  <div className="absolute bottom-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-24"></div>
+                  <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+                  <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+                  <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between relative z-10 gap-3 sm:gap-0">
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                {/* Traits décoratifs comme les headers de page */}
+                <div className="absolute inset-0 opacity-30">
+                  <div className="absolute top-4 left-0 right-0 w-full h-0.5 bg-white/40 transform rotate-12"></div>
+                  <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-6"></div>
+                  <div className="absolute bottom-8 left-0 right-0 w-full h-0.5 bg-white/40 transform rotate-24"></div>
+                  <div className="absolute bottom-4 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-12"></div>
+                </div>
+                
+                <div className="relative z-10">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    {/* Titre et navigation */}
+                    <div className="flex items-center justify-between lg:justify-start gap-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold">
+                            {formatMonthYear(currentMonth)}
+                          </h3>
+                          <p className="text-white/80 text-xs">Vue calendrier des prestations</p>
+                        </div>
+                      </div>
+                      
+                      {/* Navigation */}
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => navigateMonth('prev')}
+                          className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentMonth(new Date())}
+                          className="px-3 py-1.5 text-xs font-semibold bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+                        >
+                          Aujourd'hui
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigateMonth('next')}
+                          className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-lg sm:text-xl font-bold">
-                        {formatMonthYear(currentMonth)}
-                      </h3>
-                      <p className="text-white/80 text-xs sm:text-sm hidden sm:block">Vue calendrier des prestations</p>
+                    
+                    {/* Total mensuel - Design compact */}
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-xl">
+                      <div className="text-center">
+                        <p className="text-white/80 text-xs font-medium mb-1">Total du mois</p>
+                        <p className="text-white text-2xl font-bold">
+                          {getMonthlyTotal(currentMonth).toFixed(2)}€
+                        </p>
+                        <div className="mt-1 flex items-center justify-center space-x-1">
+                          <div className="w-1.5 h-1.5 bg-white/60 rounded-full"></div>
+                          <div className="w-1.5 h-1.5 bg-white/40 rounded-full"></div>
+                          <div className="w-1.5 h-1.5 bg-white/20 rounded-full"></div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-end space-x-1 sm:space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => navigateMonth('prev')}
-                      className="p-1.5 sm:p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur transition-all duration-200 hover:scale-105"
-                    >
-                      <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCurrentMonth(new Date())}
-                      className="px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium bg-white/20 hover:bg-white/30 backdrop-blur rounded-xl transition-all duration-200 hover:scale-105"
-                    >
-                      Aujourd'hui
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => navigateMonth('next')}
-                      className="p-1.5 sm:p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur transition-all duration-200 hover:scale-105"
-                    >
-                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
                   </div>
                 </div>
               </div>
 
               {/* Grille du calendrier */}
-              <div className="p-2 sm:p-4">
-                {/* En-têtes des jours */}
-                <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 sm:mb-3">
-                  {['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'].map((day) => (
-                    <div key={day} className="p-1.5 sm:p-3 text-center text-xs sm:text-sm font-bold text-gray-600 dark:text-gray-300 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-lg">
+              <div className="p-6">
+                {/* En-têtes des jours - Design moderne (semaine française) */}
+                <div className="grid grid-cols-7 gap-2 mb-4">
+                  {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day, index) => (
+                    <div key={day} className={`p-3 text-center text-sm font-bold rounded-xl transition-all duration-300 ${
+                      index === 5 || index === 6 
+                        ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' 
+                        : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800'
+                    }`}>
                       <span className="hidden sm:inline">{day}</span>
                       <span className="sm:hidden">{day.charAt(0)}</span>
                     </div>
                   ))}
                 </div>
 
-                {/* Grille des jours */}
-                <div className="grid grid-cols-7 gap-1 sm:gap-2 min-h-[600px] sm:min-h-[500px]">
+                {/* Grille des jours - Design premium */}
+                <div className="grid grid-cols-7 gap-2 min-h-[600px]">
                   {getDaysInMonth(currentMonth).map((date, index) => {
                     const dayServices = getServicesForDate(date);
                     const isToday = date.toDateString() === new Date().toDateString();
@@ -1374,35 +1428,39 @@ export default function ServicesPage() {
                       <div
                         key={index}
                         onClick={() => handleDayClick(date)}
-                        className={`h-28 sm:h-32 rounded-lg sm:rounded-xl border-2 p-1 sm:p-2 transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer relative ${
+                        className={`h-32 rounded-2xl border-2 p-3 transition-all duration-300 hover:shadow-2xl hover:scale-105 cursor-pointer relative group ${
                           isCurrentMonth 
                             ? isToday
-                              ? 'bg-gradient-to-br from-sky-400 to-blue-500 border-sky-300 shadow-lg ring-2 ring-sky-200'
+                              ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-400 shadow-xl ring-4 ring-indigo-200/50'
                               : isWeekend
-                              ? 'bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 border-rose-200 dark:border-rose-700'
-                              : 'bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 border-gray-200 dark:border-gray-600'
+                              ? 'bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 border-rose-200 dark:border-rose-700 hover:shadow-rose-200/50'
+                              : 'bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 border-gray-200 dark:border-gray-600 hover:shadow-gray-200/50'
                             : 'bg-gradient-to-br from-gray-100/50 to-gray-200/50 dark:from-gray-700/30 dark:to-gray-600/30 border-gray-300/50 dark:border-gray-500/50'
-                        } ${!isCurrentMonth ? 'opacity-70' : ''}`}
+                        } ${!isCurrentMonth ? 'opacity-60' : ''}`}
                       >
-                        <div className={`text-xs sm:text-sm font-bold mb-1 sm:mb-2 ${
+                        {/* Numéro du jour - Design moderne */}
+                        <div className={`text-lg font-bold mb-2 flex items-center justify-between ${
                           isCurrentMonth 
                             ? isToday
                               ? 'text-white'
                               : isWeekend
-                              ? 'text-rose-700 dark:text-rose-300'
+                              ? 'text-rose-600 dark:text-rose-400'
                               : 'text-gray-800 dark:text-gray-200'
-                            : 'text-gray-400/60 dark:text-gray-500/60'
+                            : 'text-gray-400 dark:text-gray-500'
                         }`}>
-                          {date.getDate()}
+                          <span>{date.getDate()}</span>
+                          {isToday && (
+                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                          )}
                         </div>
                         
-                        {/* Prestations du jour - Design moderne et élégant */}
-                        <div className={`overflow-hidden max-h-16 sm:max-h-16 ${!isCurrentMonth ? 'opacity-70' : ''}`}>
+                        {/* Prestations du jour - Design premium */}
+                        <div className={`overflow-hidden max-h-16 ${!isCurrentMonth ? 'opacity-70' : ''}`}>
                           {dayServices.length === 1 ? (
-                            // Une seule prestation - design moderne
+                            // Une seule prestation - design premium
                             dayServices[0] ? (
                               <div
-                                className={`w-full rounded-md sm:rounded-lg cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl border-l-2 sm:border-l-4 backdrop-blur-sm relative ${
+                                className={`w-full rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-gray-400/50 border-l-4 backdrop-blur-sm relative group ${
                                   dayServices[0].status === 'completed'
                                     ? 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border-emerald-400 shadow-emerald-200/50 dark:shadow-emerald-800/30'
                                     : dayServices[0].status === 'invoiced'
@@ -1412,27 +1470,27 @@ export default function ServicesPage() {
                                 onClick={() => handleEdit(dayServices[0])}
                                 title={`${clients.find(c => c.id === dayServices[0].client_id)?.name || 'Client inconnu'} - ${dayServices[0].hours}h - ${(dayServices[0].hours * dayServices[0].hourly_rate).toFixed(2)}€`}
                               >
-                                {/* Bouton de suppression */}
+                                {/* Bouton de suppression - Design compact */}
                                 <button
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleDelete(dayServices[0].id);
                                   }}
-                                  className="absolute top-1 right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-full flex items-center justify-center transition-colors shadow-sm border border-red-200 dark:border-red-700 z-10"
+                                  className="absolute top-1 right-1 w-5 h-5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md border border-red-200 dark:border-red-700 z-10 opacity-0 group-hover:opacity-100"
                                   title="Supprimer cette prestation"
                                 >
-                                  <Trash className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-red-600 dark:text-red-400" />
+                                  <Trash className="w-2.5 h-2.5 text-red-600 dark:text-red-400" />
                                 </button>
                                 
-                                <div className="px-1.5 sm:px-3 py-1 sm:py-2">
-                                  <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                                <div className="px-2 py-1.5">
+                                  <div className="flex items-center justify-between mb-1">
                                     <div className="flex items-center space-x-1.5">
-                                      <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
+                                      <div className={`w-1.5 h-1.5 rounded-full ${
                                         dayServices[0].status === 'completed' ? 'bg-emerald-500' :
                                         dayServices[0].status === 'invoiced' ? 'bg-rose-500' : 'bg-blue-500'
                                       }`}></div>
-                                      <div className={`text-xs font-semibold ${
+                                      <div className={`text-xs font-bold ${
                                         dayServices[0].status === 'completed' ? 'text-emerald-700 dark:text-emerald-300' :
                                         dayServices[0].status === 'invoiced' ? 'text-rose-700 dark:text-rose-300' : 'text-blue-700 dark:text-blue-300'
                                       }`}>
@@ -1440,10 +1498,10 @@ export default function ServicesPage() {
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate leading-tight">
+                                  <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate leading-tight mb-0.5">
                                     {clients.find(c => c.id === dayServices[0].client_id)?.name || 'Client inconnu'}
                                   </div>
-                                  <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                                  <div className="text-xs text-gray-600 dark:text-gray-400 font-semibold">
                                     {(dayServices[0].hours * dayServices[0].hourly_rate).toFixed(0)}€
                                   </div>
                                 </div>
