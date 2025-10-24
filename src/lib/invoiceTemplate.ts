@@ -141,6 +141,23 @@ export function generateInvoiceHTML(invoiceData: InvoiceData, companyData: Compa
       font-weight: 600;
     }
 
+    /* Règles d'impression pour la pagination */
+    @media print {
+      /* Tous les éléments sauf le tableau se répètent sur chaque page */
+      .header { page-break-inside: avoid; }
+      .client { page-break-inside: avoid; }
+      h2 { page-break-after: avoid; }
+      /* Seul le tableau peut se diviser */
+      table { page-break-inside: auto; }
+      thead { display: table-header-group; }
+      tbody { page-break-inside: auto; }
+      tr { page-break-inside: auto; page-break-after: auto; }
+      td, th { page-break-inside: avoid; }
+      /* Totaux et footer uniquement à la fin */
+      .total { page-break-inside: avoid; }
+      footer { page-break-inside: avoid; }
+    }
+
     /* Total */
     .total {
       text-align: right;

@@ -78,20 +78,54 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
       @media print { 
         .no-print { display:none; } 
         .container { padding: 0; }
-        .row { page-break-inside: avoid; }
-        .table-card { page-break-inside: avoid; }
-        .card { page-break-inside: avoid; }
+        
+        /* Configuration des pages */
+        @page {
+          margin: 0.5in;
+        }
+        
+        /* Marge supplémentaire pour les pages suivantes */
+        .table-card {
+          page-break-inside: auto;
+        }
+        
+        /* Ajouter un espacement au début des pages suivantes */
+        .table-card {
+          margin-top: 20px;
+        }
+        
+        /* Espacement supplémentaire pour les pages suivantes */
+        @media print {
+          .table-card {
+            margin-top: 40px;
+          }
+        }
+        
+        
+        /* Empêcher la division des éléments importants */
+        .invoice-header { page-break-inside: avoid; }
+        .client-info { page-break-inside: avoid; }
+        .section-title { page-break-inside: avoid; }
+        
+        /* Permettre seulement la division du tableau */
+        .table-card { page-break-inside: auto; }
+        table { page-break-inside: auto; }
+        thead { display: table-header-group; }
+        tbody { page-break-inside: auto; }
+        tr { page-break-inside: auto; page-break-after: auto; }
+        td, th { page-break-inside: avoid; }
+        
+        /* Totaux et footer uniquement à la fin */
         .totals { page-break-inside: avoid; }
-        h1, h2 { page-break-after: avoid; }
-        table { page-break-inside: avoid; }
-        tr { page-break-inside: avoid; }
+        footer { page-break-inside: avoid; }
       }
     </style>
   </head>
   <body>
     <div class="header-bar brand-bg"></div>
+    
     <div class="container">
-    <header class="row" style="align-items:flex-start">
+    <header class="row invoice-header" style="align-items:flex-start">
       <div style="flex:1">
         <div style="display:flex; align-items:center; gap:12px">
           ${(invoice.company_logo_url !== null ? invoice.company_logo_url : settings?.logoUrl) ? `<img src="${invoice.company_logo_url !== null ? invoice.company_logo_url : settings.logoUrl}" alt="logo" style="height:56px; width:auto; object-fit:contain;" />` : ''}
@@ -114,7 +148,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
       </div>
     </header>
 
-    <section class="row" style="margin-top:24px">
+    <section class="row client-info" style="margin-top:24px">
       <div style="flex:1;"></div>
       <div class="card" style="flex:1; max-width:400px;">
         <div style="font-weight:600; margin-bottom:8px" class="brand">Facturer à</div>
@@ -125,7 +159,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
       </div>
     </section>
     <main>
-      <h2 class="brand" style="margin-top:24px">Détails des prestations</h2>
+      <h2 class="brand section-title" style="margin-top:24px">Détails des prestations</h2>
       <div class="table-card">
       <table>
         <thead>
@@ -142,6 +176,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         </tbody>
       </table>
       </div>
+      
 
       <table class="totals">
         <tr>

@@ -2589,7 +2589,20 @@ export default function InvoicesPage() {
                     type="number"
                     min="0"
                     value={billingSettings.paymentTerms || ''}
-                    onChange={(e) => handleSettingsChange('paymentTerms', parseInt(e.target.value) || 30)}
+                    onChange={(e) => {
+                      const newPaymentTerms = parseInt(e.target.value) || 30;
+                      handleSettingsChange('paymentTerms', newPaymentTerms);
+                      
+                      // Remplir automatiquement les conditions de paiement si elles sont vides ou par défaut
+                      const currentTerms = billingSettings.invoiceTerms;
+                      const defaultTerms = `Paiement en ${billingSettings.paymentTerms || 30} jours.`;
+                      const newDefaultTerms = `Paiement en ${newPaymentTerms} jours.`;
+                      
+                      // Si les conditions actuelles sont vides ou correspondent au format par défaut, les mettre à jour
+                      if (!currentTerms || currentTerms === defaultTerms || currentTerms === 'Paiement à 30 jours. Pas de TVA (franchise en base).' || currentTerms === 'Paiement en 30 jours. Pas de TVA (franchise en base).' || currentTerms === 'Paiement en 30 jours.') {
+                        handleSettingsChange('invoiceTerms', newDefaultTerms);
+                      }
+                    }}
                     className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                     placeholder="30"
                   />
@@ -2603,7 +2616,7 @@ export default function InvoicesPage() {
                     value={billingSettings.invoiceTerms}
                     onChange={(e) => handleSettingsChange('invoiceTerms', e.target.value)}
                     className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
-                    placeholder="Paiement à 30 jours. Pas de TVA (franchise en base)."
+                    placeholder="Paiement en 30 jours."
                     rows={3}
                   />
                 </div>
