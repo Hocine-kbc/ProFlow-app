@@ -65,9 +65,6 @@ export function generateInvoiceHTML(invoiceData: InvoiceData, companyData: Compa
     return `${day}/${month}/${year}`;
   };
 
-  const invoiceDate = new Date(invoiceData.date);
-  const dueDate = new Date(invoiceData.due_date || new Date(invoiceDate.getTime() + 30 * 24 * 60 * 60 * 1000));
-
   // Services rows
   const servicesRows = invoiceData.services.map((service) => `
     <tr>
