@@ -2,6 +2,14 @@ import { Invoice } from '../types/index.ts';
 import { generateSharedInvoiceHTML } from './sharedInvoiceTemplate.ts';
 
 export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], services?: any[]) {
+  // For PDF download, redirect to server endpoint
+  const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+  const downloadUrl = `${baseUrl}/api/download-invoice/${invoice.id}`;
+  
+  // Open the download URL which will trigger PDF download
+  window.open(downloadUrl, '_blank');
+  return;
+
   // Read saved business settings (from SettingsPage)
   let settings: any = null;
   try {

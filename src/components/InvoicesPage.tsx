@@ -1314,8 +1314,8 @@ export default function InvoicesPage() {
         )}
         
         {/* Vue desktop - Table */}
-        <div className="hidden lg:block overflow-x-auto">
-          <table className="w-full divide-y divide-gray-200 dark:divide-gray-600 table-fixed">
+        <div className="hidden lg:block">
+          <table className="w-full divide-y divide-gray-200 dark:divide-gray-600">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th className="w-6 px-1 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1353,28 +1353,28 @@ export default function InvoicesPage() {
                     <span aria-hidden="true">&nbsp;</span>
                 )}
                 </th>
-                <th className="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   N° Facture
                 </th>
-                <th className="w-32 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Client
                 </th>
-                <th className="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="w-28 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Montant à payer
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Montant
                 </th>
-                <th className="w-28 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Date d'échéance
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Échéance
                 </th>
-                <th className="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Statut
                 </th>
-                <th className="w-28 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Date de paiement
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Paiement
                 </th>
-                <th className="w-32 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -1410,22 +1410,22 @@ export default function InvoicesPage() {
                       <span aria-hidden="true">&nbsp;</span>
                   )}
                   </td>
-                  <td className="w-20 px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white truncate">
+                  <td className="px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {invoice.invoice_number}
                   </td>
-                  <td className="w-32 px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white truncate">
+                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white truncate">
                     {invoice.client?.name || clients.find(c => c.id === invoice.client_id)?.name || 'Client inconnu'}
                   </td>
-                  <td className="w-24 px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {new Date(invoice.date).toLocaleDateString('fr-FR')}
                   </td>
-                  <td className="w-28 px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
                     {calculateInvoiceAmount(invoice).toFixed(2)}€
                   </td>
-                  <td className="w-28 px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {new Date(invoice.due_date).toLocaleDateString('fr-FR')}
                   </td>
-                  <td className="w-20 px-3 py-4 whitespace-nowrap">
+                  <td className="px-2 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                       invoice.status === 'paid' 
                         ? 'bg-green-100 dark:bg-green-900/30 dark:bg-green-900/20 text-green-800 dark:text-green-300'
@@ -1437,12 +1437,12 @@ export default function InvoicesPage() {
                        invoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
                     </span>
                   </td>
-                  <td className="w-28 px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {invoice.status === 'paid' && invoice.updated_at 
                       ? new Date(invoice.updated_at).toLocaleDateString('fr-FR')
                       : '-'}
                   </td>
-                  <td className="w-32 px-3 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-2 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       {invoice.status === 'draft' && (
                         <button

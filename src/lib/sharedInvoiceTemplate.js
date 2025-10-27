@@ -2,225 +2,518 @@
 // Utilisé à la fois par print.ts et par le serveur backend
 
 export function generateSharedInvoiceHTML(invoice, client, invoiceServices, settings) {
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   const servicesRows = (invoiceServices || [])
     .map(
       (s) => `
         <tr>
-          <td>${new Date(s.date).toLocaleDateString('fr-FR')}</td>
+          <td>${formatDate(s.date || invoice.date)}</td>
           <td>${s.description || ''}</td>
-          <td class="right">${s.hours}</td>
-          <td class="right">${s.hourly_rate.toFixed(2)}€</td>
-          <td class="right">${(s.hours * s.hourly_rate).toFixed(2)}€</td>
+          <td class="text-right">${s.hours}</td>
+          <td class="text-right">${s.hourly_rate.toFixed(2)}€</td>
+          <td class="text-right">${(s.hours * s.hourly_rate).toFixed(2)}€</td>
         </tr>`
     )
     .join('');
 
-  function euro(amount) {
-    return `${amount.toFixed(2)}€`;
-  }
+  const total = invoice.subtotal || 0;
 
-  return `<!doctype html>
-  <html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <title>Facture ${invoice.invoice_number}</title>
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facture</title>
     <style>
-      @page { 
-        size: A4 portrait; 
-        margin: 10mm; 
-        padding: 0;
-      }
-      html, body { 
-        height: auto; 
-        margin: 0; 
-        padding: 0;
-      }
-      body { 
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; 
-        padding: 0; 
-        color: #111827; 
-        background: #ffffff; 
-        -webkit-print-color-adjust: exact; 
-        print-color-adjust: exact; 
-        line-height: 1.4; 
-        font-size: 12px;
-      }
-      .container { 
-        padding: 20px 15px; 
-        max-width: 100%;
-        box-sizing: border-box;
-      }
-      .brand { color: #1d4ed8; }
-      .brand-bg { background: #1d4ed8; }
-      .brand-weak-bg { background: #eff6ff; }
-      .brand-border { border-color: #1d4ed8; }
-      .chip { display:inline-block; padding: 4px 10px; border-radius: 9999px; background: #1d4ed8; color: #ffffff; font-weight: 600; font-size: 12px; letter-spacing: 0.4px; }
-      .divider { height: 0; background: transparent; margin: 0; }
-      h1 { font-size: 18px; margin: 0 0 8px; }
-      h2 { font-size: 14px; margin: 15px 0 8px; }
-      table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-      th, td { border-bottom: none; padding: 6px 8px; font-size: 11px; }
-      thead th:not(:last-child), tbody td:not(:last-child) { border-right: 1px solid #e5e7eb; }
-      th { text-align: left; color: #1d4ed8; background: #eff6ff; }
-      .table-card { border:1px solid #e5e7eb; border-radius: 10px; overflow: hidden; background:#ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-      .table-card table { margin: 0; }
-      .table-card thead th { border-bottom: 1px solid #dbe2ea; }
-      .table-card tbody tr:nth-child(even) { background: #f8fafc; }
-      .table-card tbody td { border-bottom: 1px solid #eef2f7; }
-      .totals { margin-top: 12px; width: auto; margin-left: auto; }
-      .totals td { padding: 1px 0; font-size: 12px; border: none !important; }
-      .totals td:first-child { padding-right: 4px; white-space: nowrap; }
-      .right { text-align: right; }
-      .muted { color: #6b7280; font-size: 10px; }
-      .row { display:flex; justify-content: space-between; gap: 20px; }
-      .card { border:1px solid #e5e7eb; border-radius:6px; padding:10px; background: #ffffff; }
-      .header-bar { height: 4px; width: 100%; margin-bottom: 20px; }
-      @media print { 
-        .no-print { display:none; } 
-        .container { padding: 0; }
-        
-        /* Configuration des pages */
-        @page {
-          margin: 0.5in;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
-        /* Marge supplémentaire pour les pages suivantes */
-        .table-card {
-          page-break-inside: auto;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 0;
+            background: #f5f5f5;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
         }
         
-        /* Ajouter un espacement au début des pages suivantes */
-        .table-card {
-          margin-top: 20px;
+        .facture {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 20px auto;
+            background: white;
+            padding: 10mm;
+            padding-top: 0;
+            position: relative;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            page-break-after: always;
         }
         
-        /* Espacement supplémentaire pour les pages suivantes */
-        @media print {
-          .table-card {
-            margin-top: 40px;
-          }
-        }
-        
-        
-        /* Empêcher la division des éléments importants */
-        .invoice-header { page-break-inside: avoid; }
-        .client-info { page-break-inside: avoid; }
-        .section-title { page-break-inside: avoid; }
-        
-        /* Permettre seulement la division du tableau */
-        .table-card { page-break-inside: auto; }
-        table { page-break-inside: auto; }
-        thead { display: table-header-group; }
-        tbody { page-break-inside: auto; }
-        tr { page-break-inside: auto; page-break-after: auto; }
-        td, th { page-break-inside: avoid; }
-        
-        /* Totaux et footer uniquement à la fin */
-        .totals { page-break-inside: avoid; }
-        footer { page-break-inside: avoid; }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="header-bar brand-bg"></div>
     
-    <div class="container">
-    <header class="row invoice-header" style="align-items:flex-start">
-      <div style="flex:1">
-        <div style="display:flex; align-items:center; gap:12px">
-          ${(invoice.company_logo_url !== null ? invoice.company_logo_url : settings?.logoUrl) ? `<img src="${invoice.company_logo_url !== null ? invoice.company_logo_url : settings.logoUrl}" alt="logo" style="height:56px; width:auto; object-fit:contain;" />` : ''}
-          <div>
-            <h1 class="brand" style="margin:0">${invoice.company_name !== null ? invoice.company_name : (settings?.companyName || 'ProFlow')}</h1>
-            <div class="muted" style="margin-top:4px">${invoice.company_owner !== null ? invoice.company_owner : (settings?.ownerName || 'Votre flux professionnel simplifié')}</div>
-          </div>
-        </div>
-        <div class="divider"></div>
-        <div style="margin-top:10px">
-          <div class="muted">${invoice.company_address !== null ? invoice.company_address : (settings?.address || '')}</div>
-          <div class="muted">${invoice.company_email !== null ? invoice.company_email : (settings?.email || '')} ${(invoice.company_phone !== null ? invoice.company_phone : settings?.phone) ? ' • ' + (invoice.company_phone !== null ? invoice.company_phone : settings.phone) : ''}</div>
-          ${(invoice.company_siret !== null ? invoice.company_siret : settings?.siret) ? `<div class="muted">SIRET: ${invoice.company_siret !== null ? invoice.company_siret : settings.siret}</div>` : ''}
-        </div>
-      </div>
-      <div class="card brand-border" style="min-width:280px; border-width:2px">
-        <div style="font-size:18px; margin-bottom:8px; font-weight:700" class="brand">Facture N° : ${invoice.invoice_number}</div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span class="muted">Date d'émission</span><span>${new Date(invoice.date).toLocaleDateString('fr-FR')}</span></div>
-        <div style="display:flex; justify-content:space-between"><span class="muted">Date d'échéance</span><span>${new Date(invoice.due_date).toLocaleDateString('fr-FR')}</span></div>
-      </div>
-    </header>
-
-    <section class="row client-info" style="margin-top:24px">
-      <div style="flex:1;"></div>
-      <div class="card" style="flex:1; max-width:400px;">
-        <div style="font-weight:600; margin-bottom:8px" class="brand">Facturer à</div>
-        <div style="font-weight:600; margin-bottom:4px">${client?.name || 'Client inconnu'}</div>
-        <div class="muted" style="margin-bottom:2px">${client?.email || ''}</div>
-        <div class="muted" style="margin-bottom:2px">${client?.phone || ''}</div>
-        <div class="muted">${client?.address || ''}</div>
-      </div>
-    </section>
-    <main>
-      <h2 class="brand section-title" style="margin-top:24px">Détails des prestations</h2>
-      <div class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Description</th>
-            <th class="right">Heures</th>
-            <th class="right">Tarif</th>
-            <th class="right">Montant</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${servicesRows || '<tr><td colspan="5" class="text-center muted">Aucune prestation trouvée</td></tr>'}
-        </tbody>
-      </table>
-      </div>
-      
-
-      <table class="totals">
-        <tr>
-          <td class="right muted">Total à payer&nbsp;:</td>
-          <td class="right">${euro(invoice.subtotal)}</td>
-        </tr>
-        <tr>
-          <td colspan="2" class="right muted" style="font-size:11px; padding-top:8px;">TVA non applicable, art.293 B du CGI</td>
-        </tr>
-      </table>
-    </main>
-    <footer style="margin-top:24px" class="muted">
-      ${invoice.invoice_terms || settings?.invoiceTerms || settings?.paymentTerms || `Conditions de paiement: ${settings?.paymentDays || 30} jours. Aucune TVA applicable (franchise de base).`}
-      ${(invoice.payment_method || settings?.paymentMethod) ? `<br><br><strong>Mode de paiement :</strong> ${invoice.payment_method || settings.paymentMethod}` : ''}
-      ${(invoice.additional_terms || settings?.additionalTerms) ? `<br><br>${invoice.additional_terms || settings.additionalTerms}` : ''}
-        ${(invoice.show_legal_rate !== null ? invoice.show_legal_rate : (settings?.showLegalRate || false)) || (invoice.show_fixed_fee !== null ? invoice.show_fixed_fee : (settings?.showFixedFee || false)) ? (() => {
-        // Calculer la date limite à partir des paramètres de la facture
-        const paymentTerms = invoice.payment_terms || settings?.paymentTerms || 30;
-        const invoiceDate = new Date(invoice.date);
-        const dueDate = new Date(invoiceDate);
-        dueDate.setDate(dueDate.getDate() + paymentTerms);
         
-        // Récupérer les options d'affichage spécifiques à la facture
-        const showLegalRate = invoice.show_legal_rate !== null ? invoice.show_legal_rate : (settings?.showLegalRate !== false);
-        const showFixedFee = invoice.show_fixed_fee !== null ? invoice.show_fixed_fee : (settings?.showFixedFee !== false);
-        
-        let reglementText = '<br><br><strong>Règlement :</strong><br>';
-        
-        // La date limite s'affiche toujours automatiquement
-        reglementText += `• Date limite : ${dueDate.toLocaleDateString('fr-FR')} (${paymentTerms} jours)<br>`;
-        
-        if (showLegalRate) {
-          reglementText += '• Taux annuel de pénalité en cas de retard de paiement : 3 fois le taux légal selon la loi n°2008-776 du 4 août 2008<br>';
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
         }
         
-        if (showFixedFee) {
-          reglementText += '• En cas de retard de paiement, application d\'une indemnité forfaitaire pour frais de recouvrement de 40 € selon l\'article D. 441-5 du code du commerce.';
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            text-transform: uppercase;
         }
         
-        return reglementText;
-      })() : ''}
-    </footer>
-    <script>window.onload = () => { window.print(); };</script>
+        .page-numero {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            text-transform: uppercase;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding-top: 8px;
+            border-top: 2px solid #667eea;
+        }
+        
+        .entreprise {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .logo-img {
+            width: 35px;
+            height: 35px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="35" r="15" fill="%23fff"/><path d="M 30 50 Q 30 45 35 45 L 45 45 L 45 70 Q 45 75 50 75 Q 55 75 55 70 L 55 45 L 65 45 Q 70 45 70 50 L 70 80 Q 70 85 65 85 L 35 85 Q 30 85 30 80 Z" fill="%23fff"/></svg>') center/contain no-repeat;
+        }
+        
+        .entreprise-info h1 {
+            color: #667eea;
+            font-size: 20px;
+            margin-bottom: 3px;
+            font-weight: 700;
+        }
+        
+        .entreprise-info .subtitle {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .entreprise-info p {
+            color: #555;
+            line-height: 1.4;
+            font-size: 10px;
+        }
+        
+        .facture-info {
+            border: 1px solid #bbbbbb;
+            padding: 10px 15px;
+            border-radius: 6px;
+            background: transparent;
+            min-width: 240px;
+        }
+        
+        .facture-info h2 {
+            color: #667eea;
+            font-size: 12px;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+        
+        .facture-info .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 10px;
+        }
+        
+        .facture-info .info-row label {
+            color: #666;
+        }
+        
+        .facture-info .info-row span {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .client-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+        
+        .client-box {
+            border: 1px solid #bbbbbb;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background: #fff;
+            min-width: 280px;
+        }
+        
+        .client-box h3 {
+            color: #667eea;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        
+        .client-box p {
+            color: #555;
+            line-height: 1.4;
+            font-size: 10px;
+        }
+        
+        .client-box strong {
+            color: #333;
+            font-size: 10px;
+        }
+        
+        .table-title {
+            color: #667eea;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 8px;
+            font-size: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            table-layout: auto;
+            page-break-inside: auto;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: table-header-group;
+        }
+        
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+        
+        tbody {
+            page-break-inside: auto;
+        }
+        
+        /* Gérer l'espacement en haut d'une nouvelle page pour les tableaux */
+        thead tr {
+            page-break-after: auto;
+            page-break-before: auto;
+        }
+        
+        
+        th {
+            padding: 8px 5px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 10px;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            white-space: nowrap;
+        }
+        
+        th.text-right {
+            text-align: left;
+        }
+        
+        th:last-child {
+            border-right: none;
+        }
+        
+        td {
+            padding: 6px 9px;
+            border-bottom: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+            font-size: 10px;
+            color: #555;
+            text-align: left;
+        }
+        
+        td:last-child {
+            border-right: none;
+        }
+        
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* Bordures arrondies sur l'en-tête du tableau */
+        thead tr:first-child th:first-child {
+            border-top-left-radius: 6px;
+        }
+        
+        thead tr:first-child th:last-child {
+            border-top-right-radius: 6px;
+        }
+        
+        /* Bordures arrondies sur la dernière ligne du tbody */
+        tbody tr:last-child td:first-child {
+            border-bottom-left-radius: 6px;
+        }
+        
+        tbody tr:last-child td:last-child {
+            border-bottom-right-radius: 6px;
+        }
+        
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+        
+        tbody tr:hover {
+            background: #f3f4f6;
+        }
+        
+        .text-right {
+            text-align: left;
+        }
+        
+        .totaux-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 8px;
+        }
+        
+        .totaux {
+            width: 280px;
+            text-align: right;
+        }
+        
+        .totaux-ligne {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            font-size: 10px;
+            color: #555;
+        }
+        
+        .totaux-ligne.total {
+            border-top: 2px solid #667eea;
+            margin-top: 6px;
+            padding-top: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            color: #667eea;
+        }
+        
+        .tva-notice {
+            text-align: right;
+            color: #666;
+            font-size: 10px;
+            font-style: italic;
+            margin-top: 3px;
+        }
+        
+        .mentions {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+            page-break-inside: avoid;
+        }
+        
+        .final-section {
+            page-break-inside: avoid;
+        }
+        
+        .mentions h3 {
+            color: #333;
+            font-size: 12px;
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+        
+        .mentions p {
+            color: #666;
+            font-size: 10px;
+            line-height: 1.3;
+            margin-bottom: 3px;
+        }
+        
+        .mentions ul {
+            list-style-type: disc;
+            margin-left: 15px;
+            color: #666;
+            font-size: 10px;
+            line-height: 1.3;
+        }
+        
+        .page-footer {
+            margin-top: 20px;
+            text-align: right;
+            color: #999;
+            font-size: 10px;
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+                background: white;
+                margin: 0;
+            }
+            
+            .facture {
+                width: 210mm;
+                min-height: 297mm;
+                margin: 0;
+                padding: 10mm;
+                box-shadow: none;
+            }
+            
+            /* Supprimer l'espace du header sur la première page */
+            .facture > .page-header {
+                margin-top: -5mm;
+            }
+            
+            .mentions {
+                page-break-inside: avoid;
+            }
+            
+            .final-section {
+                page-break-inside: avoid;
+            }
+            
+            .page-footer {
+                margin-top: 20px;
+            }
+            
+            @page {
+                size: A4;
+            }
+            
+            /* Assurer un espace en haut de chaque nouvelle page pour les tableaux */
+            thead {
+                display: table-header-group;
+            }
+            
+        }
+    </style>
+</head>
+<body>
+    <div class="facture">
+        <div class="page-header">
+            <div class="page-title">FACTURE</div>
+            <div class="page-numero">N° ${invoice.invoice_number}</div>
+        </div>
+        
+        <div class="header">
+            <div class="entreprise">
+                ${(invoice.company_logo_url !== null ? invoice.company_logo_url : settings?.logoUrl) ? `
+                <div class="logo" style="background: transparent;">
+                    <img src="${invoice.company_logo_url !== null ? invoice.company_logo_url : settings.logoUrl}" alt="Logo" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;" />
+                </div>
+                ` : `
+                <div class="logo">
+                    <div class="logo-img"></div>
+                </div>
+                `}
+                <div class="entreprise-info">
+                    <h1>${invoice.company_name !== null ? invoice.company_name : (settings?.companyName || 'ProFlow')}</h1>
+                    <div class="subtitle">${invoice.company_owner !== null ? invoice.company_owner : (settings?.ownerName || '')}</div>
+                    <p>${invoice.company_address !== null ? invoice.company_address : (settings?.address || '')}<br>
+                    ${invoice.company_email !== null ? invoice.company_email : (settings?.email || '')} • ${invoice.company_phone !== null ? invoice.company_phone : (settings?.phone || '')}<br>
+                    SIRET: ${invoice.company_siret !== null ? invoice.company_siret : (settings?.siret || '')}</p>
+                </div>
+            </div>
+            <div class="facture-info">
+                <h2>Facture N° : ${invoice.invoice_number}</h2>
+                <div class="info-row">
+                    <label>Date d'émission</label>
+                    <span>${formatDate(invoice.date)}</span>
+                </div>
+                <div class="info-row">
+                    <label>Date d'échéance</label>
+                    <span>${formatDate(invoice.due_date)}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="client-section">
+            <div class="client-box">
+                <h3>Facturer à</h3>
+                <p><strong>${client?.name || 'Client inconnu'}</strong><br>
+                ${client?.email || ''}<br>
+                ${client?.phone || ''}<br>
+                ${client?.address || ''}</p>
+            </div>
+        </div>
+        
+        <h3 class="table-title">Détails des prestations</h3>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th class="text-right">Heures</th>
+                    <th class="text-right">Tarif</th>
+                    <th class="text-right">Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${servicesRows}
+            </tbody>
+        </table>
+        
+        <div class="totaux-section final-section">
+            <div class="totaux">
+                <div class="totaux-ligne total">
+                    <span>Total à payer :</span>
+                    <span>${total.toFixed(2)}€</span>
+                </div>
+                <div class="tva-notice">TVA non applicable, art.293 B du CGI</div>
+            </div>
+        </div>
+        <div class="mentions final-section">
+            <h3>Règlement :</h3>
+            <ul>
+                <li>Date limite : ${formatDate(invoice.due_date)} (${invoice.payment_terms || settings?.paymentTerms || 30} jours)</li>
+                ${(invoice.show_legal_rate !== null ? invoice.show_legal_rate : (settings?.showLegalRate !== false)) ? '<li>Taux annuel de pénalité en cas de retard de paiement : 3 fois le taux légal selon la loi n°2008-776 du 4 août 2008</li>' : ''}
+                ${(invoice.show_fixed_fee !== null ? invoice.show_fixed_fee : (settings?.showFixedFee !== false)) ? '<li>En cas de retard de paiement, application d\'une indemnité forfaitaire pour frais de recouvrement de 40 € selon l\'article D. 441-5 du code du commerce.</li>' : ''}
+            </ul>
+            <p style="margin-top: 15px;"><strong>Mode de paiement :</strong> ${invoice.payment_method || settings?.paymentMethod || 'Virement bancaire'}</p>
+        </div>
+
+        
     </div>
-  </body>
-  </html>`;
+</body>
+</html>`;
 }

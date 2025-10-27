@@ -202,7 +202,7 @@ app.post('/api/send-invoice', async (req, res) => {
     console.log('📧 Données email personnalisées reçues:', customEmailData);
     
     // Utiliser le message personnalisé ou le message par défaut
-    const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name}, veuillez trouver ci-joint votre facture.`;
+    const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name},\n\nNous vous remercions pour votre confiance et votre collaboration.\n\nVeuillez trouver ci-joint votre facture détaillée en format PDF pour vos archives. Nous restons à votre entière disposition pour toute question.\n\nCordialement.`;
     const emailSubject = customEmailData?.subject || `Facture ${invoice.invoice_number}`;
     
     console.log('📧 Message email utilisé:', emailMessage);
@@ -215,223 +215,394 @@ app.post('/api/send-invoice', async (req, res) => {
     console.log('📧 Email expéditeur utilisé:', fromEmail);
     console.log('📧 Nom expéditeur utilisé:', fromName);
     
+    // Fonction pour convertir date YYYY-MM-DD en DD-MM-YYYY
+    const formatDateFR = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+
+    // Construire l'URL de téléchargement
+    const baseUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+    const downloadUrl = `${baseUrl}/api/download-invoice/${invoiceId}`;
+    
     // Template HTML intégré (pour éviter les problèmes d'import)
-    const htmlTemplate = `
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Facture ProFlow</title>
-        <style>
-            body {
-                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                line-height: 1.6;
-                color: #1a1a1a;
-                max-width: 650px;
-                margin: 0 auto;
-                padding: 20px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
+    const htmlTemplate = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f0f2f5;
+            padding: 0;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+        
+        .email-container {
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+            background: white;
+            overflow: hidden;
+            border-radius: 15px;
+            box-sizing: border-box;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        table {
+            width: 100%;
+            table-layout: auto;
+            border-collapse: collapse;
+        }
+        
+        td, th {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 40px 40px 30px;
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .company-info {
+            display: table;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        
+        .logo-section, .invoice-number {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+        }
+        
+        .logo-section h1 {
+            font-size: 32px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        
+        .logo-section p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .invoice-number {
+            text-align: right;
+        }
+        
+        .invoice-number h2 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-number p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .company-details {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .company-details p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 3px 0;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .info-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 40px;
+            border-spacing: 30px;
+        }
+        
+        .info-section {
+            display: table-cell;
+            width: 50%;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 4px solid #1e3c72;
+        }
+        
+        .info-section h3 {
+            color: #1e3c72;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .info-section p {
+            color: #333;
+            font-size: 15px;
+            line-height: 1.7;
+            margin: 5px 0;
+        }
+        
+        .info-section strong {
+            color: #000;
+        }
+        
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .invoice-table thead {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+        }
+        
+        .invoice-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .invoice-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            color: #333;
+            font-size: 15px;
+        }
+        
+        .invoice-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .invoice-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .totals-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 30px;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+        
+        .total-row {
+            display: table;
+            width: 100%;
+            padding: 12px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .total-row .label {
+            display: table-cell;
+            width: 70%;
+            text-align: left;
+        }
+        
+        .total-row .amount {
+            display: table-cell;
+            width: 30%;
+            text-align: right;
+        }
+        
+        .total-row.subtotal {
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .total-row.final {
+            border-top: 3px solid #1e3c72;
+            margin-top: 15px;
+            padding-top: 20px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+        
+        .button-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .download-button {
+            display: inline-block;
+            background: #10b981 !important;
+            color: white !important;
+            padding: 18px 50px;
+            border-radius: 50px;
+            text-decoration: none !important;
+            font-weight: 700;
+            font-size: 16px;
+            border: none !important;
+        }
+        
+        .download-button::before {
+            content: '⬇ ';
+            font-size: 18px;
+            margin-right: 8px;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 30px 40px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+            border-radius: 0 0 15px 15px;
+        }
+        
+        .footer p {
+            color: #6c757d;
+            font-size: 13px;
+            line-height: 1.7;
+            margin: 5px 0;
+        }
+        
+        .footer a {
+            color: #1e3c72;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 600px) {
+            .info-section {
+                display: block;
+                width: 100% !important;
             }
-            .email-container {
-                background: white;
-                border-radius: 20px;
-                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-                overflow: hidden;
-                position: relative;
-            }
-            .email-container::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 4px;
-                background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
-            }
-            .header {
-                background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-                color: white;
-                padding: 40px 30px;
-                text-align: center;
-                position: relative;
-            }
-            .header::after {
-                content: '';
-                position: absolute;
-                bottom: -10px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 0;
-                height: 0;
-                border-left: 15px solid transparent;
-                border-right: 15px solid transparent;
-                border-top: 15px solid #34495e;
-            }
-            .header h1 {
-                margin: 0;
-                font-size: 32px;
-                font-weight: 700;
-                letter-spacing: -0.5px;
-            }
-            .header p {
-                margin: 10px 0 0 0;
-                opacity: 0.9;
-                font-size: 16px;
-                font-weight: 300;
-            }
-            .content {
-                padding: 40px 30px;
-                background: #fafbfc;
-            }
-            .greeting {
-                font-size: 24px;
-                color: #2c3e50;
-                margin-bottom: 25px;
-                font-weight: 600;
-            }
-            .message {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 25px;
-                border-radius: 15px;
-                margin: 25px 0;
-                font-size: 16px;
-                line-height: 1.7;
-                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-            }
-            .invoice-info {
-                background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
-                padding: 25px;
-                border-radius: 15px;
-                margin: 25px 0;
-                border: 2px solid #b3d9ff;
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            }
-            .invoice-info h3 {
-                color: #2c3e50;
-                margin: 0 0 15px 0;
-                font-size: 20px;
-                font-weight: 600;
-            }
-            .footer {
-                background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-                color: white;
-                padding: 30px;
-                text-align: center;
-            }
-            .services-table {
-                margin: 30px 0;
-            }
-            .services-table h3 {
-                color: #2c3e50;
-                font-size: 22px;
-                font-weight: 600;
+            
+            .logo-section, .invoice-number {
+                display: block;
+                width: 100% !important;
+                text-align: left !important;
                 margin-bottom: 20px;
-                text-align: center;
             }
-            .services-table table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 20px 0;
-                background: white;
-                border-radius: 15px;
-                overflow: hidden;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-                border: none;
+            
+            .content {
+                padding: 30px 20px;
             }
-            .services-table th {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 18px 15px;
-                text-align: left;
-                font-weight: 600;
-                font-size: 14px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            .services-table td {
-                padding: 18px 15px;
-                border-bottom: 1px solid #f1f3f4;
-                font-size: 15px;
-            }
-            .services-table tr:nth-child(even) {
-                background: #fafbfc;
-            }
-            .services-table tr:hover {
-                background: #f0f8ff;
-                transform: scale(1.01);
-                transition: all 0.2s ease;
-            }
-            .services-table tfoot tr {
-                background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
-                color: white !important;
-            }
-            .services-table tfoot td {
-                font-size: 18px;
-                font-weight: 700;
-                padding: 20px 15px;
-            }
-            .company-info {
-                color: #bdc3c7;
-                font-size: 14px;
-                margin: 15px 0;
-                line-height: 1.5;
-            }
-            .company-info strong {
-                color: white;
-                font-size: 16px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="email-container">
-            <div class="header">
-                <h1>{{company_name}}</h1>
-                <p>Votre partenaire professionnel</p>
-            </div>
-            <div class="content">
-                <div class="greeting">Bonjour {{client_name}},</div>
-                <div class="message">{{message}}</div>
-                <div class="invoice-info">
-                    <h3>📄 Détails de la facture</h3>
-                    <p><strong>Numéro :</strong> {{invoice_number}}</p>
-                    <p><strong>Date :</strong> {{invoice_date}}</p>
-                    <p><strong>Échéance :</strong> {{due_date}}</p>
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="company-info">
+                <div class="logo-section">
+                    <h1>{{company_name}}</h1>
+                    <p>Votre partenaire de confiance</p>
                 </div>
-                
-                <div class="services-table">
-                    <h3>💰 Services facturés</h3>
-                    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-                        <thead>
-                            <tr style="background: #f8f9fa;">
-                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Description</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Heures</th>
-                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Taux HT</th>
-                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Total HT</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{services_rows}}
-                        </tbody>
-                        <tfoot style="background: #e8f4fd;">
-                            <tr style="background: #667eea; color: white;">
-                                <td colspan="3" style="padding: 15px; font-weight: bold; text-align: right; font-size: 18px;">TOTAL :</td>
-                                <td style="padding: 15px; font-weight: bold; text-align: right; font-size: 18px;">{{total_amount}} €</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                <div class="invoice-number">
+                    <h2>FACTURE</h2>
+                    <p>N° {{invoice_number}}</p>
+                    <p>Date: {{invoice_date}}</p>
                 </div>
             </div>
-            <div class="footer">
-                <p><strong>{{company_name}}</strong><br>
-                {{company_address}}<br>
-                📧 {{company_email}} | 📞 {{company_phone}}</p>
+            
+            <div class="company-details">
+                <p><strong>{{company_name}}</strong></p>
+                <p>{{company_address}}</p>
+                <p>SIRET: {{company_siret}}</p>
+                <p>Tél: {{company_phone}}</p>
+                <p style="color: white;">Email: <a href="mailto:{{company_email}}" style="color: white; text-decoration: underline;">{{company_email}}</a></p>
             </div>
         </div>
-    </body>
-    </html>`;
+        
+        <div class="content">
+            <div class="info-grid">
+                <div class="info-section">
+                    <h3>Facturé à</h3>
+                    <p><strong>{{client_name}}</strong></p>
+                    <p>{{client_address}}</p>
+                    <p>Email: {{client_email}}</p>
+                    <p>Tél: {{client_phone}}</p>
+                </div>
+                
+                <div class="info-section">
+                    <h3>Détails de paiement</h3>
+                    <p><strong>Date d'échéance:</strong> {{due_date}}</p>
+                    <p><strong>Conditions:</strong> Net 30 jours</p>
+                    <p><strong>Mode de paiement:</strong> Virement bancaire</p>
+                    <p><strong>Référence:</strong> {{invoice_number}}</p>
+                </div>
+            </div>
+            
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th class="text-right">Quantité</th>
+                        <th class="text-right">Prix unitaire</th>
+                        <th class="text-right">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{services_rows}}
+                </tbody>
+            </table>
+            
+            <div class="totals-section">
+                <div class="total-row subtotal">
+                    <span class="label">Sous-total HT</span>
+                    <span class="amount">{{total_amount}} €</span>
+                </div>
+                <div class="total-row final">
+                    <span class="label">TOTAL À PAYER</span>
+                    <span class="amount">{{total_amount}} €</span>
+                </div>
+            </div>
+            
+            <div class="button-container">
+                <a href="{{download_url}}" class="download-button" style="display: inline-block; background: #10b981; color: white; padding: 18px 50px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 16px; border: none;">⬇ Télécharger la facture (PDF)</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>{{company_name}}</strong></p>
+            <p>{{company_address}}</p>
+            <p>Email: {{company_email}} | Tél: {{company_phone}}</p>
+        </div>
+    </div>
+</body>
+</html>`;
 
     // Calculer les montants
     let totalAmount = 0;
@@ -443,12 +614,15 @@ app.post('/api/send-invoice', async (req, res) => {
         const serviceTotal = (service.hours || 0) * (service.hourly_rate || 0);
         totalAmount += serviceTotal;
         
+        const serviceDate = service.date ? formatDateFR(service.date) : '';
+        
         servicesRows += `
           <tr>
-            <td style="padding: 12px;">${service.description || 'Service'}</td>
-            <td style="padding: 12px; text-align: center;">${service.hours || 0}h</td>
-            <td style="padding: 12px; text-align: right;">${(service.hourly_rate || 0).toFixed(2)} €</td>
-            <td style="padding: 12px; text-align: right; font-weight: bold;">${serviceTotal.toFixed(2)} €</td>
+            <td>${serviceDate}</td>
+            <td>${service.description || 'Service'}</td>
+            <td class="text-right">${service.hours || 0}</td>
+            <td class="text-right">${(service.hourly_rate || 0).toFixed(2)} €</td>
+            <td class="text-right">${serviceTotal.toFixed(2)} €</td>
           </tr>
         `;
       });
@@ -458,15 +632,19 @@ app.post('/api/send-invoice', async (req, res) => {
     const htmlContent = htmlTemplate
       .replace(/\{\{company_name\}\}/g, companyData.name || 'ProFlow')
       .replace(/\{\{client_name\}\}/g, invoice.client.name)
-      .replace(/\{\{message\}\}/g, emailMessage)
+      .replace(/\{\{client_email\}\}/g, invoice.client.email || '')
+      .replace(/\{\{client_address\}\}/g, invoice.client.address || '')
+      .replace(/\{\{client_phone\}\}/g, invoice.client.phone || '')
       .replace(/\{\{invoice_number\}\}/g, invoice.invoice_number)
-      .replace(/\{\{invoice_date\}\}/g, invoice.date)
-      .replace(/\{\{due_date\}\}/g, invoice.due_date)
+      .replace(/\{\{invoice_date\}\}/g, formatDateFR(invoice.date))
+      .replace(/\{\{due_date\}\}/g, formatDateFR(invoice.due_date))
       .replace(/\{\{services_rows\}\}/g, servicesRows)
       .replace(/\{\{total_amount\}\}/g, totalAmount.toFixed(2))
       .replace(/\{\{company_address\}\}/g, companyData.address || '')
       .replace(/\{\{company_email\}\}/g, companyData.email || '')
-      .replace(/\{\{company_phone\}\}/g, companyData.phone || '');
+      .replace(/\{\{company_phone\}\}/g, companyData.phone || '')
+      .replace(/\{\{company_siret\}\}/g, companyData.siret || '')
+      .replace(/\{\{download_url\}\}/g, downloadUrl);
 
     // Envoyer email avec template HTML
     const msg = {
@@ -489,11 +667,47 @@ app.post('/api/send-invoice', async (req, res) => {
     };
 
     try {
+      console.log('📤 Tentative d\'envoi SendGrid à:', invoice.client.email);
+      console.log('📤 Expéditeur:', fromEmail);
+      console.log('📤 Destinataire:', invoice.client.email);
+      console.log('📤 Taille PDF:', pdfData.buffer.length, 'octets');
+      
       await sgMail.send(msg);
       console.log('✅ Email envoyé avec succès (SendGrid) à:', invoice.client.email);
+      
+      // Toujours essayer Gmail en backup car SendGrid peut rejeter certains emails
+      console.log('📤 Tentative backup Gmail pour:', invoice.client.email);
+      if (gmailTransporter) {
+        try {
+          const gmailMsg = {
+            from: {
+              address: fromEmail,
+              name: fromName
+            },
+            to: invoice.client.email,
+            subject: emailSubject,
+            text: emailMessage,
+            html: htmlContent,
+            attachments: [
+              {
+                filename: pdfData.fileName,
+                content: pdfData.buffer,
+                contentType: 'application/pdf'
+              }
+            ]
+          };
+          
+          await gmailTransporter.sendMail(gmailMsg);
+          console.log('✅ Email backup envoyé avec succès (Gmail) à:', invoice.client.email);
+        } catch (gmailError) {
+          console.error('⚠️ Erreur Gmail backup (non bloquant):', gmailError.message);
+        }
+      }
+      
       res.json({ success: true, message: 'Facture envoyée avec succès' });
     } catch (emailError) {
       console.error('❌ Erreur SendGrid:', emailError.message);
+      console.error('❌ Détails complets:', JSON.stringify(emailError.response?.body, null, 2));
       
       // Essayer Gmail comme solution de secours
       if (gmailTransporter) {
@@ -566,6 +780,81 @@ app.get('/api/test-connection', (req, res) => {
     message: 'Backend connecté et prêt',
     timestamp: new Date().toISOString()
   });
+});
+
+// Route pour télécharger une facture PDF
+app.get('/api/download-invoice/:invoiceId', async (req, res) => {
+  try {
+    const { invoiceId } = req.params;
+    
+    console.log(`📥 Demande de téléchargement PDF pour facture ${invoiceId}`);
+    
+    // Récupérer la facture
+    const { data: invoice, error: invoiceError } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('id', invoiceId)
+      .single();
+
+    if (invoiceError || !invoice) {
+      console.error('❌ Facture non trouvée:', invoiceError);
+      return res.status(404).json({ error: 'Facture non trouvée' });
+    }
+
+    // Récupérer les paramètres de l'entreprise
+    const { data: companySettings } = await supabase
+      .from('company_settings')
+      .select('*')
+      .single();
+
+    // Récupérer le client
+    const { data: client, error: clientError } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', invoice.client_id)
+      .single();
+
+    if (clientError) {
+      return res.status(404).json({ error: 'Client non trouvé' });
+    }
+
+    invoice.client = client;
+
+    // Préparer les données de l'entreprise
+    const companyData = {
+      name: invoice.company_name || companySettings?.companyName || 'ProFlow',
+      address: invoice.company_address || companySettings?.address || '',
+      email: invoice.company_email || companySettings?.email || '',
+      phone: invoice.company_phone || companySettings?.phone || '',
+      siret: invoice.company_siret || companySettings?.siret || '',
+      logoUrl: invoice.company_logo_url || companySettings?.logoUrl || null,
+    };
+
+    // Récupérer les services
+    const { data: services } = await supabase
+      .from('services')
+      .select('*')
+      .eq('client_id', invoice.client_id);
+
+    invoice.services = services || [];
+
+    // Générer le PDF
+    const pdfData = await generateInvoicePDFWithPuppeteer(invoice, companyData);
+
+    // Définir les en-têtes avant d'envoyer
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${pdfData.fileName}"`);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    
+    // Envoyer le PDF
+    res.end(Buffer.from(pdfData.buffer));
+
+    console.log(`✅ PDF envoyé pour facture ${invoiceId}`);
+
+  } catch (error) {
+    console.error('❌ Erreur téléchargement PDF:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));

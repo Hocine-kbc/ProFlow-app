@@ -69,20 +69,23 @@ export async function generateInvoicePDFWithPuppeteer(invoiceData, companyData) 
       waitUntil: 'domcontentloaded' // Plus rapide que networkidle0
     });
 
+
     // Attendre que le contenu soit rendu (temps réduit)
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Générer le PDF
+    // Générer le PDF avec des marges adaptées et pagination
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '0.5in',
-        right: '0.5in',
-        bottom: '0.5in',
-        left: '0.5in'
+        top: '15mm',
+        right: '10mm',
+        bottom: '30mm',
+        left: '10mm'
       },
-      displayHeaderFooter: false,
+      displayHeaderFooter: true,
+      headerTemplate: '<div></div>',
+      footerTemplate: '<div style="font-size: 10px; text-align: center; width: 100%; padding: 0 10mm; color: #999;"><span class="pageNumber"></span> / <span class="totalPages"></span></div>',
       preferCSSPageSize: true
     });
 
