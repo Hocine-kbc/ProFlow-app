@@ -11,7 +11,29 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
     return `${day}/${month}/${year}`;
   };
 
-  const servicesRows = (invoiceServices || [])
+  // Calculer la différence en jours entre la date de facturation et la date d'échéance
+  const calculateDaysDifference = (invoiceDate, dueDate) => {
+    if (!invoiceDate || !dueDate) return invoice.payment_terms || settings?.paymentTerms || 30;
+    
+    const invoice = new Date(invoiceDate);
+    const due = new Date(dueDate);
+    const diffTime = due - invoice;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : (invoice.payment_terms || settings?.paymentTerms || 30);
+  };
+
+  const daysDifference = calculateDaysDifference(invoice.date, invoice.due_date);
+
+  // Trier les services par date (plus ancienne à plus récente)
+  const allServices = (invoiceServices || []).sort((a, b) => {
+    const dateA = new Date(a.date || invoice.date);
+    const dateB = new Date(b.date || invoice.date);
+    return dateA - dateB;
+  });
+
+  // Générer toutes les lignes de services
+  const servicesRows = allServices
     .map(
       (s) => `
         <tr>
@@ -133,7 +155,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         .entreprise-info p {
             color: #555;
             line-height: 1.4;
-            font-size: 10px;
+            font-size: 12px;
         }
         
         .facture-info {
@@ -155,7 +177,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             display: flex;
             justify-content: space-between;
             margin-bottom: 4px;
-            font-size: 10px;
+            font-size: 12px;
         }
         
         .facture-info .info-row label {
@@ -170,7 +192,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         .client-section {
             display: flex;
             justify-content: flex-end;
-            margin-bottom: 10px;
+            margin-bottom: 50px;
         }
         
         .client-box {
@@ -193,12 +215,12 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         .client-box p {
             color: #555;
             line-height: 1.4;
-            font-size: 10px;
+            font-size: 12px;
         }
         
         .client-box strong {
             color: #333;
-            font-size: 10px;
+            font-size: 12px;
         }
         
         .table-title {
@@ -213,13 +235,14 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             border-collapse: separate;
             border-spacing: 0;
             margin-bottom: 8px;
-            font-size: 10px;
+            font-size: 12px;
             border: 1px solid #e5e7eb;
             border-radius: 6px;
-            overflow: hidden;
+            overflow: visible;
             table-layout: auto;
             page-break-inside: auto;
         }
+        
         
         thead {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -243,11 +266,13 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         }
         
         
+        
+        
         th {
             padding: 8px 5px;
             text-align: left;
             font-weight: 600;
-            font-size: 10px;
+            font-size: 12px;
             border-right: 1px solid rgba(255, 255, 255, 0.2);
             white-space: nowrap;
         }
@@ -264,17 +289,27 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             padding: 6px 9px;
             border-bottom: 1px solid #e5e7eb;
             border-right: 1px solid #e5e7eb;
-            font-size: 10px;
+            font-size: 12px;
             color: #555;
             text-align: left;
+        }
+        
+        /* Assurer que toutes les lignes ont une bordure en bas */
+        @media print {
+            td {
+                border-bottom: 1px solid #e5e7eb !important;
+            }
         }
         
         td:last-child {
             border-right: none;
         }
         
-        tbody tr:last-child td {
-            border-bottom: none;
+        /* Garder les bordures en bas pour toutes les lignes */
+        @media print {
+            tbody tr:last-child td {
+                border-bottom: 1px solid #e5e7eb !important;
+            }
         }
         
         /* Bordures arrondies sur l'en-tête du tableau */
@@ -286,13 +321,24 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             border-top-right-radius: 6px;
         }
         
-        /* Bordures arrondies sur la dernière ligne du tbody */
+        /* Bordures arrondies sur la dernière ligne du tbody - seulement si pas de page break */
         tbody tr:last-child td:first-child {
             border-bottom-left-radius: 6px;
         }
         
         tbody tr:last-child td:last-child {
             border-bottom-right-radius: 6px;
+        }
+        
+        /* Garder les bordures arrondies même en cas de page break */
+        @media print {
+            tbody tr:last-child td:first-child {
+                border-bottom-left-radius: 6px;
+            }
+            
+            tbody tr:last-child td:last-child {
+                border-bottom-right-radius: 6px;
+            }
         }
         
         tbody tr:nth-child(even) {
@@ -309,6 +355,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         
         .totaux-section {
             display: flex;
+            margin-top: 20px;
             justify-content: flex-end;
             margin-bottom: 8px;
         }
@@ -322,7 +369,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             display: flex;
             justify-content: space-between;
             padding: 2px 0;
-            font-size: 10px;
+            font-size: 12px;
             color: #555;
         }
         
@@ -338,7 +385,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         .tva-notice {
             text-align: right;
             color: #666;
-            font-size: 10px;
+            font-size: 12px;
             font-style: italic;
             margin-top: 3px;
         }
@@ -363,7 +410,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         
         .mentions p {
             color: #666;
-            font-size: 10px;
+            font-size: 12px;
             line-height: 1.3;
             margin-bottom: 3px;
         }
@@ -372,7 +419,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             list-style-type: disc;
             margin-left: 15px;
             color: #666;
-            font-size: 10px;
+            font-size: 12px;
             line-height: 1.3;
         }
         
@@ -395,13 +442,10 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
                 min-height: 297mm;
                 margin: 0;
                 padding: 10mm;
+                padding-top: 0;
                 box-shadow: none;
             }
             
-            /* Supprimer l'espace du header sur la première page */
-            .facture > .page-header {
-                margin-top: -5mm;
-            }
             
             .mentions {
                 page-break-inside: avoid;
@@ -505,7 +549,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         <div class="mentions final-section">
             <h3>Règlement :</h3>
             <ul>
-                <li>Date limite : ${formatDate(invoice.due_date)} (${invoice.payment_terms || settings?.paymentTerms || 30} jours)</li>
+                <li>Date limite : ${formatDate(invoice.due_date)} (${daysDifference} jour${daysDifference > 1 ? 's' : ''})</li>
                 ${(invoice.show_legal_rate !== null ? invoice.show_legal_rate : (settings?.showLegalRate !== false)) ? '<li>Taux annuel de pénalité en cas de retard de paiement : 3 fois le taux légal selon la loi n°2008-776 du 4 août 2008</li>' : ''}
                 ${(invoice.show_fixed_fee !== null ? invoice.show_fixed_fee : (settings?.showFixedFee !== false)) ? '<li>En cas de retard de paiement, application d\'une indemnité forfaitaire pour frais de recouvrement de 40 € selon l\'article D. 441-5 du code du commerce.</li>' : ''}
             </ul>

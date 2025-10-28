@@ -259,6 +259,7 @@ export default function InvoicesPage() {
     payment_method: '',
   });
   const [originalPaymentTerms, setOriginalPaymentTerms] = useState<number | null>(null);
+  const [dueDateManuallyModified, setDueDateManuallyModified] = useState(false);
 
   // Get available services for invoicing (completed but not invoiced) - recalculé automatiquement
   const availableServices = useMemo(() => {
@@ -400,6 +401,8 @@ export default function InvoicesPage() {
     setSelectedServices([]);
     setShowModal(false);
     setEditingInvoice(null);
+    setOriginalPaymentTerms(null);
+    setDueDateManuallyModified(false);
     setPreselectedClient(null); // Réinitialiser le client pré-sélectionné
   };
   const openEdit = (inv: Invoice) => {
@@ -423,6 +426,9 @@ export default function InvoicesPage() {
     } else {
       setOriginalPaymentTerms(null);
     }
+    
+    // Réinitialiser le flag de modification manuelle
+    setDueDateManuallyModified(false);
     
     // Get services for this invoice - try from invoice.services first, then from global services
     let invoiceServices = inv.services || [];
@@ -1747,12 +1753,16 @@ export default function InvoicesPage() {
                             
                             // Mettre à jour la date d'échéance seulement si elle n'a pas été modifiée manuellement
                             setFormData(prev => ({ ...prev, date: newDate, due_date: dueDateString }));
-                          } else if (newDate && editingInvoice) {
+                          } else if (newDate && editingInvoice && !dueDateManuallyModified) {
                             // Pour une facture existante, utiliser les termes de paiement originaux
+                            // SEULEMENT si la date d'échéance n'a pas été modifiée manuellement
                             const dueDateString = calculateDueDate(newDate, originalPaymentTerms || undefined);
                             
                             // Mettre à jour la date d'échéance avec les termes originaux
                             setFormData(prev => ({ ...prev, date: newDate, due_date: dueDateString }));
+                          } else {
+                            // Si la date d'échéance a été modifiée manuellement, ne pas la recalculer
+                            setFormData(prev => ({ ...prev, date: newDate }));
                           }
                         }}
                         className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
@@ -1767,7 +1777,10 @@ export default function InvoicesPage() {
                         type="date"
                         required
                         value={formData.due_date}
-                        onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, due_date: e.target.value });
+                          setDueDateManuallyModified(true);
+                        }}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Sélectionnez d'abord une date de facture"
                       />

@@ -461,6 +461,22 @@ export default function ServicesPage() {
     return matchesQuery && matchesStatus && matchesClient;
   });
 
+  // Calculer le total mensuel des prestations
+  const calculateMonthlyTotal = () => {
+    const currentYear = currentMonth.getFullYear();
+    const currentMonthIndex = currentMonth.getMonth();
+    
+    return filteredServices
+      .filter(service => {
+        const serviceDate = new Date(service.date);
+        return serviceDate.getFullYear() === currentYear && 
+               serviceDate.getMonth() === currentMonthIndex;
+      })
+      .reduce((total, service) => total + (service.hours * service.hourly_rate), 0);
+  };
+
+  const monthlyTotal = calculateMonthlyTotal();
+
   const sortedServices = filteredServices.sort((a, b) => {
     const clientA = clients.find(c => c.id === a.client_id);
     const clientB = clients.find(c => c.id === b.client_id);
@@ -912,6 +928,70 @@ export default function ServicesPage() {
         return null;
       })()}
 
+      {/* Total mensuel */}
+      <div className="mb-6 p-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-900/20 dark:via-teal-900/20 dark:to-cyan-900/20 border border-emerald-200 dark:border-emerald-600 rounded-2xl shadow-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mr-5 shadow-lg">
+              <Package className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-1">
+                Total mensuel des prestations
+              </h3>
+              <p className="text-base text-gray-600 dark:text-gray-300 font-semibold">
+                {currentMonth.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+          
+          {/* Navigation des mois */}
+          <div className="flex items-center space-x-4">
+            <button
+              type="button"
+              onClick={() => {
+                const newMonth = new Date(currentMonth);
+                newMonth.setMonth(newMonth.getMonth() - 1);
+                setCurrentMonth(newMonth);
+              }}
+              className="w-12 h-12 bg-white dark:bg-gray-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 border border-emerald-200 dark:border-emerald-600 flex items-center justify-center"
+            >
+              <ChevronLeft className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </button>
+            
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setCurrentMonth(new Date())}
+                className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent dark:from-emerald-400 dark:to-teal-400 hover:scale-110 transition-transform duration-200 cursor-pointer"
+                title="Revenir au mois actuel"
+              >
+                {monthlyTotal.toFixed(2)}€
+              </button>
+              <div className="text-sm text-gray-600 dark:text-gray-400 font-medium mt-1">
+                {filteredServices.filter(service => {
+                  const serviceDate = new Date(service.date);
+                  return serviceDate.getFullYear() === currentMonth.getFullYear() && 
+                         serviceDate.getMonth() === currentMonth.getMonth();
+                }).length} prestation(s)
+              </div>
+            </div>
+            
+            <button
+              type="button"
+              onClick={() => {
+                const newMonth = new Date(currentMonth);
+                newMonth.setMonth(newMonth.getMonth() + 1);
+                setCurrentMonth(newMonth);
+              }}
+              className="w-12 h-12 bg-white dark:bg-gray-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 border border-emerald-200 dark:border-emerald-600 flex items-center justify-center"
+            >
+              <ChevronRight className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Tableau des prestations */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
         {/* Vue mobile - Cards */}
@@ -1357,13 +1437,13 @@ export default function ServicesPage() {
                       </div>
                       
                       {/* Navigation */}
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-3">
                         <button
                           type="button"
                           onClick={() => navigateMonth('prev')}
-                          className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg"
+                          className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg flex items-center justify-center"
                         >
-                          <ChevronLeft className="w-4 h-4" />
+                          <ChevronLeft className="w-5 h-5" />
                         </button>
                         <button
                           type="button"
@@ -1375,9 +1455,9 @@ export default function ServicesPage() {
                         <button
                           type="button"
                           onClick={() => navigateMonth('next')}
-                          className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg"
+                          className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg flex items-center justify-center"
                         >
-                          <ChevronRight className="w-4 h-4" />
+                          <ChevronRight className="w-5 h-5" />
                         </button>
                       </div>
                     </div>
