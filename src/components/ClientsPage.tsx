@@ -413,7 +413,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-green-600 via-green-600 to-green-700 dark:from-green-700 dark:via-green-700 dark:to-green-800 text-white shadow-lg overflow-hidden">
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -439,7 +439,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
             <button
               type="button"
               onClick={() => setShowModal(true)}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
+              className="inline-flex items-center px-4 py-2 rounded-full bg-green-500/30 hover:bg-green-500/40 backdrop-blur transition-colors border border-green-400/30 text-sm font-medium"
             >
               <Plus className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Nouveau client</span>

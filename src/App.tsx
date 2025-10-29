@@ -7,6 +7,7 @@ import InvoicesPage from './components/InvoicesPage.tsx';
 import StatsPage from './components/StatsPage.tsx';
 import ProfilePage from './components/ProfilePage.tsx';
 import ArchivePage from './components/ArchivePage.tsx';
+import URSSAFPage from './components/URSSAFPage.tsx';
 import { AppProvider, useApp } from './contexts/AppContext.tsx';
 import { ThemeProvider } from './contexts/ThemeContext.tsx';
 import { fetchClients, fetchServices, fetchInvoices } from './lib/api.ts';
@@ -217,6 +218,8 @@ function AppContent() {
         return <ProfilePage />;
       case 'archive':
         return <ArchivePage onPageChange={handlePageChange} />;
+      case 'urssaf':
+        return <URSSAFPage />;
       default:
         return <Dashboard onNavigate={handlePageChange} />;
     }

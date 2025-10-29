@@ -359,7 +359,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="relative rounded-2xl p-4 md:p-6 lg:p-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-700 dark:from-indigo-700 dark:via-indigo-700 dark:to-indigo-800 text-white shadow-lg overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
           <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
@@ -374,7 +374,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         </div>
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-center sm:text-left">
+          <div className="flex-1 text-center sm:text-left">
             <h1 className="text-xl sm:text-2xl font-bold">Statistiques</h1>
             <p className="text-white/80 mt-1 text-sm sm:text-base">Tableaux de bord et analyses financières</p>
           </div>

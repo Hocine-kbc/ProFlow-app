@@ -31,6 +31,7 @@ interface Settings {
   additionalTerms?: string;
   showLegalRate?: boolean;
   showFixedFee?: boolean;
+  urssafActivity?: 'services' | 'ventes' | 'liberale';
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +55,7 @@ interface DatabaseSettings {
   additionalterms?: string;
   show_legal_rate?: boolean;
   show_fixed_fee?: boolean;
+  urssafactivity?: string;
   created_at: string;
   updated_at: string;
 }
@@ -769,6 +771,7 @@ export async function fetchSettings(): Promise<Settings | null> {
         additionalTerms: dbData.additionalterms,
         showLegalRate: dbData.show_legal_rate ?? true,
         showFixedFee: dbData.show_fixed_fee ?? true,
+        urssafActivity: dbData.urssafactivity as 'services' | 'ventes' | 'liberale' | undefined,
         created_at: dbData.created_at,
         updated_at: dbData.updated_at,
       };
@@ -804,6 +807,7 @@ export async function fetchSettings(): Promise<Settings | null> {
           paymentTerms: data.paymentTerms || 0,
           logoUrl: data.logoUrl || '',
           invoiceTerms: data.invoiceTerms || '',
+          urssafActivity: data.urssafActivity || 'services',
           created_at: data.created_at || new Date().toISOString(),
           updated_at: data.updated_at || new Date().toISOString(),
         };
@@ -847,6 +851,7 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
     additionalTerms: payload.additionalTerms,
     showLegalRate: payload.showLegalRate,
     showFixedFee: payload.showFixedFee,
+    urssafActivity: (payload as any).urssafActivity,
     updated_at: now,
     created_at: now,
   };
@@ -891,6 +896,7 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
       additionalterms: payload.additionalTerms,
       show_legal_rate: payload.showLegalRate ?? true,
       show_fixed_fee: payload.showFixedFee ?? true,
+      urssafactivity: (payload as any).urssafActivity,
       updated_at: now,
       created_at: now,
     };
@@ -957,6 +963,7 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
           paymentTerms: retryData.paymentterms || 30,
           logoUrl: retryData.logourl || '',
           invoiceTerms: retryData.invoiceterms || '',
+          urssafActivity: (retryData as any).urssafactivity || 'services',
           created_at: retryData.created_at,
           updated_at: retryData.updated_at,
         };
@@ -982,6 +989,7 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
       paymentTerms: dbData.paymentterms ?? 0,
       logoUrl: dbData.logourl ?? '',
       invoiceTerms: dbData.invoiceterms ?? '',
+      urssafActivity: dbData.urssafactivity as 'services' | 'ventes' | 'liberale' | undefined,
       created_at: dbData.created_at,
       updated_at: dbData.updated_at,
     };
@@ -1002,6 +1010,7 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
       paymentTerms: payload.paymentTerms,
       logoUrl: payload.logoUrl,
       invoiceTerms: payload.invoiceTerms,
+      urssafActivity: (payload as any).urssafActivity,
       created_at: now,
       updated_at: now,
     };

@@ -376,17 +376,24 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
   return (
     <div className="space-y-6 scrollbar-hide w-full max-w-full overflow-x-hidden">
       {/* En-tête */}
-      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 dark:from-purple-700 dark:via-indigo-700 dark:to-blue-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-gray-600 via-gray-600 to-gray-700 dark:from-gray-700 dark:via-gray-700 dark:to-gray-800 text-white shadow-lg overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
           <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
           <div className="absolute top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
+          <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
+          <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
+          
+          <div className="absolute top-0 bottom-0 left-12 w-0.5 h-full bg-white/20 transform rotate-12"></div>
+          <div className="absolute top-0 bottom-0 left-24 w-0.5 h-full bg-white/15 transform -rotate-6"></div>
+          <div className="absolute top-0 bottom-0 right-12 w-0.5 h-full bg-white/20 transform rotate-45"></div>
+          <div className="absolute top-0 bottom-0 right-24 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
         </div>
         
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1 text-center sm:text-left">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold">Archive</h1>
-            <p className="text-white/80 mt-1 text-xs sm:text-sm lg:text-base">Gestion des clients et factures archivés</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Archive</h1>
+            <p className="text-white/80 mt-1 text-sm sm:text-base">Gestion des clients et factures archivés</p>
           </div>
         </div>
       </div>

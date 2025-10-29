@@ -783,7 +783,7 @@ export default function InvoicesPage() {
     <div className="space-y-6">
       {/* Header de la page Facture - seulement visible quand on est dans la vue factures */}
       {currentView === 'invoices' && (
-        <div className="relative rounded-2xl p-4 md:p-6 lg:p-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+        <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 text-white shadow-lg overflow-hidden">
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -800,45 +800,42 @@ export default function InvoicesPage() {
           <div className="absolute top-0 bottom-0 right-24 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
         </div>
         
-        <div className="relative z-10">
-          {/* Titre et bouton */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-            <div className="flex-1 text-center sm:text-left">
-              <h1 className="text-xl sm:text-2xl font-bold">Factures</h1>
-              <p className="text-sm sm:text-base text-white/80 mt-1">Émission et suivi de vos factures clients</p>
-            </div>
-            <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end space-x-2">
-              <button
-                type="button"
-                onClick={() => setCurrentView('settings')}
-                className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                <span>Paramètres</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  // Pré-remplir la date du jour et calculer l'échéance automatiquement
-                  const today = new Date().toISOString().split('T')[0];
-                  
-                  // Calculer la date d'échéance automatiquement
-                  const dueDateString = calculateDueDate(today);
-                  
-                  setFormData(prev => ({
-                    ...prev,
-                    date: today,
-                    due_date: dueDateString
-                  }));
-                  setShowModal(true);
-                }}
-                className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Nouvelle facture</span>
-                <span className="sm:hidden">Nouvelle</span>
-              </button>
-            </div>
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex-1 text-center sm:text-left">
+            <h1 className="text-xl sm:text-2xl font-bold">Factures</h1>
+            <p className="text-white/80 mt-1 text-sm sm:text-base">Émission et suivi de vos factures clients</p>
+          </div>
+          <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end space-x-2">
+            <button
+              type="button"
+              onClick={() => setCurrentView('settings')}
+              className="inline-flex items-center px-4 py-2 rounded-full bg-purple-500/30 hover:bg-purple-500/40 backdrop-blur transition-colors border border-purple-400/30 text-sm font-medium"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              <span>Paramètres</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                // Pré-remplir la date du jour et calculer l'échéance automatiquement
+                const today = new Date().toISOString().split('T')[0];
+                
+                // Calculer la date d'échéance automatiquement
+                const dueDateString = calculateDueDate(today);
+                
+                setFormData(prev => ({
+                  ...prev,
+                  date: today,
+                  due_date: dueDateString
+                }));
+                setShowModal(true);
+              }}
+              className="inline-flex items-center px-4 py-2 rounded-full bg-purple-500/30 hover:bg-purple-500/40 backdrop-blur transition-colors border border-purple-400/30 text-sm font-medium"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Nouvelle facture</span>
+              <span className="sm:hidden">Nouvelle</span>
+            </button>
           </div>
         </div>
       </div>
@@ -1628,7 +1625,7 @@ export default function InvoicesPage() {
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}
               <div className="absolute inset-0 opacity-20">
                 {/* Traits horizontaux qui traversent */}
@@ -1717,7 +1714,7 @@ export default function InvoicesPage() {
                         value={formData.invoice_number}
                         onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
                         placeholder={generateInvoiceNumber()}
-                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                       />
                     </div>
                   </div>
@@ -1765,7 +1762,7 @@ export default function InvoicesPage() {
                             setFormData(prev => ({ ...prev, date: newDate }));
                           }
                         }}
-                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                       />
                     </div>
                     
@@ -1781,7 +1778,7 @@ export default function InvoicesPage() {
                           setFormData({ ...formData, due_date: e.target.value });
                           setDueDateManuallyModified(true);
                         }}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Sélectionnez d'abord une date de facture"
                       />
                     </div>
@@ -1806,7 +1803,7 @@ export default function InvoicesPage() {
                               setFormData(prev => ({ ...prev, due_date: dueDateString }));
                             }
                           }}
-                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           placeholder="30"
                         />
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -2021,7 +2018,7 @@ export default function InvoicesPage() {
                   type="submit"
                   onClick={handleSubmit}
                   disabled={selectedServices.length === 0}
-                  className="flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-700 dark:to-indigo-700 dark:hover:from-blue-800 dark:hover:to-indigo-800 text-white rounded-full border border-blue-500 dark:border-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
+                    className="flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-700 dark:to-purple-800 dark:hover:from-purple-800 dark:hover:to-purple-900 text-white rounded-full border border-purple-500 dark:border-purple-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
                 >
                   <span className="hidden sm:inline">{editingInvoice ? 'Mettre à jour la facture' : 'Créer la facture'}</span>
                   <span className="sm:hidden">{editingInvoice ? 'Mettre à jour' : 'Créer'}</span>
@@ -2037,7 +2034,7 @@ export default function InvoicesPage() {
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-300">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-xs sm:max-w-lg lg:max-w-2xl xl:max-w-4xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all">
             {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-4 sm:p-6 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 p-4 sm:p-6 text-white relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}
               <div className="absolute inset-0 opacity-20">
                 {/* Traits horizontaux qui traversent */}
@@ -2376,7 +2373,7 @@ export default function InvoicesPage() {
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 p-6 text-white rounded-t-2xl relative overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 p-6 text-white rounded-t-2xl relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}
               <div className="absolute inset-0 opacity-20">
                 {/* Traits horizontaux qui traversent */}
@@ -2456,7 +2453,7 @@ export default function InvoicesPage() {
                     onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
                     placeholder="Bonjour, veuillez trouver ci-joint votre facture..."
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
 
@@ -2494,7 +2491,7 @@ export default function InvoicesPage() {
                   <button
                     type="submit"
                     disabled={sendingEmail || !emailData.to.trim()}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 dark:from-purple-700 dark:to-pink-700 dark:hover:from-purple-800 dark:hover:to-pink-800 text-white rounded-xl border border-purple-500 dark:border-purple-600 shadow-md hover:shadow-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-700 dark:to-purple-800 dark:hover:from-purple-800 dark:hover:to-purple-900 text-white rounded-xl border border-purple-500 dark:border-purple-600 shadow-md hover:shadow-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     {sendingEmail ? (
                       <>
@@ -2525,7 +2522,7 @@ export default function InvoicesPage() {
       {currentView === 'settings' && (
         <div className="space-y-4 sm:space-y-6">
           {/* Header de la page Paramètres */}
-          <div className="relative rounded-2xl p-4 md:p-6 lg:p-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+          <div className="relative rounded-2xl p-4 md:p-6 lg:p-8 bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 text-white shadow-lg overflow-hidden">
             {/* Traits décoratifs */}
             <div className="absolute inset-0 opacity-20">
               <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
@@ -2576,7 +2573,7 @@ export default function InvoicesPage() {
                     step="0.5"
                     value={billingSettings.defaultHourlyRate || ''}
                     onChange={(e) => handleSettingsChange('defaultHourlyRate', parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                     placeholder="25.00"
                   />
                 </div>
@@ -2589,7 +2586,7 @@ export default function InvoicesPage() {
                     type="text"
                     value={billingSettings.invoicePrefix}
                     onChange={(e) => handleSettingsChange('invoicePrefix', e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                     placeholder="FAC"
                   />
                 </div>
@@ -2616,7 +2613,7 @@ export default function InvoicesPage() {
                         handleSettingsChange('invoiceTerms', newDefaultTerms);
                       }
                     }}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                     placeholder="30"
                   />
                 </div>
@@ -2628,7 +2625,7 @@ export default function InvoicesPage() {
                   <textarea
                     value={billingSettings.invoiceTerms}
                     onChange={(e) => handleSettingsChange('invoiceTerms', e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                     placeholder="Paiement en 30 jours."
                     rows={3}
                   />
@@ -2646,7 +2643,7 @@ export default function InvoicesPage() {
                             type="checkbox"
                             checked={billingSettings.showLegalRate}
                             onChange={(e) => handleSettingsChange('showLegalRate', e.target.checked)}
-                            className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-800 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                            className="w-4 h-4 text-purple-600 bg-white border-gray-300 rounded focus:ring-purple-500 focus:ring-2 dark:bg-gray-800 dark:border-gray-600 dark:focus:ring-purple-600 dark:ring-offset-gray-800"
                           />
                         </div>
                         <div className="flex-1">
@@ -2662,7 +2659,7 @@ export default function InvoicesPage() {
                             type="checkbox"
                             checked={billingSettings.showFixedFee}
                             onChange={(e) => handleSettingsChange('showFixedFee', e.target.checked)}
-                            className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-800 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                            className="w-4 h-4 text-purple-600 bg-white border-gray-300 rounded focus:ring-purple-500 focus:ring-2 dark:bg-gray-800 dark:border-gray-600 dark:focus:ring-purple-600 dark:ring-offset-gray-800"
                           />
                         </div>
                         <div className="flex-1">
@@ -2713,7 +2710,7 @@ export default function InvoicesPage() {
                   rows={4}
                   value={billingSettings.invoiceTerms}
                   onChange={(e) => handleSettingsChange('invoiceTerms', e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200 resize-none"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200 resize-none"
                   placeholder="Paiement à 30 jours. Pas de TVA (franchise en base)."
                 />
                 {billingSettings.showLegalRate && (
@@ -2731,7 +2728,7 @@ export default function InvoicesPage() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="inline-flex items-center px-6 py-3 rounded-full text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="inline-flex items-center px-6 py-3 rounded-full text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-700 dark:to-purple-800 dark:hover:from-purple-800 dark:hover:to-purple-900 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 <Save className={`w-4 h-4 mr-2 ${isSaving ? 'animate-spin' : ''}`} />
                 <span className="text-sm font-medium">

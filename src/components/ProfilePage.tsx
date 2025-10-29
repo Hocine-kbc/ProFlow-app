@@ -14,6 +14,7 @@ import {
   Lock,
   Eye,
   EyeOff,
+  Scale,
 } from 'lucide-react';
 import {
   useApp,
@@ -39,6 +40,7 @@ export default function ProfilePage() {
     address: '',
     siret: '',
     logoUrl: '',
+    urssafActivity: 'services' as 'services' | 'ventes' | 'liberale',
   });
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -82,6 +84,7 @@ export default function ProfilePage() {
             address: remoteData.address as string || '',
             siret: remoteData.siret as string || '',
             logoUrl: remoteData.logoUrl as string || '',
+            urssafActivity: (remoteData.urssafActivity as 'services' | 'ventes' | 'liberale') || 'services',
           };
           setSettings(picked);
           localStorage.setItem('business-settings', JSON.stringify({ ...remoteData, ...picked }));
@@ -326,25 +329,25 @@ export default function ProfilePage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header amélioré et responsive */}
-      <div className="relative rounded-xl sm:rounded-2xl p-4 md:p-6 lg:p-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-pink-600 via-pink-600 to-pink-700 dark:from-pink-700 dark:via-pink-700 dark:to-pink-800 text-white shadow-lg overflow-hidden">
         {/* Traits décoratifs - Version responsive */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux */}
-          <div className="absolute top-6 sm:top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
-          <div className="absolute top-12 sm:top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
-          <div className="absolute top-18 sm:top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
-          <div className="absolute bottom-16 sm:bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
-          <div className="absolute bottom-8 sm:bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
+          <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
+          <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
+          <div className="absolute top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
+          <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
+          <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
           
           {/* Traits verticaux */}
-          <div className="absolute top-0 bottom-0 left-8 sm:left-12 w-0.5 h-full bg-white/20 transform rotate-12"></div>
-          <div className="absolute top-0 bottom-0 left-16 sm:left-24 w-0.5 h-full bg-white/15 transform -rotate-6"></div>
-          <div className="absolute top-0 bottom-0 right-8 sm:right-12 w-0.5 h-full bg-white/20 transform rotate-45"></div>
-          <div className="absolute top-0 bottom-0 right-16 sm:right-24 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
+          <div className="absolute top-0 bottom-0 left-12 w-0.5 h-full bg-white/20 transform rotate-12"></div>
+          <div className="absolute top-0 bottom-0 left-24 w-0.5 h-full bg-white/15 transform -rotate-6"></div>
+          <div className="absolute top-0 bottom-0 right-12 w-0.5 h-full bg-white/20 transform rotate-45"></div>
+          <div className="absolute top-0 bottom-0 right-24 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
         </div>
         
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          <div className="text-center sm:text-left">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex-1 text-center sm:text-left">
             <h1 className="text-xl sm:text-2xl font-bold">Profil entreprise</h1>
             <p className="text-white/80 mt-1 text-sm sm:text-base">Informations légales et données entreprise</p>
           </div>
@@ -352,7 +355,7 @@ export default function ProfilePage() {
             <button 
               type="submit" 
               form="profile-form"
-              className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 rounded-full text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 rounded-full text-white bg-pink-500/30 hover:bg-pink-500/40 backdrop-blur-sm border border-pink-400/30 hover:border-pink-400/50 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
             >
               <Save className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               <span className="text-sm font-medium">Sauvegarder</span>
@@ -555,6 +558,42 @@ export default function ProfilePage() {
                 placeholder="12345678901234"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400">14 chiffres sans espaces</p>
+            </div>
+          </div>
+        </div>
+
+        {/* URSSAF Information - Nouvelle section */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center">
+            <Scale className="w-5 h-5 mr-2 text-red-600 dark:text-red-400" />
+            Type d'activité URSSAF
+          </h3>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
+            Sélectionnez votre type d'activité pour pré-remplir automatiquement les déclarations URSSAF (régime micro-entreprise).
+          </p>
+          
+          <div className="grid grid-cols-1 gap-4 md:gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                <Scale className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
+                Type d'activité *
+              </label>
+              <select
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                value={settings.urssafActivity}
+                onChange={(e) => handleInputChange('urssafActivity', e.target.value)}
+              >
+                <option value="services">Prestations de services (BIC) - 21,2%</option>
+                <option value="ventes">Vente de marchandises (BIC) - 12,3%</option>
+                <option value="liberale">Professions libérales (BNC) - 24,6%</option>
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {settings.urssafActivity === 'services' 
+                  ? 'Taux de cotisations : 21,2% sur le CA (abattement fiscal 50%)'
+                  : settings.urssafActivity === 'ventes'
+                  ? 'Taux de cotisations : 12,3% sur le CA (abattement fiscal 71%)'
+                  : 'Taux de cotisations : 24,6% sur le CA (abattement fiscal 34%)'}
+              </p>
             </div>
           </div>
         </div>

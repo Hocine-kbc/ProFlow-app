@@ -558,7 +558,7 @@ export default function ServicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 text-white shadow-lg overflow-hidden">
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -584,7 +584,7 @@ export default function ServicesPage() {
             <button
               type="button"
               onClick={() => currentTab === 'services' ? setShowModal(true) : setShowArticleModal(true)}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur transition-colors border border-white/20 text-sm font-medium"
+              className="inline-flex items-center px-4 py-2 rounded-full bg-orange-500/30 hover:bg-orange-500/40 backdrop-blur transition-colors border border-orange-400/30 text-sm font-medium"
             >
               <Plus className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">
@@ -1884,7 +1884,7 @@ export default function ServicesPage() {
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}
               <div className="absolute inset-0 opacity-20">
                 {/* Traits horizontaux qui traversent */}
@@ -1970,7 +1970,7 @@ export default function ServicesPage() {
                     required
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
                 
@@ -1985,7 +1985,7 @@ export default function ServicesPage() {
                     required
                     value={formData.hours || ''}
                     onChange={(e) => setFormData({ ...formData, hours: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
               </div>
@@ -2001,7 +2001,7 @@ export default function ServicesPage() {
                     required
                     value={formData.hourly_rate || ''}
                     onChange={(e) => setFormData({ ...formData, hourly_rate: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
                 
@@ -2028,7 +2028,7 @@ export default function ServicesPage() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Détails de la prestation..."
                 />
               </div>
@@ -2055,7 +2055,7 @@ export default function ServicesPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-sm font-medium"
+                    className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-full border border-orange-500 dark:border-orange-600 shadow-md hover:shadow-lg transition-all text-sm font-medium"
                   >
                     {editingService ? 'Modifier' : 'Ajouter'}
                   </button>
@@ -2241,7 +2241,7 @@ export default function ServicesPage() {
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="bg-gradient-to-r from-teal-600 via-indigo-600 to-blue-600 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
               <div className="absolute inset-0 opacity-20">
                 <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
                 <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
@@ -2287,7 +2287,7 @@ export default function ServicesPage() {
                       required
                       value={articleFormData.name}
                       onChange={(e) => setArticleFormData({ ...articleFormData, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       placeholder="Ex: Développement web, Conseil..."
                     />
                   </div>
@@ -2300,7 +2300,7 @@ export default function ServicesPage() {
                       value={articleFormData.description}
                       onChange={(e) => setArticleFormData({ ...articleFormData, description: e.target.value })}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       placeholder="Description détaillée de la prestation..."
                     />
                   </div>
@@ -2316,7 +2316,7 @@ export default function ServicesPage() {
                       required
                       value={articleFormData.hourly_rate || ''}
                       onChange={(e) => setArticleFormData({ ...articleFormData, hourly_rate: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   
@@ -2328,7 +2328,7 @@ export default function ServicesPage() {
                       type="text"
                       value={articleFormData.category}
                       onChange={(e) => setArticleFormData({ ...articleFormData, category: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       placeholder="Ex: Développement, Design..."
                     />
                   </div>
@@ -2357,7 +2357,7 @@ export default function ServicesPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full border border-blue-500 dark:border-blue-600 shadow-md hover:shadow-lg transition-all text-sm font-medium"
+                    className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-full border border-orange-500 dark:border-orange-600 shadow-md hover:shadow-lg transition-all text-sm font-medium"
                   >
                     {editingArticle ? 'Modifier' : 'Créer'}
                   </button>
@@ -2374,7 +2374,7 @@ export default function ServicesPage() {
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
               <div className="absolute inset-0 opacity-20">
                 <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
                 <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
