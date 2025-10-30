@@ -42,7 +42,7 @@ const loadURSSAFSettings = () => {
 
 export default function URSSAFPage() {
   const { state } = useApp();
-  const { services, invoices } = state;
+  const { services } = state;
 
   // Charger les paramètres une première fois
   const initialSettings = loadURSSAFSettings();
@@ -58,7 +58,7 @@ export default function URSSAFPage() {
   };
 
   // État pour le calculateur - toujours micro-entreprise, seul le type d'activité change
-  const [selectedStatus, setSelectedStatus] = useState<string>('micro-entreprise');
+  const selectedStatus = 'micro-entreprise';
   const [selectedActivity, setSelectedActivity] = useState<string>(initialSettings.activity);
   // État global pour la période - contrôle toute la page
   const [periodType, setPeriodType] = useState<'mensuelle' | 'trimestrielle'>('trimestrielle');
@@ -95,27 +95,6 @@ export default function URSSAFPage() {
     month3: { name: '', revenue: 0 },
     total: 0
   });
-
-  // Fonction pour obtenir les services filtrés selon la période
-  const getFilteredServices = () => {
-    if (!services || services.length === 0) return [];
-    
-    if (periodType === 'mensuelle') {
-      const [year, month] = selectedMonth.split('-').map(Number);
-      return services.filter(service => {
-        const serviceDate = new Date(service.date);
-        return serviceDate.getMonth() === month - 1 && serviceDate.getFullYear() === year;
-      });
-    } else { // trimestrielle
-      const quarterNumber = parseInt(selectedQuarter.substring(1)); // T1 => 1, T2 => 2, etc.
-      const startMonth = (quarterNumber - 1) * 3;
-      return services.filter(service => {
-        const serviceDate = new Date(service.date);
-        const serviceMonth = serviceDate.getMonth();
-        return serviceMonth >= startMonth && serviceMonth < startMonth + 3 && serviceDate.getFullYear() === selectedQuarterYear;
-      });
-    }
-  };
 
   // Calculer le CA trimestriel automatiquement et progressivement
   useEffect(() => {
@@ -893,9 +872,9 @@ export default function URSSAFPage() {
                         isPast
                           ? 'bg-gray-50/50 dark:bg-gray-900/30'
                           : isToday
-                          ? 'bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500'
+                          ? 'bg-amber-50 dark:bg-amber-900/20'
                           : isUpcoming
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500'
+                          ? 'bg-blue-50 dark:bg-blue-900/20'
                           : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                       } transition-colors`}
                     >

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import sgMail from '@sendgrid/mail';
 import nodemailer from 'nodemailer';
 import { generateInvoicePDFWithPuppeteer } from './src/lib/puppeteerPdfGenerator.js';
+import juice from 'juice';
 
 // Configuration
 dotenv.config();
@@ -230,377 +231,258 @@ app.post('/api/send-invoice', async (req, res) => {
     const downloadUrl = `${baseUrl}/api/download-invoice/${invoiceId}`;
     
     // Template HTML intégré (pour éviter les problèmes d'import)
-    const htmlTemplate = `<!DOCTYPE html>
-<html lang="fr">
+    const htmlTemplate = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facture</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #f0f2f5;
-            padding: 0;
-            min-height: 100vh;
-            margin: 0;
-            text-align: center;
-            overflow-x: hidden;
-            max-width: 100%;
-        }
-        
-        .email-container {
-            max-width: 100%;
-            width: 100%;
-            margin: 0 auto;
-            background: white;
-            overflow: hidden;
-            border-radius: 15px;
-            box-sizing: border-box;
-        }
-        
-        * {
-            box-sizing: border-box;
-        }
-        
-        table {
-            width: 100%;
-            table-layout: auto;
-            border-collapse: collapse;
-        }
-        
-        td, th {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            padding: 40px 40px 30px;
-            color: white;
-            border-radius: 15px 15px 0 0;
-        }
-        
-        .company-info {
-            display: table;
-            width: 100%;
-            margin-bottom: 30px;
-        }
-        
-        .logo-section, .invoice-number {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-        }
-        
-        .logo-section h1 {
-            font-size: 32px;
-            margin-bottom: 5px;
-            font-weight: 700;
-        }
-        
-        .logo-section p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .invoice-number {
-            text-align: right;
-        }
-        
-        .invoice-number h2 {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-        
-        .invoice-number p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .company-details {
-            background: rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 8px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .company-details p {
-            font-size: 14px;
-            line-height: 1.6;
-            margin: 3px 0;
-        }
-        
-        .content {
-            padding: 40px;
-        }
-        
-        .info-grid {
-            display: table;
-            width: 100%;
-            margin-bottom: 40px;
-            border-spacing: 30px;
-        }
-        
-        .info-section {
-            display: table-cell;
-            width: 50%;
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 10px;
-            border-left: 4px solid #1e3c72;
-        }
-        
-        .info-section h3 {
-            color: #1e3c72;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-        
-        .info-section p {
-            color: #333;
-            font-size: 15px;
-            line-height: 1.7;
-            margin: 5px 0;
-        }
-        
-        .info-section strong {
-            color: #000;
-        }
-        
-        .invoice-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 30px 0;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        
-        .invoice-table thead {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-        }
-        
-        .invoice-table th {
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .invoice-table td {
-            padding: 15px;
-            border-bottom: 1px solid #e9ecef;
-            color: #333;
-            font-size: 15px;
-        }
-        
-        .invoice-table tbody tr:hover {
-            background: #f8f9fa;
-        }
-        
-        .invoice-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .text-right {
-            text-align: right;
-        }
-        
-        .totals-section {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 30px;
-            border-radius: 10px;
-            margin: 30px 0;
-        }
-        
-        .total-row {
-            display: table;
-            width: 100%;
-            padding: 12px 0;
-            font-size: 16px;
-            color: #333;
-        }
-        
-        .total-row .label {
-            display: table-cell;
-            width: 70%;
-            text-align: left;
-        }
-        
-        .total-row .amount {
-            display: table-cell;
-            width: 30%;
-            text-align: right;
-        }
-        
-        .total-row.subtotal {
-            border-bottom: 1px solid #dee2e6;
-        }
-        
-        .total-row.final {
-            border-top: 3px solid #1e3c72;
-            margin-top: 15px;
-            padding-top: 20px;
-            font-size: 24px;
-            font-weight: 700;
-            color: #1e3c72;
-        }
-        
-        .button-container {
-            text-align: center;
-            margin: 40px 0;
-        }
-        
-        .download-button {
-            display: inline-block;
-            background: #10b981 !important;
-            color: white !important;
-            padding: 18px 50px;
-            border-radius: 50px;
-            text-decoration: none !important;
-            font-weight: 700;
-            font-size: 16px;
-            border: none !important;
-        }
-        
-        .download-button::before {
-            content: '⬇ ';
-            font-size: 18px;
-            margin-right: 8px;
-        }
-        
-        .footer {
-            background: #f8f9fa;
-            padding: 30px 40px;
-            text-align: center;
-            border-top: 1px solid #e9ecef;
-            border-radius: 0 0 15px 15px;
-        }
-        
-        .footer p {
-            color: #6c757d;
-            font-size: 13px;
-            line-height: 1.7;
-            margin: 5px 0;
-        }
-        
-        .footer a {
-            color: #1e3c72;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        
-        @media (max-width: 600px) {
-            .info-section {
-                display: block;
-                width: 100% !important;
-            }
-            
-            .logo-section, .invoice-number {
-                display: block;
-                width: 100% !important;
-                text-align: left !important;
-                margin-bottom: 20px;
-            }
-            
-            .content {
-                padding: 30px 20px;
-            }
-        }
-    </style>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Facture</title>
+  <style type="text/css">
+    body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: none; }
+    table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { border: 0; outline: none; text-decoration: none; display: block; }
+    a { text-decoration: none; }
+    @media only screen and (max-width: 600px) {
+      .container { width: 100% !important; max-width: 100% !important; }
+      .stack { display: block !important; width: 100% !important; }
+      .center { text-align: center !important; }
+      .px { padding-left: 16px !important; padding-right: 16px !important; }
+      .btn-full { display: block !important; width: 100% !important; }
+      .hide-mobile { display: none !important; }
+      .mt-12 { margin-top: 12px !important; }
+    }
+  </style>
 </head>
-<body>
-    <div class="email-container">
-        <div class="header">
-            <div class="company-info">
-                <div class="logo-section">
-                    <h1>{{company_name}}</h1>
-                    <p>Votre partenaire de confiance</p>
-                </div>
-                <div class="invoice-number">
-                    <h2>FACTURE</h2>
-                    <p>N° {{invoice_number}}</p>
-                    <p>Date: {{invoice_date}}</p>
-                </div>
-            </div>
-            
-            <div class="company-details">
-                <p><strong>{{company_name}}</strong></p>
-                <p>{{company_address}}</p>
-                <p>SIRET: {{company_siret}}</p>
-                <p>Tél: {{company_phone}}</p>
-                <p style="color: white;">Email: <a href="mailto:{{company_email}}" style="color: white; text-decoration: underline;">{{company_email}}</a></p>
-            </div>
-        </div>
-        
-        <div class="content">
-            <div class="info-grid">
-                <div class="info-section">
-                    <h3>Facturé à</h3>
-                    <p><strong>{{client_name}}</strong></p>
-                    <p>{{client_address}}</p>
-                    <p>Email: {{client_email}}</p>
-                    <p>Tél: {{client_phone}}</p>
-                </div>
-                
-                <div class="info-section">
-                    <h3>Détails de paiement</h3>
-                    <p><strong>Date d'échéance:</strong> {{due_date}}</p>
-                    <p><strong>Conditions:</strong> Net 30 jours</p>
-                    <p><strong>Mode de paiement:</strong> Virement bancaire</p>
-                    <p><strong>Référence:</strong> {{invoice_number}}</p>
-                </div>
-            </div>
-            
-            <table class="invoice-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Description</th>
-                        <th class="text-right">Quantité</th>
-                        <th class="text-right">Prix unitaire</th>
-                        <th class="text-right">Montant</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{services_rows}}
-                </tbody>
-            </table>
-            
-            <div class="totals-section">
-                <div class="total-row subtotal">
-                    <span class="label">Sous-total HT</span>
-                    <span class="amount">{{total_amount}} €</span>
-                </div>
-                <div class="total-row final">
-                    <span class="label">TOTAL À PAYER</span>
-                    <span class="amount">{{total_amount}} €</span>
-                </div>
-            </div>
-            
-            <div class="button-container">
-                <a href="{{download_url}}" class="download-button" style="display: inline-block; background: #10b981; color: white; padding: 18px 50px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 16px; border: none;">⬇ Télécharger la facture (PDF)</a>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p><strong>{{company_name}}</strong></p>
-            <p>{{company_address}}</p>
-            <p>Email: {{company_email}} | Tél: {{company_phone}}</p>
-        </div>
-    </div>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f4f4f4">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <table width="800" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="max-width: 800px; border-radius: 14px; overflow: hidden;" class="container">
+          <tr>
+            <td bgcolor="#1e3c72" style="padding: 18px 30px;">
+              <!-- Header band on white card -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="background:#ffffff; border-radius:12px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <!-- Logo + company name -->
+                        <td valign="middle">
+                          <table border="0" cellspacing="0" cellpadding="0">
+                            <tr>
+                              <td align="center" valign="middle" style="padding-right:12px;">
+                                <img src="{{company_logo_url}}" alt="Logo" width="48" height="48" style="display:block; width:48px; height:48px; border-radius:48px; object-fit:cover;" />
+                              </td>
+                              <td valign="middle">
+                                <div style="font-family: Arial, sans-serif; font-size:20px; font-weight:700; color:#1e3c72;">{{company_name}}</div>
+                                <div style="font-family: Arial, sans-serif; font-size:12px; color:#6b7280; padding-top:2px;">Votre partenaire de confiance</div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                        <!-- Invoice info on the right -->
+                        <td align="right" valign="middle">
+                          <table border="0" cellspacing="0" cellpadding="0" align="right">
+                            <tr>
+                              <td align="right" style="font-family: Arial, sans-serif; font-size:13px; color:#374151; padding-bottom:2px;">FACTURE</td>
+                            </tr>
+                            <tr>
+                              <td align="right" style="font-family: Arial, sans-serif; font-size:12px; color:#6b7280;">N° {{invoice_number}}</td>
+                            </tr>
+                            <tr>
+                              <td align="right" style="font-family: Arial, sans-serif; font-size:12px; color:#6b7280;">Date: {{invoice_date}}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#2a5298" style="padding: 20px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; line-height: 20px;">
+                    <strong>{{company_name}}</strong><br/>
+                    {{company_address}}<br/>
+                    SIRET: {{company_siret}}<br/>
+                    Tél: {{company_phone}} | Email: {{company_email}}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px 30px 20px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td width="48%" valign="top" bgcolor="#ffffff" style="padding: 0; border-radius: 10px;" class="stack mt-12">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" arcsize="10%" fillcolor="#f8f9fa" strokecolor="#f8f9fa" style="width:360px;">
+                      <v:textbox inset="0,0,0,0">
+                    <![endif]-->
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background:#f8f9fa; border-radius:10px; overflow:hidden; border-top-right-radius:10px; border-bottom-right-radius:10px;">
+                      <tr>
+                        <td bgcolor="#1e3c72" style="height:4px; line-height:4px; font-size:0; border-top-left-radius:10px; border-top-right-radius:10px;"></td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 20px;">
+                          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background:#f8f9fa;">
+                            <tr>
+                              <td style="color: #1e3c72; font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; padding-bottom: 10px; text-transform: uppercase;">FACTURÉ À</td>
+                            </tr>
+                            <tr>
+                              <td style="color: #333333; font-family: Arial, sans-serif; font-size: 14px; line-height: 22px;">
+                                <strong>{{client_name}}</strong><br/>
+                                {{client_address}}<br/>
+                                Email: {{client_email}}<br/>
+                                Tél: {{client_phone}}
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                    <!--[if mso]>
+                      </v:textbox>
+                    </v:roundrect>
+                    <![endif]-->
+                  </td>
+                  <td width="4%" class="hide-mobile"></td>
+                  <td width="48%" valign="top" bgcolor="#ffffff" style="padding: 0; border-radius: 10px;" class="stack mt-12">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" arcsize="10%" fillcolor="#f8f9fa" strokecolor="#f8f9fa" style="width:360px;">
+                      <v:textbox inset="0,0,0,0">
+                    <![endif]-->
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background:#f8f9fa; border-radius:10px; overflow:hidden; border-top-right-radius:10px; border-bottom-right-radius:10px;">
+                      <tr>
+                        <td bgcolor="#1e3c72" style="height:4px; line-height:4px; font-size:0; border-top-left-radius:10px; border-top-right-radius:10px;"></td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 20px;">
+                          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background:#f8f9fa;">
+                            <tr>
+                              <td style="color: #1e3c72; font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; padding-bottom: 10px; text-transform: uppercase;">DÉTAILS DE PAIEMENT</td>
+                            </tr>
+                            <tr>
+                              <td style="color: #333333; font-family: Arial, sans-serif; font-size: 14px; line-height: 22px;">
+                                <strong>Date d'échéance:</strong><br/>
+                                {{due_date}}<br/>
+                                <strong>Conditions:</strong> Net 30 jours<br/>
+                                <strong>Mode de paiement:</strong><br/>
+                                Virement bancaire<br/>
+                                <strong>Référence:</strong> {{invoice_number}}
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                    <!--[if mso]>
+                      </v:textbox>
+                    </v:roundrect>
+                    <![endif]-->
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Zone de texte avant le tableau des prestations -->
+          <tr>
+            <td style="padding: 0 30px 20px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="background:#ffffff; border-radius: 10px;">
+                <tr>
+                  <td style="padding:16px 18px; color:#333333; font-family: Arial, sans-serif; font-size:14px; line-height:22px;">
+                    {{intro_message}}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 30px 20px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+                <tr bgcolor="#1e3c72">
+                  <td style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; padding: 12px; text-transform: uppercase;">Date</td>
+                  <td style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; padding: 12px; text-transform: uppercase;">Description</td>
+                  <td align="right" style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; padding: 12px; text-transform: uppercase;">Qté</td>
+                  <td align="right" style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; padding: 12px; text-transform: uppercase;">P.U.</td>
+                  <td align="right" style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; padding: 12px; text-transform: uppercase;">Montant</td>
+                </tr>
+                {{services_rows}}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 30px 30px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f8f9fa" style="padding: 20px; border-radius: 10px;">
+                <tr>
+                  <td style="color: #333333; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; padding: 10px 0; padding-left: 10px; border-bottom: 1px solid #dee2e6;">Sous-total HT</td>
+                  <td align="right" style="color: #333333; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; padding: 10px 10px 10px 0; border-bottom: 1px solid #dee2e6;">{{total_amount}} €</td>
+                </tr>
+                <tr>
+                  <td style="color: #333333; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; padding: 10px 0; padding-left: 10px;">TVA (0%)
+                    <div style="font-weight: normal; font-size: 12px; color: #6b7280; padding-top: 2px;">TVA non applicable, art. 293 B du CGI</div>
+                  </td>
+                  <td align="right" style="color: #333333; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; padding: 10px 10px 10px 0;">0,00 €</td>
+                </tr>
+                <tr>
+                  <td style="color: #1e3c72; font-family: Arial, sans-serif; font-size: 22px; font-weight: bold; padding: 15px 0 0 10px; border-top: 3px solid #1e3c72;">TOTAL À PAYER</td>
+                  <td align="right" style="color: #1e3c72; font-family: Arial, sans-serif; font-size: 22px; font-weight: bold; padding: 15px 10px 0 0; border-top: 3px solid #1e3c72;">{{total_amount}} €</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Extra spacer after totals -->
+          <tr>
+            <td style="padding: 0 30px 6px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" role="presentation">
+                <tr>
+                  <td style="height: 14px; line-height: 14px; font-size: 0;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 0 30px 30px 30px;">
+              <!-- Bulletproof button -->
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{download_url}}" style="height:48px;v-text-anchor:middle;width:360px;" arcsize="50%" stroke="f" fillcolor="#1e3c72">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">⬇ Télécharger la facture (PDF)</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-- -->
+              <table border="0" cellspacing="0" cellpadding="0" role="presentation" width="100%">
+                <tr>
+                  <td align="center" bgcolor="#1e3c72" style="border-radius:999px; width:100%;">
+                    <a href="{{download_url}}" target="_blank" class="btn-full" style="display:block; width:100%; padding:14px 28px; font-family: Arial, sans-serif; font-size:16px; font-weight:bold; color:#ffffff; text-decoration:none;">⬇ Télécharger la facture (PDF)</a>
+                  </td>
+                </tr>
+              </table>
+              <!--<![endif]-->
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#f8f9fa" style="padding: 25px 30px; border-top: 1px solid #e0e0e0; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="color: #666666; font-family: Arial, sans-serif; font-size: 12px; line-height: 20px;">
+                    <strong>{{company_name}}</strong><br/>
+                    {{company_address}}<br/>
+                    Tél: {{company_phone}} | Email: {{company_email}}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 
@@ -608,24 +490,34 @@ app.post('/api/send-invoice', async (req, res) => {
     let totalAmount = 0;
     let servicesRows = '';
     
-    // Générer les lignes de services
+    // Générer les lignes de services (Date, Description, Qté, P.U., Montant)
     if (services && services.length > 0) {
+      let rowIndex = 0;
       services.forEach(service => {
-        const serviceTotal = (service.hours || 0) * (service.hourly_rate || 0);
-        totalAmount += serviceTotal;
-        
+        const qty = service.hours != null ? `${service.hours}h` : (service.quantity != null ? String(service.quantity) : '1');
+        const unit = (service.hourly_rate != null ? service.hourly_rate : (service.unit_price != null ? service.unit_price : 0));
+        const lineTotal = (service.hours != null ? service.hours * unit : (service.quantity != null ? service.quantity * unit : unit)) || 0;
+        totalAmount += lineTotal;
         const serviceDate = service.date ? formatDateFR(service.date) : '';
-        
+        const rowBg = (rowIndex % 2 === 0) ? '#f7f7f7' : '#ffffff';
+
         servicesRows += `
           <tr>
-            <td>${serviceDate}</td>
-            <td>${service.description || 'Service'}</td>
-            <td class="text-right">${service.hours || 0}</td>
-            <td class="text-right">${(service.hourly_rate || 0).toFixed(2)} €</td>
-            <td class="text-right">${serviceTotal.toFixed(2)} €</td>
+            <td style=\"background:${rowBg}; color: #333333; font-family: Arial, sans-serif; font-size: 14px; padding: 12px; border-bottom: 1px solid #e0e0e0;\">${serviceDate}</td>
+            <td style=\"background:${rowBg}; color: #333333; font-family: Arial, sans-serif; font-size: 14px; padding: 12px; border-bottom: 1px solid #e0e0e0;\">${service.description || 'Prestation'}</td>
+            <td align=\"right\" style=\"background:${rowBg}; color: #333333; font-family: Arial, sans-serif; font-size: 14px; padding: 12px; border-bottom: 1px solid #e0e0e0;\">${qty}</td>
+            <td align=\"right\" style=\"background:${rowBg}; color: #333333; font-family: Arial, sans-serif; font-size: 14px; padding: 12px; border-bottom: 1px solid #e0e0e0;\">${Number(unit).toFixed(2)} €</td>
+            <td align=\"right\" style=\"background:${rowBg}; color: #333333; font-family: Arial, sans-serif; font-size: 14px; padding: 12px; border-bottom: 1px solid #e0e0e0;\">${Number(lineTotal).toFixed(2)} €</td>
           </tr>
         `;
+        rowIndex++;
       });
+    } else {
+      servicesRows = `
+        <tr>
+          <td colspan=\"5\" style=\"padding:14px; color:#666; font-family: Arial, sans-serif; font-size: 14px;\">Aucune prestation.</td>
+        </tr>
+      `;
     }
 
     // Remplacer les variables du template
@@ -644,7 +536,11 @@ app.post('/api/send-invoice', async (req, res) => {
       .replace(/\{\{company_email\}\}/g, companyData.email || '')
       .replace(/\{\{company_phone\}\}/g, companyData.phone || '')
       .replace(/\{\{company_siret\}\}/g, companyData.siret || '')
-      .replace(/\{\{download_url\}\}/g, downloadUrl);
+      .replace(/\{\{company_logo_url\}\}/g, companyData.logoUrl || '')
+      .replace(/\{\{download_url\}\}/g, downloadUrl)
+      .replace(/\{\{intro_message\}\}/g, emailMessage || '');
+
+    const inlinedHtml = juice(htmlContent, { removeStyleTags: false, preserveImportant: true, applyStyleTags: true });
 
     // Envoyer email avec template HTML
     const msg = {
@@ -655,7 +551,7 @@ app.post('/api/send-invoice', async (req, res) => {
       },
       subject: emailSubject,
       text: emailMessage,
-      html: htmlContent,
+      html: inlinedHtml,
       attachments: [
         {
           content: Buffer.from(pdfData.buffer).toString('base64'),
@@ -687,7 +583,7 @@ app.post('/api/send-invoice', async (req, res) => {
             to: invoice.client.email,
             subject: emailSubject,
             text: emailMessage,
-            html: htmlContent,
+            html: inlinedHtml,
             attachments: [
               {
                 filename: pdfData.fileName,
@@ -722,7 +618,7 @@ app.post('/api/send-invoice', async (req, res) => {
             to: invoice.client.email,
             subject: emailSubject,
             text: emailMessage,
-            html: htmlContent,
+            html: inlinedHtml,
             attachments: [
               {
                 filename: pdfData.fileName,
@@ -857,4 +753,5 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
   }
 });
 
+app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));

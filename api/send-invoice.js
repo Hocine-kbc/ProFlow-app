@@ -3,6 +3,7 @@ import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import sgMail from '@sendgrid/mail';
 import nodemailer from 'nodemailer';
+import juice from 'juice';
 
 // Configuration
 const app = express();
@@ -240,91 +241,257 @@ function generateSimplePDF(invoice, companyData) {
   return Buffer.from(pdfContent).toString('base64');
 }
 
-// Fonction pour générer le HTML de l'email
+// Fonction pour générer le HTML de l'email (ultra compatible)
 function generateEmailHTML(invoice, companyData, message) {
-  let servicesRows = '';
+  const companyName = companyData.name || 'ENTREPRISE SAS';
+  const invoiceNumber = invoice.invoice_number || '';
+  const invoiceDate = invoice.date || '';
+  const dueDate = invoice.due_date || '';
+  const client = invoice.client || {};
+
+  // Construire les lignes prestations
   let totalAmount = 0;
-  
+  let servicesRows = '';
   if (invoice.services && invoice.services.length > 0) {
-    invoice.services.forEach(service => {
-      const serviceTotal = (service.hours || 0) * (service.hourly_rate || 0);
-      totalAmount += serviceTotal;
-      
-      servicesRows += `
+    servicesRows = invoice.services.map(s => {
+      const qty = s.hours != null ? `${s.hours}h` : (s.quantity != null ? String(s.quantity) : '1');
+      const unit = (s.hourly_rate != null ? s.hourly_rate : (s.unit_price != null ? s.unit_price : 0));
+      const lineTotal = (s.hours != null ? s.hours * unit : (s.quantity != null ? s.quantity * unit : unit)) || 0;
+      totalAmount += lineTotal;
+      return `
         <tr>
-          <td style="padding: 12px;">${service.description || 'Service'}</td>
-          <td style="padding: 12px; text-align: center;">${service.hours || 0}h</td>
-          <td style="padding: 12px; text-align: right;">${(service.hourly_rate || 0).toFixed(2)} €</td>
-          <td style="padding: 12px; text-align: right; font-weight: bold;">${serviceTotal.toFixed(2)} €</td>
-        </tr>
-      `;
-    });
+          <td style="color: #333333; font-family: Arial, sans-serif; font-size: 14px; padding: 12px; border-bottom: 1px solid #e0e0e0;">
+            ${s.description || 'Prestation'}
+          </td>
+          <td align="right" style="color: #333333; font-family: Arial, sans-serif; font-size: 14px; padding: 12px; border-bottom: 1px solid #e0e0e0;">
+            ${qty}
+          </td>
+          <td align="right" style="color: #333333; font-family: Arial, sans-serif; font-size: 14px; padding: 12px; border-bottom: 1px solid #e0e0e0;">
+            ${Number(unit).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+          </td>
+          <td align="right" style="color: #333333; font-family: Arial, sans-serif; font-size: 14px; padding: 12px; border-bottom: 1px solid #e0e0e0;">
+            ${Number(lineTotal).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+          </td>
+        </tr>`;
+    }).join('');
+  } else {
+    servicesRows = `
+      <tr>
+        <td colspan="4" style="color:#666; font-family: Arial, sans-serif; font-size: 14px; padding: 12px;">
+          Aucune prestation.
+        </td>
+      </tr>`;
   }
 
-  return `
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Facture ${invoice.invoice_number}</title>
-        <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px; }
-            .invoice-info { background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 15px 0; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { background: #667eea; color: white; }
-            .total { background: #2c3e50; color: white; font-weight: bold; }
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <h1>${companyData.name}</h1>
-            <p>Votre partenaire professionnel</p>
-        </div>
-        <div class="content">
-            <h2>Bonjour ${invoice.client.name},</h2>
-            <div class="invoice-info">
-                <h3>📄 Détails de la facture</h3>
-                <p><strong>Numéro :</strong> ${invoice.invoice_number}</p>
-                <p><strong>Date :</strong> ${invoice.date}</p>
-                <p><strong>Échéance :</strong> ${invoice.due_date}</p>
-            </div>
-            
-            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                ${message}
-            </div>
-            
-            <h3>💰 Services facturés</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th style="text-align: center;">Heures</th>
-                        <th style="text-align: right;">Taux HT</th>
-                        <th style="text-align: right;">Total HT</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${servicesRows}
-                </tbody>
-                <tfoot>
-                    <tr class="total">
-                        <td colspan="3" style="text-align: right;">TOTAL :</td>
-                        <td style="text-align: right;">${totalAmount.toFixed(2)} €</td>
-                    </tr>
-                </tfoot>
-            </table>
-            
-            <div style="margin-top: 30px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
-                <p><strong>${companyData.name}</strong><br>
-                ${companyData.address}<br>
-                📧 ${companyData.email} | 📞 ${companyData.phone}</p>
-            </div>
-        </div>
-    </body>
-    </html>
-  `;
+  // Micro-entreprise: TVA souvent à 0; on garde la ligne TVA mais à 0
+  const sousTotal = totalAmount;
+  const tva = 0;
+  const totalAPayer = sousTotal + tva;
+
+  // Client fields
+  const clientName = client.name || '';
+  const clientAddress = client.address || '';
+  const clientEmail = client.email || '';
+  const clientPhone = client.phone || '';
+
+  const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Facture</title>
+  <style type="text/css">
+    body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: none; }
+    table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { border: 0; outline: none; text-decoration: none; display: block; }
+    a { text-decoration: none; }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f4f4f4">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <table width="600" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="max-width: 600px;">
+          <tr>
+            <td bgcolor="#1e3c72" style="padding: 30px 30px 25px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="color: #ffffff; font-family: Arial, sans-serif; font-size: 28px; font-weight: bold;">${companyName}</td>
+                        <td align="right" style="color: #ffffff; font-family: Arial, sans-serif; font-size: 20px; font-weight: bold;">FACTURE</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; padding-top: 5px;">Votre partenaire de confiance</td>
+                        <td align="right" style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; padding-top: 5px;">N° ${invoiceNumber}</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="padding-top: 5px;">
+                          <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                            <tr>
+                              <td align="right" style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px;">Date: ${invoiceDate}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#2a5298" style="padding: 20px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; line-height: 20px;">
+                    <strong>${companyName}</strong><br/>
+                    ${companyData.address || ''}<br/>
+                    ${companyData.city || ''} ${companyData.zip || ''} ${companyData.country || ''}<br/>
+                    ${companyData.siret ? `SIRET: ${companyData.siret}` : ''} ${companyData.vat ? `| TVA: ${companyData.vat}` : ''}<br/>
+                    ${companyData.phone ? `Tél: ${companyData.phone}` : ''} ${companyData.email ? `| Email: ${companyData.email}` : ''}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px 30px 20px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td width="48%" valign="top" bgcolor="#f8f9fa" style="padding: 20px; border-left: 4px solid #1e3c72;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="color: #1e3c72; font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; padding-bottom: 10px; text-transform: uppercase;">FACTURÉ À</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #333333; font-family: Arial, sans-serif; font-size: 14px; line-height: 22px;">
+                          <strong>${clientName}</strong><br/>
+                          ${client.company || ''}<br/>
+                          ${clientAddress}<br/>
+                          ${clientEmail ? `<strong>Email:</strong> ${clientEmail}<br/>` : ''}
+                          ${clientPhone ? `<strong>Tél:</strong> ${clientPhone}` : ''}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td width="4%"></td>
+                  <td width="48%" valign="top" bgcolor="#f8f9fa" style="padding: 20px; border-left: 4px solid #1e3c72;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="color: #1e3c72; font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; padding-bottom: 10px; text-transform: uppercase;">DÉTAILS DE PAIEMENT</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #333333; font-family: Arial, sans-serif; font-size: 14px; line-height: 22px;">
+                          <strong>Date d'échéance:</strong><br/>
+                          ${dueDate || ''}<br/>
+                          <strong>Conditions:</strong> Net 30 jours<br/>
+                          <strong>Mode de paiement:</strong><br/>
+                          Virement bancaire<br/>
+                          <strong>Référence:</strong> ${invoiceNumber}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 30px 20px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e0e0e0;">
+                <tr bgcolor="#1e3c72">
+                  <td style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; padding: 12px; text-transform: uppercase;">Description</td>
+                  <td align="right" style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; padding: 12px; text-transform: uppercase;">Qté</td>
+                  <td align="right" style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; padding: 12px; text-transform: uppercase;">P.U.</td>
+                  <td align="right" style="color: #ffffff; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; padding: 12px; text-transform: uppercase;">Montant</td>
+                </tr>
+                ${servicesRows}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 30px 30px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f8f9fa" style="padding: 20px;">
+                <tr>
+                  <td style="color: #333333; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; padding: 10px 0; border-bottom: 1px solid #dee2e6;">Sous-total HT</td>
+                  <td align="right" style="color: #333333; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; padding: 10px 0; border-bottom: 1px solid #dee2e6;">${Number(sousTotal).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+                </tr>
+                <tr>
+                  <td style="color: #333333; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; padding: 10px 0;">TVA (0%)</td>
+                  <td align="right" style="color: #333333; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; padding: 10px 0;">${Number(tva).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+                </tr>
+                <tr>
+                  <td style="color: #1e3c72; font-family: Arial, sans-serif; font-size: 22px; font-weight: bold; padding: 15px 0 0 0; border-top: 3px solid #1e3c72;">TOTAL À PAYER</td>
+                  <td align="right" style="color: #1e3c72; font-family: Arial, sans-serif; font-size: 22px; font-weight: bold; padding: 15px 0 0 0; border-top: 3px solid #1e3c72;">${Number(totalAPayer).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 0 30px 30px 30px;">
+              <table border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" bgcolor="#28a745" style="border-radius: 30px; padding: 16px 45px;">
+                    <a href="#" target="_blank" style="color: #ffffff; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; text-decoration: none; display: inline-block;">⬇ Télécharger la facture (PDF)</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 30px 20px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#fff3cd" style="padding: 20px; border-left: 4px solid #ffc107;">
+                <tr>
+                  <td style="color: #856404; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; padding-bottom: 10px;">💳 Informations bancaires</td>
+                </tr>
+                <tr>
+                  <td style="color: #856404; font-family: Arial, sans-serif; font-size: 14px; line-height: 22px;">
+                    ${companyData.bank_name ? `<strong>Banque:</strong> ${companyData.bank_name}<br/>` : ''}
+                    ${companyData.iban ? `<strong>IBAN:</strong> ${companyData.iban}<br/>` : ''}
+                    ${companyData.bic ? `<strong>BIC:</strong> ${companyData.bic}<br/>` : ''}
+                    <strong>Référence à mentionner:</strong> ${invoiceNumber}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 30px 30px 30px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#e7f3ff" style="padding: 20px; border-left: 4px solid #0066cc;">
+                <tr>
+                  <td style="color: #004085; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; padding-bottom: 10px;">📋 Notes importantes</td>
+                </tr>
+                <tr>
+                  <td style="color: #004085; font-family: Arial, sans-serif; font-size: 14px; line-height: 22px;">
+                    ${message || 'Merci pour votre confiance.'}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#f8f9fa" style="padding: 25px 30px; border-top: 1px solid #e0e0e0;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="color: #666666; font-family: Arial, sans-serif; font-size: 12px; line-height: 20px;">
+                    <strong>${companyName}</strong>${companyData.rcs ? ` - ${companyData.rcs}` : ''}<br/>
+                    ${companyData.address || ''}${companyData.city ? `, ${companyData.city}` : ''}${companyData.zip ? `, ${companyData.zip}` : ''}${companyData.country ? `, ${companyData.country}` : ''}<br/>
+                    ${companyData.phone ? `Tél: ${companyData.phone}` : ''}${companyData.email ? ` | Email: ${companyData.email}` : ''}<br/>
+                    ${companyData.website ? `Site web: ${companyData.website}` : ''}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  // Inline CSS (sécurisant même si beaucoup de styles sont déjà inline)
+  return juice(html, { removeStyleTags: false, preserveImportant: true, applyStyleTags: true });
 }
