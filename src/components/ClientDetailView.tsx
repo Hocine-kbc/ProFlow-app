@@ -31,7 +31,7 @@ import { supabase } from '../lib/supabase.ts';
 import { openInvoicePrintWindow } from '../lib/print.ts';
 import { sendInvoiceEmail, EmailData } from '../lib/emailService.ts';
 import { useSettings } from '../hooks/useSettings.ts';
-import { updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi, fetchClientNotes, createClientNote, deleteClientNote, ClientNote } from '../lib/api.ts';
+import { updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi, fetchClientNotes, createClientNote, deleteClientNote, ClientNote, createNotification } from '../lib/api.ts';
 import { useApp } from '../contexts/AppContext.tsx';
 import AlertModal from './AlertModal.tsx';
 import CustomSelect from './CustomSelect.tsx';
@@ -459,7 +459,7 @@ export default function ClientDetailView({
         to_email: emailData.to,
         to_name: clientName,
         subject: emailData.subject || `Facture N° ${emailModal.invoice_number} - ${new Date(emailModal.date).toLocaleDateString('fr-FR')}`,
-        message: emailData.message || 'Veuillez trouver ci-joint votre facture.',
+        message: emailData.message || `Bonjour ${client.name || 'Madame, Monsieur'},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question, je reste à votre disposition.\n\nCordialement,\n${settings?.companyName || 'ProFlow'}`,
         invoice_number: emailModal.invoice_number,
         invoice_date: new Date(emailModal.date).toLocaleDateString('fr-FR'),
         invoice_due_date: new Date(emailModal.due_date).toLocaleDateString('fr-FR'),
@@ -527,6 +527,24 @@ export default function ClientDetailView({
           updated_at: new Date().toISOString()
         }
       });
+      
+      // Créer une notification de paiement
+      try {
+        const amount = invoice.amount || 0;
+        await createNotification(
+          'payment',
+          'Paiement reçu',
+          `La facture ${invoice.number} a été marquée comme payée (${amount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })})`,
+          'invoices',
+          {
+            invoice_id: invoice.id,
+            invoice_number: invoice.number,
+            amount: amount,
+          }
+        );
+      } catch (notifError) {
+        console.error('Error creating payment notification:', notifError);
+      }
       
       // Recharger les données du client
       loadClientDetail();

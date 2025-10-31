@@ -1,5 +1,5 @@
 import { supabase } from './supabase.ts';
-import { Service, Invoice } from '../types/index.ts';
+import { Service, Invoice, BusinessNotification, NotificationType, Message, Conversation } from '../types/index.ts';
 
 // Define interfaces locally since they're not exported from types
 interface Client {
@@ -1138,6 +1138,607 @@ export async function deleteClientNote(noteId: string): Promise<void> {
     }
   } catch (error) {
     console.error('Failed to delete client note:', error);
+    throw error;
+  }
+}
+
+// ==================== NOTIFICATIONS ====================
+
+interface DatabaseNotification {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  message: string | null;
+  link: string | null;
+  read: boolean;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Récupérer toutes les notifications de l'utilisateur
+export async function fetchNotifications(): Promise<BusinessNotification[]> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Utilisateur non authentifié');
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+
+    return (data as DatabaseNotification[]).map((n) => ({
+      id: n.id,
+      user_id: n.user_id,
+      type: n.type as NotificationType,
+      title: n.title,
+      message: n.message || undefined,
+      link: n.link || undefined,
+      read: n.read,
+      metadata: n.metadata || undefined,
+      created_at: n.created_at,
+      updated_at: n.updated_at,
+    }));
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    throw error;
+  }
+}
+
+// Récupérer le nombre de notifications non lues
+export async function getUnreadNotificationsCount(): Promise<number> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return 0;
+
+    const { count, error } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('read', false);
+
+    if (error) throw error;
+
+    return count || 0;
+  } catch (error) {
+    console.error('Error getting unread notifications count:', error);
+    return 0;
+  }
+}
+
+// Créer une notification
+export async function createNotification(
+  type: NotificationType,
+  title: string,
+  message?: string,
+  link?: string,
+  metadata?: Record<string, unknown>
+): Promise<BusinessNotification> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Utilisateur non authentifié');
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: user.id,
+        type,
+        title,
+        message: message || null,
+        link: link || null,
+        read: false,
+        metadata: metadata || null,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const n = data as DatabaseNotification;
+    return {
+      id: n.id,
+      user_id: n.user_id,
+      type: n.type as NotificationType,
+      title: n.title,
+      message: n.message || undefined,
+      link: n.link || undefined,
+      read: n.read,
+      metadata: n.metadata || undefined,
+      created_at: n.created_at,
+      updated_at: n.updated_at,
+    };
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    throw error;
+  }
+}
+
+// Marquer une notification comme lue
+export async function markNotificationAsRead(id: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    throw error;
+  }
+}
+
+// Marquer toutes les notifications comme lues
+export async function markAllNotificationsAsRead(): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Utilisateur non authentifié');
+
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('user_id', user.id)
+      .eq('read', false);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    throw error;
+  }
+}
+
+// Supprimer une notification
+export async function deleteNotification(id: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    throw error;
+  }
+}
+
+// Supprimer toutes les notifications lues
+export async function deleteReadNotifications(): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Utilisateur non authentifié');
+
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('read', true);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting read notifications:', error);
+    throw error;
+  }
+}
+
+// ==================== MESSAGES ====================
+
+interface DatabaseMessage {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  client_id: string | null;
+  subject: string | null;
+  content: string;
+  attachments: unknown[] | null;
+  read: boolean;
+  read_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Récupérer toutes les conversations de l'utilisateur
+export async function fetchConversations(): Promise<Conversation[]> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Utilisateur non authentifié');
+
+    // Récupérer tous les messages où l'utilisateur est expéditeur ou destinataire
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select('*')
+      .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Récupérer les emails des utilisateurs impliqués
+    const userIds = new Set<string>();
+    if (messages) {
+      for (const msg of messages as any[]) {
+        userIds.add(msg.sender_id);
+        userIds.add(msg.recipient_id);
+      }
+    }
+
+    const userIdsArray = Array.from(userIds);
+    const userEmailsMap = new Map<string, string>();
+    
+    // Pour chaque utilisateur, récupérer son email depuis auth.users
+    // Note: On ne peut pas directement interroger auth.users, donc on utilise l'email du user actuel
+    // et pour les autres, on essaie de trouver l'email dans les messages existants ou on utilise un placeholder
+    for (const userId of Array.from(userIds)) {
+      try {
+        // Si c'est l'utilisateur actuel, on récupère son email
+        if (userId === user.id) {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (currentUser?.email) {
+            userEmailsMap.set(userId, currentUser.email);
+            continue;
+          }
+        }
+        
+        // Pour les autres utilisateurs, on cherche leur email dans les messages existants
+        // ou on utilise un placeholder
+        // Note: Dans un vrai système, il faudrait une table de profils ou utiliser l'API Admin
+        let foundEmail = false;
+        if (messages) {
+          for (const msg of messages as any[]) {
+            // Si on trouve un message où cet utilisateur est impliqué et qu'on a son email quelque part
+            // On va plutôt utiliser un identifiant basé sur l'ID pour l'instant
+            // et améliorer plus tard avec une vraie table de profils
+          }
+        }
+        
+        // Si pas trouvé, utiliser un identifiant basé sur l'ID
+        userEmailsMap.set(userId, `user-${userId.substring(0, 8)}`);
+      } catch {
+        userEmailsMap.set(userId, `user-${userId.substring(0, 8)}`);
+      }
+    }
+
+    // Grouper les messages par conversation (par autre utilisateur)
+    const conversationsMap = new Map<string, Conversation>();
+    
+    if (messages) {
+      for (const msg of messages as any[]) {
+        const otherUserId = msg.sender_id === user.id ? msg.recipient_id : msg.sender_id;
+        const otherUserEmail = userEmailsMap.get(otherUserId) || 'Utilisateur inconnu';
+        
+        if (!conversationsMap.has(otherUserId)) {
+          conversationsMap.set(otherUserId, {
+            id: otherUserId,
+            other_user_id: otherUserId,
+            other_user_email: otherUserEmail,
+            unread_count: 0,
+            client: msg.client_id ? { id: msg.client_id, name: '' } : undefined,
+          });
+        }
+        
+        const conversation = conversationsMap.get(otherUserId)!;
+        
+        // Mettre à jour le dernier message si nécessaire
+        if (!conversation.last_message || new Date(msg.created_at) > new Date(conversation.last_message.created_at)) {
+          conversation.last_message = {
+            id: msg.id,
+            sender_id: msg.sender_id,
+            recipient_id: msg.recipient_id,
+            client_id: msg.client_id || undefined,
+            subject: msg.subject || undefined,
+            content: msg.content,
+            attachments: Array.isArray(msg.attachments) ? msg.attachments as any[] : undefined,
+            read: msg.read,
+            read_at: msg.read_at || undefined,
+            created_at: msg.created_at,
+            updated_at: msg.updated_at,
+          };
+        }
+        
+        // Compter les messages non lus
+        if (msg.recipient_id === user.id && !msg.read) {
+          conversation.unread_count++;
+        }
+      }
+    }
+
+    // Récupérer les noms des clients si nécessaire
+    const clientIds = Array.from(conversationsMap.values())
+      .map(c => c.client?.id)
+      .filter(Boolean) as string[];
+    
+    if (clientIds.length > 0) {
+      const { data: clients } = await supabase
+        .from('clients')
+        .select('id, name')
+        .in('id', clientIds);
+      
+      if (clients) {
+        for (const conversation of conversationsMap.values()) {
+          if (conversation.client?.id) {
+            const client = clients.find(c => c.id === conversation.client?.id);
+            if (client) {
+              conversation.client.name = client.name;
+            }
+          }
+        }
+      }
+    }
+
+    return Array.from(conversationsMap.values()).sort((a, b) => {
+      const aDate = a.last_message ? new Date(a.last_message.created_at).getTime() : 0;
+      const bDate = b.last_message ? new Date(b.last_message.created_at).getTime() : 0;
+      return bDate - aDate;
+    });
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+    throw error;
+  }
+}
+
+// Récupérer les messages d'une conversation
+export async function fetchMessages(otherUserId: string, limit: number = 50): Promise<Message[]> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Utilisateur non authentifié');
+
+    // Valider que otherUserId est un UUID valide
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(otherUserId)) {
+      throw new Error('L\'ID de l\'utilisateur doit être un UUID valide');
+    }
+
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .or(`and(sender_id.eq.${user.id},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${user.id})`)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    // Récupérer les emails des utilisateurs
+    const userIds = new Set<string>();
+    userIds.add(user.id);
+    userIds.add(otherUserId);
+    
+    const userEmailsMap = new Map<string, string>();
+    for (const userId of userIds) {
+      try {
+        // Valider que c'est un UUID valide
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(userId)) {
+          // Si ce n'est pas un UUID valide, on ne peut pas continuer
+          console.warn(`Invalid UUID format: ${userId}`);
+          userEmailsMap.set(userId, 'ID invalide');
+          continue;
+        }
+        
+        if (userId === user.id) {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (currentUser?.email) {
+            userEmailsMap.set(userId, currentUser.email);
+          } else {
+            userEmailsMap.set(userId, `user-${userId.substring(0, 8)}`);
+          }
+        } else {
+          // Pour l'autre utilisateur, on utilise un identifiant basé sur l'ID
+          // Dans un vrai système, il faudrait une table de profils ou API Admin
+          userEmailsMap.set(userId, `user-${userId.substring(0, 8)}`);
+        }
+      } catch {
+        userEmailsMap.set(userId, `user-${userId.substring(0, 8)}`);
+      }
+    }
+
+    return (data as any[]).map((msg: any) => ({
+      id: msg.id,
+      sender_id: msg.sender_id,
+      recipient_id: msg.recipient_id,
+      client_id: msg.client_id || undefined,
+      subject: msg.subject || undefined,
+      content: msg.content,
+      attachments: Array.isArray(msg.attachments) ? msg.attachments as any[] : undefined,
+      read: msg.read,
+      read_at: msg.read_at || undefined,
+      created_at: msg.created_at,
+      updated_at: msg.updated_at,
+      sender: { id: msg.sender_id, email: userEmailsMap.get(msg.sender_id) || 'Utilisateur' },
+      recipient: { id: msg.recipient_id, email: userEmailsMap.get(msg.recipient_id) || 'Utilisateur' },
+    })).reverse(); // Inverser pour afficher du plus ancien au plus récent
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    throw error;
+  }
+}
+
+// Envoyer un message
+export async function sendMessage(
+  recipientId: string,
+  content: string,
+  subject?: string,
+  clientId?: string,
+  attachments?: { name: string; url: string; size: number; type: string }[]
+): Promise<Message> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Utilisateur non authentifié');
+
+    // Valider que recipientId est un UUID valide
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(recipientId)) {
+      throw new Error('L\'ID du destinataire doit être un UUID valide');
+    }
+
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({
+        sender_id: user.id,
+        recipient_id: recipientId,
+        client_id: clientId || null,
+        subject: subject || null,
+        content,
+        attachments: attachments && attachments.length > 0 ? attachments : null,
+        read: false,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const msg = data as DatabaseMessage;
+    return {
+      id: msg.id,
+      sender_id: msg.sender_id,
+      recipient_id: msg.recipient_id,
+      client_id: msg.client_id || undefined,
+      subject: msg.subject || undefined,
+      content: msg.content,
+      attachments: Array.isArray(msg.attachments) ? msg.attachments as any[] : undefined,
+      read: msg.read,
+      read_at: msg.read_at || undefined,
+      created_at: msg.created_at,
+      updated_at: msg.updated_at,
+    };
+  } catch (error) {
+    console.error('Error sending message:', error);
+    throw error;
+  }
+}
+
+// Uploader une pièce jointe
+export async function uploadMessageAttachment(file: File): Promise<{ name: string; url: string; size: number; type: string }> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Utilisateur non authentifié');
+
+    // Créer un nom de fichier unique
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    
+    // Upload vers Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('message-attachments')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    // Récupérer l'URL publique
+    const { data: { publicUrl } } = supabase.storage
+      .from('message-attachments')
+      .getPublicUrl(fileName);
+
+    return {
+      name: file.name,
+      url: publicUrl,
+      size: file.size,
+      type: file.type || 'application/octet-stream'
+    };
+  } catch (error) {
+    console.error('Error uploading attachment:', error);
+    throw error;
+  }
+}
+
+// Marquer un message comme lu
+export async function markMessageAsRead(messageId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('messages')
+      .update({ 
+        read: true,
+        read_at: new Date().toISOString()
+      })
+      .eq('id', messageId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error marking message as read:', error);
+    throw error;
+  }
+}
+
+// Marquer tous les messages d'une conversation comme lus
+export async function markConversationAsRead(otherUserId: string): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Utilisateur non authentifié');
+
+    const { error } = await supabase
+      .from('messages')
+      .update({ 
+        read: true,
+        read_at: new Date().toISOString()
+      })
+      .eq('recipient_id', user.id)
+      .eq('sender_id', otherUserId)
+      .eq('read', false);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error marking conversation as read:', error);
+    throw error;
+  }
+}
+
+// Récupérer le nombre de messages non lus
+export async function getUnreadMessagesCount(): Promise<number> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return 0;
+
+    const { count, error } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('recipient_id', user.id)
+      .eq('read', false);
+
+    if (error) throw error;
+
+    return count || 0;
+  } catch (error) {
+    console.error('Error getting unread messages count:', error);
+    return 0;
+  }
+}
+
+// Supprimer un message
+export async function deleteMessage(messageId: string): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Utilisateur non authentifié');
+
+    // Vérifier que l'utilisateur est soit le sender soit le recipient
+    const { data: message } = await supabase
+      .from('messages')
+      .select('sender_id, recipient_id')
+      .eq('id', messageId)
+      .single();
+
+    if (!message) {
+      throw new Error('Message non trouvé');
+    }
+
+    // Permettre la suppression si l'utilisateur est l'expéditeur OU le destinataire
+    if (message.sender_id !== user.id && message.recipient_id !== user.id) {
+      throw new Error('Vous ne pouvez supprimer que vos propres messages ou les messages que vous avez reçus');
+    }
+
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .eq('id', messageId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting message:', error);
     throw error;
   }
 }

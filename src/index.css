@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Animation de cloche qui oscille */
+@keyframes bell-swing {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: rotate(-15deg);
+  }
+  20%, 40%, 60%, 80% {
+    transform: rotate(15deg);
+  }
+}
+
+.animate-bell-swing {
+  animation: bell-swing 0.5s ease-in-out;
+  transform-origin: top center;
+}
+
 /* Elegant scrollbar for desktop - same as menu */
 .scrollbar-hide {
   scrollbar-width: thin;  /* Firefox */

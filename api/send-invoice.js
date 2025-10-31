@@ -137,7 +137,7 @@ export default async function handler(req, res) {
     const pdfContent = generateSimplePDF(invoice, companyData);
 
     // Données email
-    const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name}, veuillez trouver ci-joint votre facture.`;
+  const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question ou précision, je reste à votre disposition.\n\nCordialement,\n${companyData.name || 'ProFlow'}`;
     const emailSubject = customEmailData?.subject || `Facture ${invoice.invoice_number}`;
     const fromEmail = userEmail || process.env.SENDGRID_FROM_EMAIL;
     const fromName = companyData.name || 'ProFlow';
@@ -431,10 +431,10 @@ function generateEmailHTML(invoice, companyData, message) {
           </tr>
           <tr>
             <td align="center" style="padding: 0 30px 30px 30px;">
-              <table border="0" cellspacing="0" cellpadding="0">
+              <table border="0" cellspacing="0" cellpadding="0" width="100%" style="max-width:600px;">
                 <tr>
-                  <td align="center" bgcolor="#28a745" style="border-radius: 30px; padding: 16px 45px;">
-                    <a href="#" target="_blank" style="color: #ffffff; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; text-decoration: none; display: inline-block;">⬇ Télécharger la facture (PDF)</a>
+                  <td align="center" style="font-family: Arial, sans-serif; font-size:18px; font-weight:bold; font-style:italic; color:#0f172a; background:#eef6ff; border:1px solid #bfdbfe; padding:16px 18px; border-radius:12px;">
+                    Votre facture (PDF) est jointe à cet email.
                   </td>
                 </tr>
               </table>

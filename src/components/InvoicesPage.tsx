@@ -29,6 +29,7 @@ import {
   fetchSettings as fetchSettingsApi,
   updateInvoice as updateInvoiceApi,
   upsertSettings,
+  createNotification,
 } from '../lib/api.ts';
 import { EmailData, sendInvoiceEmail } from '../lib/emailService.ts';
 import { openInvoicePrintWindow } from '../lib/print.ts';
@@ -468,6 +469,26 @@ export default function InvoicesPage() {
           type: 'UPDATE_INVOICE',
           payload: { ...invoice, ...saved }
         });
+
+        // Créer une notification si la facture est marquée comme payée
+        if (status === 'paid') {
+          try {
+            const amount = invoice.net_amount || invoice.subtotal || 0;
+            await createNotification(
+              'payment',
+              'Paiement reçu',
+              `La facture ${invoice.invoice_number} a été marquée comme payée (${amount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })})`,
+              'invoices',
+              {
+                invoice_id: invoice.id,
+                invoice_number: invoice.invoice_number,
+                amount: amount,
+              }
+            );
+          } catch (notifError) {
+            console.error('Error creating payment notification:', notifError);
+          }
+        }
       } catch {
         showNotification('error', 'Erreur', 'Erreur lors de la mise à jour de la facture');
       }
@@ -654,7 +675,7 @@ export default function InvoicesPage() {
         to_email: emailData.to,
         to_name: clientName,
         subject: emailData.subject || `Facture N° ${emailModal.invoice_number} - ${new Date(emailModal.date).toLocaleDateString('fr-FR')}`,
-        message: emailData.message || 'Veuillez trouver ci-joint votre facture.',
+        message: emailData.message || `Bonjour ${clientName},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question, je reste à votre disposition.\n\nCordialement,\n${settings?.companyName || 'ProFlow'}`,
         invoice_number: emailModal.invoice_number,
         invoice_date: new Date(emailModal.date).toLocaleDateString('fr-FR'),
         invoice_due_date: new Date(emailModal.due_date).toLocaleDateString('fr-FR'),
@@ -1176,10 +1197,11 @@ export default function InvoicesPage() {
                             // Trouver le client associé à cette facture
                             const associatedClient = clients.find(c => c.id === invoice.client_id);
                             // Pré-remplir l'email du client
+                            const politeMsg = `Bonjour ${associatedClient?.name || 'Madame, Monsieur'},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question, je reste à votre disposition.\n\nCordialement,\n${settings?.companyName || 'ProFlow'}`;
                             setEmailData({
                               to: associatedClient?.email || '',
                               subject: `Facture N° ${invoice.invoice_number} - ${new Date(invoice.date).toLocaleDateString('fr-FR')}`,
-                              message: 'Veuillez trouver ci-joint votre facture.'
+                              message: politeMsg
                             });
                             setEmailModal(invoice);
                           }}
@@ -1472,10 +1494,11 @@ export default function InvoicesPage() {
                             // Trouver le client associé à cette facture
                             const associatedClient = clients.find(c => c.id === invoice.client_id);
                             // Pré-remplir l'email du client
+                            const politeMsg2 = `Bonjour ${associatedClient?.name || 'Madame, Monsieur'},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question, je reste à votre disposition.\n\nCordialement,\n${settings?.companyName || 'ProFlow'}`;
                             setEmailData({
                               to: associatedClient?.email || '',
                               subject: `Facture N° ${invoice.invoice_number} - ${new Date(invoice.date).toLocaleDateString('fr-FR')}`,
-                              message: 'Veuillez trouver ci-joint votre facture.'
+                              message: politeMsg2
                             });
                             setEmailModal(invoice);
                           }}
@@ -1529,8 +1552,7 @@ export default function InvoicesPage() {
                     </div>
                   </td>
                 </tr>
-                ))
-              )}
+                )))}
             </tbody>
           </table>
         </div>
@@ -2453,7 +2475,7 @@ export default function InvoicesPage() {
                     onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
                     placeholder="Bonjour, veuillez trouver ci-joint votre facture..."
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-[15px] font-semibold italic"
                   />
                 </div>
 

@@ -8,6 +8,7 @@ import StatsPage from './components/StatsPage.tsx';
 import ProfilePage from './components/ProfilePage.tsx';
 import ArchivePage from './components/ArchivePage.tsx';
 import URSSAFPage from './components/URSSAFPage.tsx';
+import MessagesPage from './components/MessagesPage.tsx';
 import { AppProvider, useApp } from './contexts/AppContext.tsx';
 import { ThemeProvider } from './contexts/ThemeContext.tsx';
 import { fetchClients, fetchServices, fetchInvoices } from './lib/api.ts';
@@ -220,6 +221,8 @@ function AppContent() {
         return <ArchivePage onPageChange={handlePageChange} />;
       case 'urssaf':
         return <URSSAFPage />;
+      case 'messages':
+        return <MessagesPage />;
       default:
         return <Dashboard onNavigate={handlePageChange} />;
     }

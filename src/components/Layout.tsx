@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { X, Home, Users, Clock, FileText, BarChart3, User, ChevronLeft, ChevronRight, Moon, Sun, Power, Archive, Scale } from 'lucide-react';
+import { X, Home, Users, Clock, FileText, BarChart3, User, ChevronLeft, ChevronRight, Moon, Sun, Power, Archive, Scale, MessageCircle } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext.tsx';
 import { supabase } from '../lib/supabase.ts';
 import NotificationContainer from './NotificationContainer.tsx';
+import NotificationBell from './NotificationBell.tsx';
+import MessagePanel from './MessagePanel.tsx';
 import AlertModal from './AlertModal.tsx';
 import ChatBot from './ChatBot.tsx';
 
@@ -17,6 +19,7 @@ const menuItems = [
   { id: 'clients', label: 'Clients', icon: Users, color: 'green' },
   { id: 'services', label: 'Prestations', icon: Clock, color: 'orange' },
   { id: 'invoices', label: 'Factures', icon: FileText, color: 'purple' },
+  { id: 'messages', label: 'Messages', icon: MessageCircle, color: 'cyan' },
   { id: 'stats', label: 'Statistiques', icon: BarChart3, color: 'indigo' },
   { id: 'urssaf', label: 'URSSAF', icon: Scale, color: 'red' },
   { id: 'archive', label: 'Archive', icon: Archive, color: 'gray' },
@@ -101,11 +104,11 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-30 ${sidebarCollapsed ? 'w-16' : 'w-72'} bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg transform lg:translate-x-0 ${
+      <div className={`fixed inset-y-0 left-0 z-40 ${sidebarCollapsed ? 'w-16' : 'w-72'} bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg transform lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } flex flex-col`} style={{
         transition: 'width 300ms ease-in-out, transform 300ms ease-in-out',
-        zIndex: 30
+        zIndex: 40
       }}>
         {/* Header avec gradient - Masqué sur mobile */}
         <div className="hidden lg:block relative h-20 p-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700">
@@ -194,95 +197,68 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
           })}
         </nav>
 
-        {/* Boutons d'action - Desktop */}
-        <div className="hidden lg:block p-2 border-t border-gray-200 dark:border-gray-700 mt-auto">
-          <div className="space-y-1">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className={`${sidebarCollapsed ? 'w-12' : 'w-full'} flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-1.5'} text-left rounded-xl group relative text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white`}
-              style={{ height: '40px', minHeight: '40px' }}
-              title={sidebarCollapsed ? (isDark ? 'Mode clair' : 'Mode sombre') : ''}
-            >
-              <div className="rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-600" style={{ 
-                minWidth: '32px', 
-                minHeight: '32px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                marginRight: sidebarCollapsed ? '0' : '6px',
-                padding: '6px'
-              }}>
-                {isDark ? <Sun size={16} className="text-yellow-600 dark:text-yellow-400" /> : <Moon size={16} className="text-gray-600 dark:text-gray-400" />}
-              </div>
-              {!sidebarCollapsed && (
-                <span className="font-medium text-sm truncate">{isDark ? 'Mode clair' : 'Mode sombre'}</span>
-              )}
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => setShowLogoutAlert(true)}
-              className={`${sidebarCollapsed ? 'w-12' : 'w-full'} flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-1.5'} text-left rounded-xl group relative text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400`}
-              style={{ height: '40px', minHeight: '40px' }}
-              title={sidebarCollapsed ? 'Se déconnecter' : ''}
-            >
-              <div className="rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-red-100 dark:group-hover:bg-red-900/20" style={{ 
-                minWidth: '32px', 
-                minHeight: '32px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                marginRight: sidebarCollapsed ? '0' : '6px',
-                padding: '6px'
-              }}>
-                <Power size={16} className="text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400" />
-              </div>
-              {!sidebarCollapsed && (
-                <span className="font-medium text-sm truncate">Se déconnecter</span>
-              )}
-            </button>
-          </div>
-        </div>
+      </div>
 
+      {/* Header fixe en haut - Toute la largeur, derrière le menu */}
+      <div className="bg-gradient-to-r from-white via-white to-gray-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 shadow-md border-b border-gray-200/80 dark:border-gray-700/80 backdrop-blur-sm px-4 lg:px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-30" style={{ height: '64px' }}>
+        {/* Mobile: Menu hamburger */}
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="lg:hidden p-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        
+        {/* Mobile: Logo */}
+        <div className="lg:hidden flex items-center">
+          <img src="/ProFlowlogo.png" alt="ProFlow" className="h-10 w-auto invert dark:invert-0" />
+        </div>
+        
+        {/* Desktop: Espace vide à gauche */}
+        <div className="hidden lg:block flex-1" />
+        
+        {/* Actions à droite */}
+        <div className="flex items-center gap-1.5">
+          <NotificationBell onNavigate={onPageChange} />
+          <MessagePanel onNavigate={onPageChange} />
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="relative p-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95 group"
+            title={isDark ? 'Mode clair' : 'Mode sombre'}
+          >
+            <div className="relative">
+              {isDark ? (
+                <Sun className="w-5 h-5 transition-transform group-hover:rotate-180 duration-500" />
+              ) : (
+                <Moon className="w-5 h-5 transition-transform group-hover:rotate-12 duration-300" />
+              )}
+            </div>
+            <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-yellow-400/20 to-orange-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+          </button>
+          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-1" />
+          <button
+            type="button"
+            onClick={() => setShowLogoutAlert(true)}
+            className="relative p-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 active:scale-95 group"
+            title="Se déconnecter"
+          >
+            <Power className="w-5 h-5 transition-transform group-hover:scale-110 duration-200" />
+            <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-red-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+          </button>
+        </div>
       </div>
 
       {/* Main content */}
       <div className={`transition-all duration-500 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'}`}>
-                {/* Mobile header */}
-                <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-1 flex items-center justify-between fixed top-0 left-0 right-0 z-40" style={{ height: '50px', zIndex: 40 }}>
-                  <button
-                    type="button"
-                    onClick={() => setSidebarOpen(true)}
-                    className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                  </button>
-                  <img src="/ProFlowlogo.png" alt="ProFlow" className="h-48 w-auto invert dark:invert-0" />
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={toggleTheme}
-                      className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      title={isDark ? 'Mode clair' : 'Mode sombre'}
-                    >
-                      {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowLogoutAlert(true)}
-                      className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                      title="Se déconnecter"
-                    >
-                      <Power className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-
+        {/* Espace pour le header */}
+        <div className="h-[64px]"></div>
+        
         {/* Page content */}
-        <main className="p-4 md:p-6 lg:p-8 min-h-screen pb-12 pt-[70px] md:pt-[70px] lg:pt-6">
+        <main className="p-4 md:p-6 lg:p-8 min-h-screen pb-12">
           {children}
         </main>
       </div>

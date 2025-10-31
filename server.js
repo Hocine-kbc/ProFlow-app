@@ -203,7 +203,7 @@ app.post('/api/send-invoice', async (req, res) => {
     console.log('📧 Données email personnalisées reçues:', customEmailData);
     
     // Utiliser le message personnalisé ou le message par défaut
-    const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name},\n\nNous vous remercions pour votre confiance et votre collaboration.\n\nVeuillez trouver ci-joint votre facture détaillée en format PDF pour vos archives. Nous restons à votre entière disposition pour toute question.\n\nCordialement.`;
+    const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question ou précision, je reste à votre disposition.\n\nCordialement,\n${companyData.name}`;
     const emailSubject = customEmailData?.subject || `Facture ${invoice.invoice_number}`;
     
     console.log('📧 Message email utilisé:', emailMessage);
@@ -395,8 +395,8 @@ app.post('/api/send-invoice', async (req, res) => {
             <td style="padding: 0 30px 20px 30px;">
               <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="background:#ffffff; border-radius: 10px;">
                 <tr>
-                  <td style="padding:16px 18px; color:#333333; font-family: Arial, sans-serif; font-size:14px; line-height:22px;">
-                    {{intro_message}}
+                  <td style="padding:16px 18px; color:#333333; font-family: Arial, sans-serif; font-size:16px; font-weight:bold; font-style:italic; line-height:24px;">
+                    <div style="white-space:pre-line;">{{intro_message}}</div>
                   </td>
                 </tr>
               </table>
@@ -448,22 +448,13 @@ app.post('/api/send-invoice', async (req, res) => {
           </tr>
           <tr>
             <td align="center" style="padding: 0 30px 30px 30px;">
-              <!-- Bulletproof button -->
-              <!--[if mso]>
-              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{download_url}}" style="height:48px;v-text-anchor:middle;width:360px;" arcsize="50%" stroke="f" fillcolor="#1e3c72">
-                <w:anchorlock/>
-                <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">⬇ Télécharger la facture (PDF)</center>
-              </v:roundrect>
-              <![endif]-->
-              <!--[if !mso]><!-- -->
-              <table border="0" cellspacing="0" cellpadding="0" role="presentation" align="center" style="width:auto;">
+              <table border="0" cellspacing="0" cellpadding="0" role="presentation" align="center" style="width:100%; max-width:680px;">
                 <tr>
-                  <td align="center" bgcolor="#1e3c72" style="border-radius:999px;">
-                    <a href="{{download_url}}" target="_blank" class="btn-full" style="display:inline-block; padding:14px 28px; font-family: Arial, sans-serif; font-size:16px; font-weight:bold; color:#ffffff; text-decoration:none; white-space:nowrap;">⬇ Télécharger la facture (PDF)</a>
+                  <td align="center" style="font-family: Arial, sans-serif; font-size:18px; font-weight:bold; font-style:italic; color:#0f172a; background:#eef6ff; border:1px solid #bfdbfe; padding:16px 18px; border-radius:12px;">
+                    Votre facture (PDF) est jointe à cet email.
                   </td>
                 </tr>
               </table>
-              <!--<![endif]-->
             </td>
           </tr>
           <tr>

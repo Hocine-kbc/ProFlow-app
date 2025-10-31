@@ -74,3 +74,65 @@ export interface ChatBotState {
   isLoading: boolean;
   suggestions: ChatSuggestion[];
 }
+
+// Notification type
+export type NotificationType = 'payment' | 'message' | 'invoice' | 'reminder' | 'system' | 'warning';
+
+export interface BusinessNotification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message?: string;
+  link?: string;
+  read: boolean;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+// Message type
+export interface MessageAttachment {
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+}
+
+export interface Message {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  client_id?: string;
+  subject?: string;
+  content: string;
+  attachments?: MessageAttachment[];
+  read: boolean;
+  read_at?: string;
+  created_at: string;
+  updated_at: string;
+  sender?: {
+    id: string;
+    email: string;
+  };
+  recipient?: {
+    id: string;
+    email: string;
+  };
+  client?: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface Conversation {
+  id: string;
+  other_user_id: string;
+  other_user_email: string;
+  last_message?: Message;
+  unread_count: number;
+  client?: {
+    id: string;
+    name: string;
+  };
+}
