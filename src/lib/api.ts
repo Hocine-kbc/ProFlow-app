@@ -8,6 +8,7 @@ interface Client {
   name: string;
   email: string;
   phone?: string;
+  siren?: string;
   address?: string;
   status?: 'active' | 'inactive' | 'archived';
   created_at: string;
@@ -66,6 +67,7 @@ interface DatabaseClient {
   name: string;
   email: string;
   phone: string;
+  siren?: string;
   address: string;
   created_at: string;
   updated_at: string;
@@ -280,7 +282,7 @@ export async function createClient(payload: Omit<Client, 'id' | 'created_at' | '
     
     const now = new Date().toISOString();
     const toInsert = { ...payload, user_id: user.id, created_at: now, updated_at: now } as DatabaseClient;
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('clients')
       .insert(toInsert)
       .select('*')
@@ -288,7 +290,15 @@ export async function createClient(payload: Omit<Client, 'id' | 'created_at' | '
     
     if (error) {
       console.error('Error creating client:', error);
-      throw error;
+      // Retry without siren if column doesn't exist
+      if (String(error.message || '').includes('siren')) {
+        const { siren: _siren, ...fallback } = toInsert as any;
+        const retry = await supabase.from('clients').insert(fallback).select('*').single();
+        if (retry.error) throw retry.error;
+        data = retry.data as any;
+      } else {
+        throw error;
+      }
     }
     
     return data as Client;
@@ -300,7 +310,7 @@ export async function createClient(payload: Omit<Client, 'id' | 'created_at' | '
 
 export async function updateClient(id: string, payload: Partial<Client>): Promise<Client> {
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('clients')
       .update({ ...payload, updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -309,7 +319,19 @@ export async function updateClient(id: string, payload: Partial<Client>): Promis
     
     if (error) {
       console.error('Error updating client:', error);
-      throw error;
+      if (String(error.message || '').includes('siren')) {
+        const { siren: _siren, ...fallback } = payload as any;
+        const retry = await supabase
+          .from('clients')
+          .update({ ...fallback, updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select('*')
+          .single();
+        if (retry.error) throw retry.error;
+        data = retry.data as any;
+      } else {
+        throw error;
+      }
     }
     
     return data as Client;

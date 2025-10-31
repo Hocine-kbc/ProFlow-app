@@ -9,6 +9,7 @@ type Client = {
   name: string;
   email: string;
   phone?: string;
+  siren?: string;
   address?: string;
   status?: 'active' | 'inactive' | 'archived';
   created_at: string;
@@ -47,6 +48,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
     name: '',
     email: '',
     phone: '',
+    siren: '',
     street: '',
     postalCode: '',
     city: '',
@@ -72,6 +74,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
+      siren: formData.siren || undefined,
       address: fullAddress
     };
     
@@ -126,7 +129,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', street: '', postalCode: '', city: '', country: '' });
+    setFormData({ name: '', email: '', phone: '', siren: '', street: '', postalCode: '', city: '', country: '' });
     setEditingClient(null);
     setShowModal(false);
   };
@@ -150,6 +153,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
       name: client.name,
       email: client.email,
       phone: client.phone || '',
+      siren: client.siren || '',
       street: street,
       postalCode: postalCode,
       city: city,

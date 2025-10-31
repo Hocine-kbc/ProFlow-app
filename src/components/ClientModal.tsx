@@ -8,6 +8,7 @@ interface ClientModalProps {
     name: string;
     email: string;
     phone: string;
+    siren?: string;
     street: string;
     postalCode: string;
     city: string;
@@ -17,6 +18,7 @@ interface ClientModalProps {
     name: string;
     email: string;
     phone: string;
+    siren?: string;
     street: string;
     postalCode: string;
     city: string;
@@ -114,6 +116,18 @@ export default function ClientModal({
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                />
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
+                  SIREN (facultatif)
+                </label>
+                <input
+                  type="text"
+                  value={formData.siren || ''}
+                  onChange={(e) => setFormData({ ...formData, siren: e.target.value })}
+                  placeholder="ex: 123 456 789"
                   className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>

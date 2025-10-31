@@ -74,14 +74,14 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         
         .facture {
             width: 210mm;
-            min-height: 297mm;
-            margin: 20px auto;
+            /* Supprimer la hauteur minimale pour éviter de forcer une nouvelle page */
+            min-height: auto;
+            margin: 10mm auto 0;
             background: white;
             padding: 10mm;
             padding-top: 0;
             position: relative;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            page-break-after: always;
+            box-shadow: none;
         }
         
     
@@ -228,10 +228,16 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             font-size: 12px;
             font-weight: 700;
             margin-bottom: 6px;
+            /* Aligner le titre avec le tableau (95% centré) */
+            width: 95%;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 2px;
         }
         
         table {
-            width: 100%;
+            width: 95%;
+            margin: 0 auto;
             border-collapse: separate;
             border-spacing: 0;
             margin-bottom: 8px;
@@ -251,7 +257,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         }
         
         tr {
-            page-break-inside: avoid;
+            page-break-inside: auto;
             page-break-after: auto;
         }
         
@@ -357,7 +363,10 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             display: flex;
             margin-top: 20px;
             justify-content: flex-end;
-            margin-bottom: 8px;
+            margin-bottom: 100px;
+            width: 95%;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .totaux {
@@ -378,7 +387,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             margin-top: 6px;
             padding-top: 8px;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 16px;
             color: #667eea;
         }
         
@@ -439,8 +448,9 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             
             .facture {
                 width: 210mm;
-                min-height: 297mm;
-                margin: 0;
+                /* aucune hauteur minimale en print */
+                min-height: auto;
+                margin: 0 auto 0;
                 padding: 10mm;
                 padding-top: 0;
                 box-shadow: none;
@@ -461,6 +471,12 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             
             @page {
                 size: A4;
+                /* Marges par défaut (pages 2+) */
+                margin: 12mm 0 18mm 0;
+            }
+            @page :first {
+                /* Plus d'espace en bas de la 1ère page */
+                margin: 8mm 0 24mm 0;
             }
             
             /* Assurer un espace en haut de chaque nouvelle page pour les tableaux */
@@ -514,9 +530,9 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
             <div class="client-box">
                 <h3>Facturer à</h3>
                 <p><strong>${client?.name || 'Client inconnu'}</strong><br>
-                ${client?.email || ''}<br>
-                ${client?.phone || ''}<br>
-                ${client?.address || ''}</p>
+                ${client?.email ? client.email + '<br>' : ''}
+                ${client?.phone ? client.phone + '<br>' : ''}
+                ${client?.address || ''}${client?.siren ? '<br>SIREN: ' + client.siren : ''}</p>
             </div>
         </div>
         

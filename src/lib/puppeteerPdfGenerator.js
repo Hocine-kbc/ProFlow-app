@@ -77,16 +77,11 @@ export async function generateInvoicePDFWithPuppeteer(invoiceData, companyData) 
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      margin: {
-        top: '15mm',
-        right: '10mm',
-        bottom: '30mm',
-        left: '10mm'
-      },
+      margin: { top: '0mm', right: '0mm', bottom: '30mm', left: '0mm' },
       displayHeaderFooter: true,
       headerTemplate: '<div></div>',
-      footerTemplate: '<div style="font-size: 10px; text-align: center; width: 100%; padding: 0 10mm; color: #999;"><span class="pageNumber"></span> / <span class="totalPages"></span></div>',
-      preferCSSPageSize: true
+      footerTemplate: '<div style="font-size:10px; width:100%; text-align:center; color:#999; padding-top:4mm;">Page <span class="pageNumber"></span> / <span class="totalPages"></span></div>',
+      preferCSSPageSize: false
     });
 
     // Sauvegarder le fichier

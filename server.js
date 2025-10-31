@@ -309,7 +309,7 @@ app.post('/api/send-invoice', async (req, res) => {
                     <strong>{{company_name}}</strong><br/>
                     {{company_address}}<br/>
                     SIRET: {{company_siret}}<br/>
-                    Tél: {{company_phone}} | Email: {{company_email}}
+                    Tél: {{company_phone}} | Email: <a href="mailto:{{company_email}}" style="color:#ffffff; text-decoration:none;">{{company_email}}</a>
                   </td>
                 </tr>
               </table>
@@ -456,10 +456,10 @@ app.post('/api/send-invoice', async (req, res) => {
               </v:roundrect>
               <![endif]-->
               <!--[if !mso]><!-- -->
-              <table border="0" cellspacing="0" cellpadding="0" role="presentation" width="100%">
+              <table border="0" cellspacing="0" cellpadding="0" role="presentation" align="center" style="width:auto;">
                 <tr>
-                  <td align="center" bgcolor="#1e3c72" style="border-radius:999px; width:100%;">
-                    <a href="{{download_url}}" target="_blank" class="btn-full" style="display:block; width:100%; padding:14px 28px; font-family: Arial, sans-serif; font-size:16px; font-weight:bold; color:#ffffff; text-decoration:none;">⬇ Télécharger la facture (PDF)</a>
+                  <td align="center" bgcolor="#1e3c72" style="border-radius:999px;">
+                    <a href="{{download_url}}" target="_blank" class="btn-full" style="display:inline-block; padding:14px 28px; font-family: Arial, sans-serif; font-size:16px; font-weight:bold; color:#ffffff; text-decoration:none; white-space:nowrap;">⬇ Télécharger la facture (PDF)</a>
                   </td>
                 </tr>
               </table>

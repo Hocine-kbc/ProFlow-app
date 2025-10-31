@@ -350,7 +350,7 @@ function generateEmailHTML(invoice, companyData, message) {
                     ${companyData.address || ''}<br/>
                     ${companyData.city || ''} ${companyData.zip || ''} ${companyData.country || ''}<br/>
                     ${companyData.siret ? `SIRET: ${companyData.siret}` : ''} ${companyData.vat ? `| TVA: ${companyData.vat}` : ''}<br/>
-                    ${companyData.phone ? `Tél: ${companyData.phone}` : ''} ${companyData.email ? `| Email: ${companyData.email}` : ''}
+                    ${companyData.phone ? `Tél: ${companyData.phone}` : ''} ${companyData.email ? ` | Email: <a href=\"mailto:${companyData.email}\" style=\"color:#ffffff; text-decoration:none;\">${companyData.email}</a>` : ''}
                   </td>
                 </tr>
               </table>
