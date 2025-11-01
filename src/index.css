@@ -243,3 +243,14 @@ input[type="checkbox"]:checked::after {
 .scrollbar-none::-webkit-scrollbar {
   display: none; /* WebKit browsers (Chrome, Safari, Edge) */
 }
+
+/* Prevent scroll on email inbox page */
+body:has(.email-inbox-container) {
+  overflow: hidden;
+}
+
+/* Ensure email inbox container doesn't overflow */
+.email-inbox-container {
+  box-sizing: border-box;
+  max-width: 100%;
+}

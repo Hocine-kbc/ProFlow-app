@@ -1190,12 +1190,12 @@ export default function ServicesPage() {
                         </button>
                       </td>
                     )}
-                    <td className="w-48 px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
+                    <td className="w-48 px-6 py-4">
+                      <div className="flex items-start min-w-0">
                         {(() => {
                           if (!client) {
                             return (
-                              <div className="w-8 h-8 bg-gradient-to-br from-gray-500 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
+                              <div className="w-8 h-8 bg-gradient-to-br from-gray-500 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
                                 ?
                               </div>
                             );
@@ -1233,13 +1233,13 @@ export default function ServicesPage() {
                           const gradientClass = colors[colorIndex];
                           
                           return (
-                            <div className={`w-8 h-8 bg-gradient-to-br ${gradientClass} rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md`}>
+                            <div className={`w-8 h-8 bg-gradient-to-br ${gradientClass} rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0`}>
                               {client.name.charAt(0).toUpperCase()}
                             </div>
                           );
                         })()}
-                        <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        <div className="ml-3 min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2" title={client?.name || 'Client inconnu'}>
                             {client?.name || 'Client inconnu'}
                           </div>
                         </div>

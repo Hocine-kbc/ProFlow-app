@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import sgMail from '@sendgrid/mail';
 import nodemailer from 'nodemailer';
 import { generateInvoicePDFWithPuppeteer } from './src/lib/puppeteerPdfGenerator.js';
+import messagesRouter from './api/messages.js';
 import juice from 'juice';
 
 // Configuration
@@ -744,5 +745,7 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
+// Routes de messagerie
+app.use('/api/messages', messagesRouter);
+
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));

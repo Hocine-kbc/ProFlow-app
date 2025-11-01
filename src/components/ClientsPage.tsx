@@ -732,8 +732,8 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                       </button>
                     </td>
                   )}
-                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <div className="flex items-center">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4">
+                    <div className="flex items-start min-w-0">
                       {(() => {
                         const firstLetter = client.name.charAt(0).toUpperCase();
                         const colors = [
@@ -768,13 +768,13 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                         const gradientClass = colors[colorIndex];
                         
                         return (
-                          <div className={`w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br ${gradientClass} rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-md`}>
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br ${gradientClass} rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-md flex-shrink-0`}>
                             {firstLetter}
                           </div>
                         );
                       })()}
-                      <div className="ml-3 sm:ml-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px] sm:max-w-none">
+                      <div className="ml-3 sm:ml-4 min-w-0 flex-1">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2" title={client.name}>
                           {client.name}
                         </div>
                       </div>
