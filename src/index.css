@@ -244,6 +244,43 @@ input[type="checkbox"]:checked::after {
   display: none; /* WebKit browsers (Chrome, Safari, Edge) */
 }
 
+/* Scrollbar visible pour la liste des messages */
+.scrollbar-visible {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent; /* Firefox */
+}
+
+.scrollbar-visible::-webkit-scrollbar {
+  width: 8px; /* Chrome, Safari, Opera */
+}
+
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
+
+/* Dark mode scrollbar */
+.dark .scrollbar-visible {
+  scrollbar-color: rgba(75, 85, 99, 0.5) transparent; /* Firefox dark mode */
+}
+
+.dark .scrollbar-visible::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+}
+
+.dark .scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.7);
+}
+
 /* Prevent scroll on email inbox page */
 body:has(.email-inbox-container) {
   overflow: hidden;
@@ -253,4 +290,33 @@ body:has(.email-inbox-container) {
 .email-inbox-container {
   box-sizing: border-box;
   max-width: 100%;
+}
+
+/* Styles pour les listes dans contentEditable - Force l'affichage des puces/numéros */
+[contenteditable] ul,
+[contenteditable] ol {
+  display: block !important;
+  list-style-position: outside !important;
+  padding-left: 30px !important;
+  margin: 8px 0 !important;
+  -webkit-padding-start: 30px !important;
+  -moz-padding-start: 30px !important;
+}
+
+[contenteditable] ul {
+  list-style-type: disc !important;
+  -webkit-list-style-type: disc !important;
+  -moz-list-style-type: disc !important;
+}
+
+[contenteditable] ol {
+  list-style-type: decimal !important;
+  -webkit-list-style-type: decimal !important;
+  -moz-list-style-type: decimal !important;
+}
+
+[contenteditable] li {
+  display: list-item !important;
+  margin: 4px 0;
+  padding-left: 4px;
 }

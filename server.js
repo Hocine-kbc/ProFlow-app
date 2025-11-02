@@ -748,4 +748,157 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
 // Routes de messagerie
 app.use('/api/messages', messagesRouter);
 
-app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
+// Fonction pour traiter les messages programmés
+async function checkAndProcessScheduledMessages() {
+  try {
+    const now = new Date().toISOString();
+    
+    // Récupérer tous les messages programmés dont la date est passée
+    const { data: scheduledMessages, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('status', 'scheduled')
+      .not('scheduled_at', 'is', null)
+      .lte('scheduled_at', now);
+    
+    if (error) {
+      console.error('❌ Erreur récupération messages programmés:', error);
+      return;
+    }
+    
+    if (!scheduledMessages || scheduledMessages.length === 0) {
+      return;
+    }
+    
+    console.log(`📬 ${scheduledMessages.length} message(s) programmé(s) à envoyer`);
+    
+    // Importer dynamiquement le router messages pour accéder aux fonctions
+    const messagesModule = await import('./api/messages.js');
+    const sendExternalEmail = messagesModule.sendExternalEmail;
+    
+    // Traiter chaque message
+    for (const message of scheduledMessages) {
+      try {
+        // Récupérer le destinataire
+        let recipientEmail = message.recipient_email;
+        let recipientId = message.recipient_id;
+        
+        // Si pas de recipient_id, essayer de trouver l'utilisateur par email
+        if (!recipientId && recipientEmail) {
+          try {
+            const { data: { users } } = await supabase.auth.admin.listUsers();
+            if (users) {
+              const recipient = users.find(u => u.email && u.email.toLowerCase() === recipientEmail.toLowerCase());
+              if (recipient) {
+                recipientId = recipient.id;
+              }
+            }
+          } catch (userError) {
+            console.error('Erreur recherche utilisateur:', userError);
+          }
+        }
+        
+        // Détecter les emails externes
+        const allRecipients = [
+          recipientEmail,
+          ...(message.cc ? message.cc.split(',').map(e => e.trim()) : []),
+          ...(message.bcc ? message.bcc.split(',').map(e => e.trim()) : [])
+        ].filter(Boolean);
+        
+        // Vérifier quels emails sont externes
+        const { data: existingUsers } = await supabase
+          .from('users')
+          .select('email')
+          .in('email', allRecipients);
+        
+        const existingEmails = new Set((existingUsers || []).map(u => u.email));
+        const externalEmails = allRecipients.filter(email => !existingEmails.has(email));
+        
+        // Envoyer les emails externes si nécessaire
+        if (externalEmails.length > 0 && sendExternalEmail) {
+          console.log(`📧 Envoi d'emails externes pour le message ${message.id}:`, externalEmails);
+          
+          for (const externalEmail of externalEmails) {
+            try {
+              await sendExternalEmail(
+                externalEmail,
+                message.subject,
+                message.content,
+                message.attachments || []
+              );
+              console.log(`✅ Email externe envoyé à ${externalEmail}`);
+            } catch (extError) {
+              console.error(`❌ Erreur envoi email externe à ${externalEmail}:`, extError);
+            }
+          }
+        }
+        
+        // Créer le message pour le destinataire interne (si existe)
+        if (recipientId) {
+          const recipientMessage = {
+            sender_id: message.sender_id,
+            recipient_email: recipientEmail,
+            recipient_id: recipientId,
+            subject: message.subject,
+            content: message.content,
+            attachments: message.attachments || [],
+            status: 'sent',
+            folder: 'inbox',
+            priority: message.priority || 'normal',
+            reply_to_id: message.reply_to_id || null,
+            read: false
+          };
+          
+          // Ajouter cc et bcc seulement s'ils existent dans le message
+          // (ces colonnes peuvent ne pas exister dans la table)
+          if (message.cc !== undefined && message.cc !== null) {
+            recipientMessage.cc = message.cc;
+          }
+          if (message.bcc !== undefined && message.bcc !== null) {
+            recipientMessage.bcc = message.bcc;
+          }
+          
+          const { error: sendError } = await supabase
+            .from('messages')
+            .insert(recipientMessage);
+          
+          if (sendError) {
+            console.error(`❌ Erreur création message destinataire:`, sendError);
+            continue;
+          }
+        }
+        
+        // Mettre à jour le message original à 'sent'
+        const { error: updateError } = await supabase
+          .from('messages')
+          .update({
+            status: 'sent',
+            folder: 'sent',
+            scheduled_at: null
+          })
+          .eq('id', message.id);
+        
+        if (updateError) {
+          console.error(`❌ Erreur mise à jour message:`, updateError);
+        } else {
+          console.log(`✅ Message programmé ${message.id} envoyé avec succès`);
+        }
+      } catch (msgError) {
+        console.error(`❌ Erreur traitement message ${message.id}:`, msgError);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors du traitement des messages programmés:', error);
+  }
+}
+
+app.listen(PORT, () => {
+  console.log(`🚀 Serveur démarré sur le port ${PORT}`);
+  
+  // Vérifier les messages programmés toutes les minutes
+  setInterval(checkAndProcessScheduledMessages, 60000); // 60000ms = 1 minute
+  console.log('⏰ Vérification des messages programmés activée (toutes les minutes)');
+  
+  // Vérifier immédiatement au démarrage
+  setTimeout(checkAndProcessScheduledMessages, 5000); // Attendre 5 secondes après le démarrage
+});

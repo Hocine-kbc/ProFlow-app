@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Home, Users, Clock, FileText, BarChart3, User, ChevronLeft, ChevronRight, Moon, Sun, Power, Archive, Scale, MessageCircle } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext.tsx';
 import { supabase } from '../lib/supabase.ts';
 import NotificationContainer from './NotificationContainer.tsx';
 import NotificationBell from './NotificationBell.tsx';
-import MessagePanel from './MessagePanel.tsx';
 import AlertModal from './AlertModal.tsx';
 import ChatBot from './ChatBot.tsx';
 
@@ -30,12 +29,58 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const { isDark, toggleTheme } = useTheme();
 
   // Fonction de déconnexion avec confirmation
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
+
+  // Charger le nombre de messages email non lus
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setUnreadMessagesCount(0);
+          return;
+        }
+
+        const { data: messagesData, error } = await supabase
+          .from('messages')
+          .select('id, deleted_by_users, recipient_id, read, folder, is_archived, is_deleted, is_spam')
+          .eq('recipient_id', user.id);
+
+        if (error) throw error;
+
+        if (!messagesData) {
+          setUnreadMessagesCount(0);
+          return;
+        }
+
+        // Filtrer les messages non lus dans la boîte de réception
+        const unread = messagesData.filter(msg => {
+          const deletedBy = Array.isArray(msg.deleted_by_users) ? msg.deleted_by_users : [];
+          const notDeleted = !deletedBy.includes(user.id);
+          const inInbox = (msg.folder === 'inbox' || !msg.folder) && !msg.is_archived && !msg.is_deleted && !msg.is_spam;
+          return notDeleted && inInbox && !msg.read;
+        });
+
+        setUnreadMessagesCount(unread.length);
+      } catch (error) {
+        console.error('Error fetching unread messages count:', error);
+        setUnreadMessagesCount(0);
+      }
+    };
+
+    fetchUnreadCount();
+
+    // Rafraîchir toutes les 30 secondes
+    const interval = setInterval(fetchUnreadCount, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Fonction pour obtenir les classes de couleur
   const getColorClasses = (color: string) => {
@@ -168,7 +213,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                   style={{ height: '54px', minHeight: '54px' }}
                   title={sidebarCollapsed ? item.label : ''}
                 >
-                  <div className={`rounded-lg ${
+                  <div className={`rounded-lg relative ${
                     isActive 
                       ? 'bg-white/20' 
                       : `${colors.icon} ${colors.iconHover}`
@@ -182,11 +227,17 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                     padding: '8px'
                   }}>
                     <Icon size={18} className={isActive ? 'text-white' : `${colors.iconColor} group-hover:${colors.iconColor.split(' ')[0]}`} />
+                    {/* Badge pour les messages non lus - visible même quand la sidebar est réduite */}
+                    {item.id === 'messages' && unreadMessagesCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-4 px-1 text-[10px] font-bold text-white bg-red-500 dark:bg-red-600 rounded-full shadow-lg z-10">
+                        {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                      </span>
+                    )}
                   </div>
                   {!sidebarCollapsed && (
-                    <div className="flex-1">
+                    <div className="flex-1 flex items-center justify-between">
                       <span className="font-medium whitespace-nowrap">{item.label}</span>
-                      {isActive && (
+                      {isActive && item.id !== 'messages' && (
                         <div className="absolute top-1/2 right-4 transform -translate-y-1/2 w-2 h-2 bg-white rounded-full"></div>
                       )}
                     </div>
@@ -223,7 +274,6 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         {/* Actions à droite */}
         <div className="flex items-center gap-1.5">
           <NotificationBell onNavigate={onPageChange} />
-          <MessagePanel onNavigate={onPageChange} />
           <button
             type="button"
             onClick={toggleTheme}

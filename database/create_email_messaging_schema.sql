@@ -21,7 +21,10 @@ add column if not exists in_reply_to_id uuid references public.messages(id) on d
 add column if not exists priority text default 'normal' check (priority in ('low', 'normal', 'high', 'urgent')),
 add column if not exists spam_score integer default 0 check (spam_score >= 0 and spam_score <= 100),
 add column if not exists is_spam boolean default false,
-add column if not exists folder text default 'inbox' check (folder in ('inbox', 'sent', 'drafts', 'archive', 'trash', 'spam'));
+add column if not exists folder text default 'inbox' check (folder in ('inbox', 'sent', 'drafts', 'archive', 'trash', 'spam')),
+add column if not exists recipient_email text,
+add column if not exists cc text,
+add column if not exists bcc text;
 
 -- Index pour les nouvelles colonnes
 create index if not exists idx_messages_status on public.messages using btree (status);

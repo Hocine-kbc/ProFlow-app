@@ -79,15 +79,18 @@ export default function MessageItem({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={`
-        grid grid-cols-[40px_40px_200px_1fr_120px_140px] gap-3 px-6 py-3 cursor-pointer transition-all duration-200 ease-in-out 
+        grid grid-cols-[40px_40px_280px_1fr_140px_auto] gap-3 px-6 py-3 cursor-pointer transition-[background-color,box-shadow,transform] duration-200 ease-in-out 
         ${isFirst ? '' : 'border-t border-gray-200 dark:border-gray-700'}
-        ${isLast ? 'border-b border-gray-200 dark:border-gray-700' : ''}
-        items-center transform
+        items-center transform overflow-x-hidden
         ${isSelected 
           ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-600 dark:border-l-blue-400 shadow-sm' 
-          : isUnread
+          : ''
+        }
+        ${!isSelected && isUnread
           ? 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:shadow-md hover:scale-[1.01] font-semibold'
-          : 'hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md hover:scale-[1.01]'
+          : !isSelected
+          ? 'hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md hover:scale-[1.01]'
+          : ''
         }
       `}
     >
@@ -97,7 +100,7 @@ export default function MessageItem({
           onClick={handleSelectClick}
           className={`p-1 rounded transition-all duration-200 ${isSelected || isHovered ? 'opacity-100 scale-100 hover:bg-gray-200 dark:hover:bg-gray-600' : 'opacity-20 scale-90'}`}
         >
-          <div className={`w-4 h-4 border-2 rounded transition-all ${isSelected ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 shadow-sm' : 'border-gray-400 dark:border-gray-500 hover:border-gray-500 dark:hover:border-gray-400'}`}>
+          <div className={`w-4 h-4 border-2 rounded-full transition-all ${isSelected ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 shadow-sm' : 'border-gray-400 dark:border-gray-500 hover:border-gray-500 dark:hover:border-gray-400'}`}>
             {isSelected && (
               <svg className="w-full h-full text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

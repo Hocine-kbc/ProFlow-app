@@ -2300,7 +2300,7 @@ export default function InvoicesPage() {
 
                         {/* Vue desktop - Table */}
                         <div className="hidden sm:block overflow-x-auto rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800">
-                          <table className="min-w-full border-0 rounded-xl sm:rounded-2xl overflow-hidden" style={{ minWidth: '600px' }}>
+                          <table className="w-full border-0 rounded-xl sm:rounded-2xl overflow-hidden">
                             <thead className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
                               <tr>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 first:rounded-tl-xl sm:first:rounded-tl-2xl last:rounded-tr-xl sm:last:rounded-tr-2xl">Description</th>

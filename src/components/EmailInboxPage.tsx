@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Mail, MailOpen, Archive, ArchiveRestore, Trash2, CheckSquare, Square, Star, RefreshCw, User, FileText, Calendar, Clock } from 'lucide-react';
+import { Mail, MailOpen, Archive, ArchiveRestore, Trash2, Star, RefreshCw, User, FileText, Calendar, Clock, ChevronDown } from 'lucide-react';
 import { EmailMessage, MessageFolder, MessageFilters, MessageStats } from '../types/index.ts';
 import { supabase } from '../lib/supabase.ts';
 import { useApp } from '../contexts/AppContext.tsx';
@@ -15,6 +15,10 @@ export default function EmailInboxPage() {
   const [selectedMessage, setSelectedMessage] = useState<EmailMessage | null>(null);
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const selectedMessageRef = useRef<EmailMessage | null>(null);
+  const messagesScrollContainerRef = useRef<HTMLDivElement>(null);
+  const [selectionFilter, setSelectionFilter] = useState<'all' | 'unread' | 'read' | 'starred' | 'unstarred'>('all');
+  const [showSelectionMenu, setShowSelectionMenu] = useState(false);
+  const selectionMenuRef = useRef<HTMLDivElement>(null);
   const [stats, setStats] = useState<MessageStats>({
     inbox_count: 0,
     unread_count: 0,
@@ -38,6 +42,21 @@ export default function EmailInboxPage() {
       setCurrentUserId(user?.id || null);
     };
     fetchUser();
+  }, []);
+
+  // Remettre le body en haut quand on arrive sur la page messages
+  useEffect(() => {
+    // Remettre le body en haut au montage
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    
+    return () => {
+      // Nettoyer la position du body quand on quitte la page
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
   }, []);
 
   // Charger les messages selon le dossier
@@ -242,7 +261,116 @@ export default function EmailInboxPage() {
 
   useEffect(() => {
     loadStats();
+    
+    // Rafraîchir les stats automatiquement toutes les 30 secondes
+    const statsInterval = setInterval(() => {
+      loadStats();
+    }, 30000);
+    
+    return () => {
+      clearInterval(statsInterval);
+    };
   }, [loadStats]);
+
+  // Sauvegarder la position de scroll
+  useEffect(() => {
+    const scrollContainer = messagesScrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      const scrollKey = `email-messages-scroll-${currentFolder}`;
+      try {
+        sessionStorage.setItem(scrollKey, scrollContainer.scrollTop.toString());
+      } catch (error) {
+        console.warn('Impossible de sauvegarder la position de scroll:', error);
+      }
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
+  }, [currentFolder]);
+
+  // Restaurer la position de scroll quand on revient sur la page ou change de dossier
+  useEffect(() => {
+    const scrollContainer = messagesScrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    if (loading) {
+      // Pendant le chargement, remettre le scroll en haut
+      scrollContainer.scrollTop = 0;
+      return;
+    }
+
+    // Après le chargement, restaurer la position sauvegardée
+    const scrollKey = `email-messages-scroll-${currentFolder}`;
+    try {
+      const savedScroll = sessionStorage.getItem(scrollKey);
+      if (savedScroll !== null) {
+        // Petit délai pour s'assurer que le contenu est rendu
+        setTimeout(() => {
+          if (scrollContainer) {
+            scrollContainer.scrollTop = parseInt(savedScroll, 10);
+          }
+        }, 100);
+      } else {
+        // Pas de position sauvegardée, remettre en haut
+        scrollContainer.scrollTop = 0;
+      }
+    } catch (error) {
+      console.warn('Impossible de restaurer la position de scroll:', error);
+    }
+  }, [currentFolder, loading, messages]);
+
+  // Filtrer les messages selon la recherche et le filtre de sélection
+  const getFilteredMessages = (): EmailMessage[] => {
+    let filtered = messages;
+
+    // Filtrer par recherche
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(m => {
+        const subject = (m.subject || '').toLowerCase();
+        const senderEmail = (m.sender?.email || '').toLowerCase();
+        const recipientEmail = (m.recipient?.email || '').toLowerCase();
+        const content = (m.content || '').toLowerCase();
+        
+        return subject.includes(query) ||
+               senderEmail.includes(query) ||
+               recipientEmail.includes(query) ||
+               content.includes(query);
+      });
+    }
+
+    // Filtrer par sélection
+    switch (selectionFilter) {
+      case 'unread':
+        return filtered.filter(m => !m.read && m.sender_id !== currentUserId);
+      case 'read':
+        return filtered.filter(m => m.read && m.sender_id !== currentUserId);
+      case 'starred':
+        return filtered.filter(m => m.is_starred);
+      case 'unstarred':
+        return filtered.filter(m => !m.is_starred);
+      default:
+        return filtered;
+    }
+  };
+
+  // Sélectionner selon le filtre
+  const handleSelectByFilter = (filter: 'all' | 'unread' | 'read' | 'starred' | 'unstarred') => {
+    setSelectionFilter(filter);
+    // Utiliser getFilteredMessages() pour prendre en compte la recherche ET le filtre
+    const filtered = getFilteredMessages();
+    if (selectedMessages.size === filtered.length && filtered.length > 0) {
+      // Tous sont déjà sélectionnés, on désélectionne
+      setSelectedMessages(new Set());
+    } else {
+      // Sélectionner tous les messages filtrés
+      setSelectedMessages(new Set(filtered.map(m => m.id)));
+    }
+    setShowSelectionMenu(false);
+  };
+
 
   // Sélection multiple
   const toggleMessageSelection = (messageId: string) => {
@@ -258,12 +386,28 @@ export default function EmailInboxPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedMessages.size === messages.length) {
+    const filtered = getFilteredMessages();
+    if (selectedMessages.size === filtered.length && filtered.length > 0) {
       setSelectedMessages(new Set());
     } else {
-      setSelectedMessages(new Set(messages.map(m => m.id)));
+      setSelectedMessages(new Set(filtered.map(m => m.id)));
     }
+    setShowSelectionMenu(false);
   };
+
+  // Fermer le menu quand on clique à l'extérieur
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectionMenuRef.current && !selectionMenuRef.current.contains(event.target as Node)) {
+        setShowSelectionMenu(false);
+      }
+    };
+
+    if (showSelectionMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showSelectionMenu]);
 
   // Actions groupées
   const handleBulkArchive = async () => {
@@ -428,12 +572,23 @@ export default function EmailInboxPage() {
 
       if (error) throw error;
       
-      setMessages(prev => prev.map(m => 
-        m.id === messageId ? { ...m, is_starred: !currentValue } : m
-      ));
+      const newStarredValue = !currentValue;
       
-      if (selectedMessage?.id === messageId) {
-        setSelectedMessage(prev => prev ? { ...prev, is_starred: !currentValue } : null);
+      // Si on retire l'étoile et qu'on est dans le dossier favoris, retirer le message de la liste
+      if (!newStarredValue && currentFolder === 'starred') {
+        setMessages(prev => prev.filter(m => m.id !== messageId));
+        // Si le message est actuellement ouvert, retourner à la liste
+        if (selectedMessage?.id === messageId) {
+          setSelectedMessage(null);
+        }
+      } else {
+        // Sinon, mettre à jour le message
+        setMessages(prev => prev.map(m => 
+          m.id === messageId ? { ...m, is_starred: newStarredValue } : m
+        ));
+        if (selectedMessage?.id === messageId) {
+          setSelectedMessage(prev => prev ? { ...prev, is_starred: newStarredValue } : null);
+        }
       }
       
       loadStats();
@@ -558,7 +713,7 @@ export default function EmailInboxPage() {
   const hasSelection = selectedMessages.size > 0;
 
   return (
-    <div className="email-inbox-container flex bg-gray-100 dark:bg-gray-900 overflow-hidden p-3 gap-3 -m-4 md:-m-6 lg:-m-8" style={{ height: 'calc(100vh - 64px)', maxHeight: 'calc(100vh - 64px)', minWidth: '100%', width: '100%' }}>
+    <div className="email-inbox-container flex bg-gray-100 dark:bg-gray-900 overflow-hidden overflow-x-hidden p-3 gap-3 -m-4 md:-m-6 lg:-m-8" style={{ height: 'calc(100vh - 64px)', maxHeight: 'calc(100vh - 64px)', minWidth: '100%', width: '100%' }}>
       {/* Sidebar */}
       <EmailSidebar
         currentFolder={currentFolder}
@@ -605,17 +760,6 @@ export default function EmailInboxPage() {
             <div className="px-6 py-2 flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1">
                 <button
-                  onClick={toggleSelectAll}
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                  title="Sélectionner tout"
-                >
-                  {selectedMessages.size > 0 && selectedMessages.size === messages.length ? (
-                    <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  ) : (
-                    <Square className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                  )}
-                </button>
-                <button
                   onClick={() => loadMessages(currentFolder)}
                   className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                   title="Actualiser"
@@ -629,58 +773,68 @@ export default function EmailInboxPage() {
                 )}
               </div>
               
-              {hasSelection && (
-                <div className="flex items-center gap-1">
-                  {(() => {
-                    // Vérifier si tous les messages sélectionnés sont lus ou non
-                    const selectedMessagesData = messages.filter(m => selectedMessages.has(m.id) && m.sender_id !== currentUserId);
-                    const allRead = selectedMessagesData.length > 0 && selectedMessagesData.every(m => m.read);
-                    
-                    // Si tous sont lus, afficher enveloppe fermée (pour marquer comme non lu)
-                    // Si tous sont non lus ou mixte, afficher enveloppe ouverte (pour marquer comme lu)
-                    const shouldMarkAsUnread = allRead;
-                    
-                    return (
-                      <button
-                        onClick={() => handleBulkMarkRead(!shouldMarkAsUnread)}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                        title={shouldMarkAsUnread ? 'Marquer comme non lu' : 'Marquer comme lu'}
-                      >
-                        {shouldMarkAsUnread ? (
-                          <Mail className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                        ) : (
-                          <MailOpen className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                        )}
-                      </button>
-                    );
-                  })()}
-                  <button
-                    onClick={handleBulkSnooze}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                    title="Mettre en attente"
-                  >
-                    <Clock className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                  </button>
-                  <button
-                    onClick={handleBulkArchive}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                    title={currentFolder === 'archive' ? 'Désarchiver' : 'Archiver'}
-                  >
-                    {currentFolder === 'archive' ? (
-                      <ArchiveRestore className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                    ) : (
-                      <Archive className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                    )}
-                  </button>
-                  <button
-                    onClick={handleBulkDelete}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                    title="Supprimer"
-                  >
-                    <Trash2 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                  </button>
-                </div>
-              )}
+              <div className={`flex items-center gap-1 transition-opacity duration-200 ${hasSelection ? 'opacity-100' : 'opacity-30'}`}>
+                {(() => {
+                  // Vérifier si tous les messages sélectionnés sont lus ou non
+                  const selectedMessagesData = messages.filter(m => selectedMessages.has(m.id) && m.sender_id !== currentUserId);
+                  const allRead = selectedMessagesData.length > 0 && selectedMessagesData.every(m => m.read);
+                  
+                  // Si tous sont lus, afficher enveloppe fermée (pour marquer comme non lu)
+                  // Si tous sont non lus ou mixte, afficher enveloppe ouverte (pour marquer comme lu)
+                  const shouldMarkAsUnread = allRead;
+                  
+                  return (
+                    <button
+                      onClick={() => hasSelection && handleBulkMarkRead(!shouldMarkAsUnread)}
+                      disabled={!hasSelection}
+                      className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all ${
+                        hasSelection ? 'cursor-pointer' : 'cursor-not-allowed'
+                      }`}
+                      title={shouldMarkAsUnread ? 'Marquer comme non lu' : 'Marquer comme lu'}
+                    >
+                      {shouldMarkAsUnread ? (
+                        <Mail className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                      ) : (
+                        <MailOpen className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                      )}
+                    </button>
+                  );
+                })()}
+                <button
+                  onClick={handleBulkSnooze}
+                  disabled={!hasSelection}
+                  className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all ${
+                    hasSelection ? 'cursor-pointer' : 'cursor-not-allowed'
+                  }`}
+                  title="Mettre en attente"
+                >
+                  <Clock className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                </button>
+                <button
+                  onClick={handleBulkArchive}
+                  disabled={!hasSelection}
+                  className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all ${
+                    hasSelection ? 'cursor-pointer' : 'cursor-not-allowed'
+                  }`}
+                  title={currentFolder === 'archive' ? 'Désarchiver' : 'Archiver'}
+                >
+                  {currentFolder === 'archive' ? (
+                    <ArchiveRestore className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                  ) : (
+                    <Archive className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                  )}
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={!hasSelection}
+                  className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all ${
+                    hasSelection ? 'cursor-pointer' : 'cursor-not-allowed'
+                  }`}
+                  title="Supprimer"
+                >
+                  <Trash2 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -689,11 +843,133 @@ export default function EmailInboxPage() {
         {!selectedMessage ? (
           <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800">
             {/* Table Header - Fixe */}
-            <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-              <div className="grid grid-cols-[40px_40px_200px_1fr_120px_140px] gap-3 px-6 py-3 items-center">
+            <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800">
+              <div className="grid grid-cols-[40px_40px_280px_1fr_140px_auto] gap-3 px-6 py-3 items-center">
                 {/* Colonne checkbox */}
-                <div className="flex items-center justify-center">
-                  <CheckSquare className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <div className="flex items-center justify-center relative" ref={selectionMenuRef}>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelectAll();
+                      }}
+                      className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                      title="Sélectionner tout"
+                    >
+                      <div className={`w-4 h-4 border-2 rounded-full transition-all flex items-center justify-center ${
+                        (() => {
+                          const filtered = getFilteredMessages();
+                          return selectedMessages.size > 0 && selectedMessages.size === filtered.length && filtered.length > 0;
+                        })()
+                          ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 shadow-sm'
+                          : 'border-gray-400 dark:border-gray-500'
+                      }`}>
+                        {(() => {
+                          const filtered = getFilteredMessages();
+                          return selectedMessages.size > 0 && selectedMessages.size === filtered.length && filtered.length > 0;
+                        })() && (
+                          <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowSelectionMenu(!showSelectionMenu);
+                      }}
+                      className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                      title="Filtres de sélection"
+                    >
+                      <ChevronDown className={`w-3 h-3 text-gray-500 dark:text-gray-400 transition-transform ${showSelectionMenu ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+                  
+                  {/* Menu déroulant */}
+                  {showSelectionMenu && (
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                      <button
+                        onClick={() => handleSelectByFilter('all')}
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                      >
+                        <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${
+                          selectionFilter === 'all' ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' : 'border-gray-300 dark:border-gray-600'
+                        }`}>
+                          {selectionFilter === 'all' && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className={selectionFilter === 'all' ? 'font-semibold text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>Tous</span>
+                      </button>
+                      <button
+                        onClick={() => handleSelectByFilter('unread')}
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                      >
+                        <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${
+                          selectionFilter === 'unread' ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' : 'border-gray-300 dark:border-gray-600'
+                        }`}>
+                          {selectionFilter === 'unread' && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <Mail className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
+                        <span className={selectionFilter === 'unread' ? 'font-semibold text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>Non lus</span>
+                      </button>
+                      <button
+                        onClick={() => handleSelectByFilter('read')}
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                      >
+                        <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${
+                          selectionFilter === 'read' ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' : 'border-gray-300 dark:border-gray-600'
+                        }`}>
+                          {selectionFilter === 'read' && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <MailOpen className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
+                        <span className={selectionFilter === 'read' ? 'font-semibold text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>Lus</span>
+                      </button>
+                      <button
+                        onClick={() => handleSelectByFilter('starred')}
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                      >
+                        <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${
+                          selectionFilter === 'starred' ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' : 'border-gray-300 dark:border-gray-600'
+                        }`}>
+                          {selectionFilter === 'starred' && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <Star className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400 fill-yellow-400" />
+                        <span className={selectionFilter === 'starred' ? 'font-semibold text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>Suivis</span>
+                      </button>
+                      <button
+                        onClick={() => handleSelectByFilter('unstarred')}
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                      >
+                        <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${
+                          selectionFilter === 'unstarred' ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' : 'border-gray-300 dark:border-gray-600'
+                        }`}>
+                          {selectionFilter === 'unstarred' && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <Star className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
+                        <span className={selectionFilter === 'unstarred' ? 'font-semibold text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}>Non suivis</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
                 {/* Colonne star */}
                 <div className="flex items-center justify-center">
@@ -707,54 +983,78 @@ export default function EmailInboxPage() {
                   <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Sujet</span>
                 </div>
+                <div></div>
                 <div className="flex items-center justify-end gap-2">
                   <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Date</span>
                 </div>
-                <div></div>
               </div>
             </div>
 
             {/* Messages List - Scrollable */}
-            <div className="flex-1 overflow-y-auto scrollbar-none">
-              {loading ? (
-                <div className="p-12 text-center text-gray-500 dark:text-gray-400">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-3"></div>
-                  <p className="text-sm font-medium">Chargement des messages...</p>
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="p-12 text-center text-gray-500 dark:text-gray-400">
-                  <Mail className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                  <p className="text-base font-medium text-gray-600 dark:text-gray-300">Aucun message</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Votre boîte de réception est vide</p>
-                </div>
-              ) : (
-                <div>
-                  {messages.map((message, index) => (
-                    <MessageItem
-                      key={message.id}
-                      message={message}
-                      isSelected={selectedMessages.has(message.id)}
-                      onSelect={() => toggleMessageSelection(message.id)}
-                      onClick={() => {
-                        setSelectedMessage(message);
-                        selectedMessageRef.current = message;
-                        if (!message.read) {
-                          handleMarkAsRead(message.id);
-                        }
-                      }}
-                      onStar={() => handleStar(message.id, message.is_starred)}
-                      onArchive={() => handleArchive(message.id)}
-                      onDelete={() => handleDelete(message.id)}
-                      onSnooze={() => handleSnooze(message.id)}
-                      onMarkRead={(read) => handleMarkAsRead(message.id, read)}
-                      currentUserId={currentUserId}
-                      isFirst={index === 0}
-                      isLast={index === messages.length - 1}
-                    />
-                  ))}
-                </div>
-              )}
+            <div ref={messagesScrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-visible">
+              {(() => {
+                if (loading) {
+                  return (
+                    <div className="p-12 text-center text-gray-500 dark:text-gray-400">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-3"></div>
+                      <p className="text-sm font-medium">Chargement des messages...</p>
+                    </div>
+                  );
+                }
+
+                const filteredMessages = getFilteredMessages();
+
+                if (filteredMessages.length === 0) {
+                  return (
+                    <div className="p-12 text-center text-gray-500 dark:text-gray-400">
+                      <Mail className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                      <p className="text-base font-medium text-gray-600 dark:text-gray-300">
+                        {searchQuery.trim() ? 'Aucun résultat' : 'Aucun message'}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {searchQuery.trim() 
+                          ? `Aucun message ne correspond à "${searchQuery}"` 
+                          : 'Votre boîte de réception est vide'}
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div>
+                    {filteredMessages.map((message, index) => (
+                      <MessageItem
+                        key={message.id}
+                        message={message}
+                        isSelected={selectedMessages.has(message.id)}
+                        onSelect={() => toggleMessageSelection(message.id)}
+                        onClick={() => {
+                          // Si c'est un brouillon, ouvrir le composeur au lieu de la vue message
+                          if (message.status === 'draft') {
+                            setSelectedMessage(message);
+                            setShowComposer(true);
+                          } else {
+                            setSelectedMessage(message);
+                            selectedMessageRef.current = message;
+                            if (!message.read) {
+                              handleMarkAsRead(message.id);
+                            }
+                          }
+                        }}
+                        onStar={() => handleStar(message.id, message.is_starred)}
+                        onArchive={() => handleArchive(message.id)}
+                        onDelete={() => handleDelete(message.id)}
+                        onSnooze={() => handleSnooze(message.id)}
+                        onMarkRead={(read) => handleMarkAsRead(message.id, read)}
+                        currentUserId={currentUserId}
+                        isFirst={index === 0}
+                        isLast={index === filteredMessages.length - 1}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         ) : (
@@ -808,8 +1108,22 @@ export default function EmailInboxPage() {
       {/* Composer Modal */}
       {showComposer && (
         <EmailComposer
-          onClose={() => setShowComposer(false)}
-          replyTo={selectedMessage || undefined}
+          onClose={() => {
+            setShowComposer(false);
+            setSelectedMessage(null);
+          }}
+          replyTo={selectedMessage?.status !== 'draft' ? selectedMessage || undefined : undefined}
+          draft={selectedMessage?.status === 'draft' ? selectedMessage : undefined}
+          onSent={() => {
+            setShowComposer(false);
+            setSelectedMessage(null);
+            loadMessages(currentFolder);
+            loadStats();
+          }}
+          onDraftSaved={() => {
+            loadMessages(currentFolder);
+            loadStats();
+          }}
         />
       )}
     </div>

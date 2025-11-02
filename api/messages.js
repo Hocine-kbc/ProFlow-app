@@ -5,6 +5,8 @@ import multer from 'multer';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import https from 'https';
+import http from 'http';
 
 // Charger les variables d'environnement
 dotenv.config();
@@ -40,6 +42,19 @@ if (!process.env.SUPABASE_SERVICE_KEY) {
 // Configuration SendGrid
 if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.test-key-not-configured') {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('✅ SendGrid API Key configuré');
+  
+  // Vérifier également la configuration de l'adresse expéditrice
+  if (process.env.SENDGRID_FROM_EMAIL && process.env.SENDGRID_FROM_EMAIL !== 'noreply@proflow.com') {
+    console.log(`✅ Adresse expéditrice configurée: ${process.env.SENDGRID_FROM_EMAIL}`);
+    console.log('⚠️ Assurez-vous que cette adresse est vérifiée dans SendGrid (Sender Verification)');
+  } else {
+    console.warn('⚠️ SENDGRID_FROM_EMAIL non configuré ou utilise la valeur par défaut.');
+    console.warn('   Veuillez définir SENDGRID_FROM_EMAIL dans votre fichier .env avec une adresse email vérifiée dans SendGrid.');
+    console.warn('   Les emails externes ne fonctionneront pas tant que SENDGRID_FROM_EMAIL n\'est pas configuré.');
+  }
+} else {
+  console.warn('⚠️ SENDGRID_API_KEY non configuré ou invalide. Les emails externes ne fonctionneront pas.');
 }
 
 // Configuration Multer pour l'upload de fichiers
@@ -95,27 +110,175 @@ function calculateSpamScore(senderEmail, content, subject) {
   return Math.min(score, 100);
 }
 
+// Fonction pour télécharger un fichier depuis une URL et le convertir en base64
+async function downloadFileAsBase64(url) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Utiliser le module http/https natif pour être compatible avec toutes les versions de Node.js
+      const urlObj = new URL(url);
+      const protocol = urlObj.protocol === 'https:' ? https : http;
+      
+      protocol.get(url, (response) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`Erreur lors du téléchargement: ${response.statusCode} ${response.statusMessage}`));
+          return;
+        }
+
+        const chunks = [];
+        response.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+        
+        response.on('end', () => {
+          const buffer = Buffer.concat(chunks);
+          const base64 = buffer.toString('base64');
+          resolve(base64);
+        });
+        
+        response.on('error', (error) => {
+          reject(error);
+        });
+      }).on('error', (error) => {
+        reject(error);
+      });
+    } catch (error) {
+      console.error('Erreur lors du téléchargement du fichier:', error);
+      reject(error);
+    }
+  });
+}
+
 // Fonction pour envoyer un email via SendGrid
-async function sendExternalEmail(to, subject, content, attachments = []) {
+export async function sendExternalEmail(to, subject, content, attachments = [], senderEmail = null) {
   try {
+    // Vérifier que SendGrid est configuré
+    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'SG.test-key-not-configured') {
+      console.error('❌ SENDGRID_API_KEY non configuré');
+      throw new Error('SendGrid n\'est pas configuré. Vérifiez SENDGRID_API_KEY dans votre fichier .env');
+    }
+
+    // Vérifier que SENDGRID_FROM_EMAIL est configuré et vérifié
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL;
+    if (!fromEmail || fromEmail === 'noreply@proflow.com') {
+      const errorMsg = 'SENDGRID_FROM_EMAIL n\'est pas configuré dans votre fichier .env. ' +
+        'Vous devez définir SENDGRID_FROM_EMAIL avec une adresse email vérifiée dans SendGrid. ' +
+        'Exemple: SENDGRID_FROM_EMAIL=votre_email@exemple.com';
+      console.error('❌', errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    console.log(`📧 Préparation de l'email pour: ${to}`);
+    console.log(`📧 Sujet: ${subject}`);
+    console.log(`📧 Pièces jointes: ${attachments.length}`);
+
+    // Préparer les pièces jointes
+    const preparedAttachments = [];
+    if (attachments && attachments.length > 0) {
+      for (const att of attachments) {
+        try {
+          let attachmentContent = '';
+          
+          // Si le fichier a déjà du contenu base64, l'utiliser
+          if (att.base64) {
+            attachmentContent = att.base64;
+          } 
+          // Sinon, si c'est une URL Supabase, télécharger le fichier
+          else if (att.url) {
+            console.log(`📎 Téléchargement de la pièce jointe: ${att.name} depuis ${att.url}`);
+            attachmentContent = await downloadFileAsBase64(att.url);
+          }
+          
+          if (attachmentContent) {
+            preparedAttachments.push({
+              content: attachmentContent,
+              filename: att.name || 'attachment',
+              type: att.type || 'application/octet-stream',
+              disposition: 'attachment'
+            });
+            console.log(`✅ Pièce jointe préparée: ${att.name}`);
+          } else {
+            console.warn(`⚠️ Impossible de préparer la pièce jointe: ${att.name}`);
+          }
+        } catch (attError) {
+          console.error(`❌ Erreur lors de la préparation de la pièce jointe ${att.name}:`, attError);
+          // Continuer même si une pièce jointe échoue
+        }
+      }
+    }
+
+    // Préparer le contenu HTML
+    let htmlContent = content;
+    // Convertir les sauts de ligne en <br>
+    htmlContent = htmlContent.replace(/\n/g, '<br>');
+    // Encapsuler dans un HTML de base si ce n'est pas déjà du HTML
+    if (!htmlContent.includes('<html')) {
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          </style>
+        </head>
+        <body>
+          ${htmlContent}
+        </body>
+        </html>
+      `;
+    }
+
+    // Toujours utiliser l'email vérifié dans SendGrid (SENDGRID_FROM_EMAIL)
+    // Ignorer senderEmail car les emails des utilisateurs ne sont pas vérifiés dans SendGrid
+    // fromEmail est déjà vérifié plus haut, pas besoin de le re-vérifier ici
+    const fromName = process.env.SENDGRID_FROM_NAME || 'ProFlow';
+
+    console.log(`📧 Adresse expéditrice vérifiée: ${fromEmail}`);
+
     const msg = {
-      to,
-      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@proflow.com',
-      subject,
-      html: content.replace(/\n/g, '<br>'),
-      attachments: attachments.map(att => ({
-        content: att.base64 || '',
-        filename: att.name,
-        type: att.type,
-        disposition: 'attachment'
-      }))
+      to: to,
+      from: {
+        email: fromEmail,
+        name: fromName
+      },
+      subject: subject,
+      html: htmlContent,
+      text: content.replace(/<[^>]*>/g, ''), // Version texte sans HTML
+      attachments: preparedAttachments
     };
 
-    await sgMail.send(msg);
-    return { success: true };
+    console.log(`📤 Envoi de l'email via SendGrid...`);
+    const result = await sgMail.send(msg);
+    console.log(`✅ Email envoyé avec succès à ${to}. Code: ${result[0]?.statusCode}`);
+    return { success: true, result };
   } catch (error) {
-    console.error('SendGrid error:', error);
-    return { success: false, error: error.message };
+    console.error('❌ Erreur SendGrid:', error);
+    // Log détaillé de l'erreur
+    if (error.response && error.response.body) {
+      const errorDetails = error.response.body;
+      console.error('Détails de l\'erreur SendGrid:', JSON.stringify(errorDetails, null, 2));
+      
+      // Créer un message d'erreur plus explicite
+      let errorMessage = 'Erreur lors de l\'envoi de l\'email externe';
+      
+      if (errorDetails.errors && errorDetails.errors.length > 0) {
+        const firstError = errorDetails.errors[0];
+        
+        if (firstError.field === 'from' && firstError.message.includes('verified Sender Identity')) {
+          errorMessage = `L'adresse email expéditrice "${process.env.SENDGRID_FROM_EMAIL || senderEmail || 'noreply@proflow.com'}" n'est pas vérifiée dans SendGrid. ` +
+            `Vous devez vérifier cette adresse dans votre compte SendGrid (Sender Verification). ` +
+            `Consultez: https://sendgrid.com/docs/for-developers/sending-email/sender-identity/`;
+        } else {
+          errorMessage = firstError.message || errorMessage;
+        }
+      }
+      
+      const detailedError = new Error(errorMessage);
+      detailedError.originalError = error;
+      detailedError.sendgridDetails = errorDetails;
+      throw detailedError;
+    }
+    throw error; // Propager l'erreur pour qu'elle soit gérée par l'appelant
   }
 }
 
@@ -163,8 +326,26 @@ router.post('/', authenticate, upload.array('attachments'), async (req, res) => 
       }
     }
 
-    // Récupérer l'ID du destinataire si c'est un email
+    // Collecter tous les emails (À, Cc, Cci)
+    const allRecipients = [];
+    if (parsedMessage.recipient_email) {
+      allRecipients.push(parsedMessage.recipient_email);
+    }
+    if (parsedMessage.cc) {
+      // Extraire les emails du champ Cc
+      const ccEmails = parsedMessage.cc.split(',').map(e => e.trim()).filter(e => e);
+      allRecipients.push(...ccEmails);
+    }
+    if (parsedMessage.bcc) {
+      // Extraire les emails du champ Cci
+      const bccEmails = parsedMessage.bcc.split(',').map(e => e.trim()).filter(e => e);
+      allRecipients.push(...bccEmails);
+    }
+
+    // Récupérer l'ID du destinataire principal et détecter les emails externes
     let recipientId = parsedMessage.recipient_id;
+    const externalEmails = new Set(); // Pour stocker les emails externes sans doublons
+    
     if (!recipientId && parsedMessage.recipient_email) {
       try {
         // Utiliser l'API Admin pour chercher l'utilisateur par email
@@ -177,27 +358,61 @@ router.post('/', authenticate, upload.array('attachments'), async (req, res) => 
           if (recipient) {
             recipientId = recipient.id;
           } else {
-            // Si l'utilisateur n'existe pas et qu'on ne veut pas envoyer d'email externe
-            if (!options.send_external_email && parsedMessage.status !== 'draft') {
-              return res.status(404).json({ 
-                error: `Destinataire "${parsedMessage.recipient_email}" introuvable dans l'application. Activez l'option "Envoyer aussi par email externe" pour envoyer à un email externe.` 
-              });
-            }
+            // Email externe détecté - l'ajouter à la liste
+            externalEmails.add(parsedMessage.recipient_email.toLowerCase());
           }
         } else if (listError) {
           console.error('Error listing users:', listError);
-          // Si erreur de listing mais qu'on peut envoyer un email externe, continuer
-          if (!options.send_external_email && parsedMessage.status !== 'draft') {
-            return res.status(500).json({ error: 'Erreur lors de la recherche du destinataire' });
+          // En cas d'erreur, considérer comme email externe pour permettre l'envoi
+          if (parsedMessage.recipient_email) {
+            externalEmails.add(parsedMessage.recipient_email.toLowerCase());
           }
         }
       } catch (error) {
         console.error('Error finding user by email:', error);
-        // Si l'utilisateur n'est pas trouvé mais qu'on peut envoyer un email externe, continuer
-        if (!options.send_external_email && parsedMessage.status !== 'draft') {
-          return res.status(404).json({ error: 'Destinataire introuvable dans l\'application' });
+        // En cas d'erreur, considérer comme email externe
+        if (parsedMessage.recipient_email) {
+          externalEmails.add(parsedMessage.recipient_email.toLowerCase());
         }
       }
+    }
+
+    // Vérifier les emails dans Cc et Cci
+    try {
+      const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+      if (!listError && users) {
+        // Vérifier chaque email dans Cc et Cci
+        const userEmails = new Set(users.map(u => u.email?.toLowerCase()).filter(Boolean));
+        
+        if (parsedMessage.cc) {
+          const ccEmails = parsedMessage.cc.split(',').map(e => e.trim()).filter(e => e);
+          ccEmails.forEach(email => {
+            if (!userEmails.has(email.toLowerCase())) {
+              externalEmails.add(email.toLowerCase());
+            }
+          });
+        }
+        
+        if (parsedMessage.bcc) {
+          const bccEmails = parsedMessage.bcc.split(',').map(e => e.trim()).filter(e => e);
+          bccEmails.forEach(email => {
+            if (!userEmails.has(email.toLowerCase())) {
+              externalEmails.add(email.toLowerCase());
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking Cc/Bcc emails:', error);
+    }
+
+    // Activer automatiquement l'envoi externe si des emails externes sont détectés
+    if (externalEmails.size > 0 && parsedMessage.status !== 'draft') {
+      options.send_external_email = true;
+      // Fusionner les emails externes détectés avec ceux fournis manuellement
+      const manualExternal = (options.external_recipients || []).map(e => e.toLowerCase());
+      options.external_recipients = [...new Set([...Array.from(externalEmails), ...manualExternal])];
+      console.log(`📧 Email(s) externe(s) détecté(s): ${Array.from(externalEmails).join(', ')}`);
     }
 
     // Calculer le score de spam
@@ -220,6 +435,7 @@ router.post('/', authenticate, upload.array('attachments'), async (req, res) => 
     const messageData = {
       sender_id: req.user.id,
       recipient_id: finalRecipientId,
+      recipient_email: parsedMessage.recipient_email || null,
       subject: parsedMessage.subject || '(Sans objet)',
       content: parsedMessage.content || '',
       attachments: attachments,
@@ -229,6 +445,8 @@ router.post('/', authenticate, upload.array('attachments'), async (req, res) => 
       priority: parsedMessage.priority || 'normal',
       scheduled_at: parsedMessage.scheduled_at || null,
       reply_to_id: parsedMessage.reply_to_id || null,
+      cc: parsedMessage.cc || null,
+      bcc: parsedMessage.bcc || null,
       spam_score: spamScore,
       is_spam: isSpam,
       read: false,
@@ -260,22 +478,85 @@ router.post('/', authenticate, upload.array('attachments'), async (req, res) => 
 
       if (insertError) throw insertError;
 
-      // Envoyer via SendGrid si demandé
-      if (options.send_external_email && options.external_recipients) {
-        for (const email of options.external_recipients) {
-          await sendExternalEmail(
+      // Envoyer via SendGrid si demandé ou si des emails externes sont détectés
+      const emailResults = {
+        success: [],
+        failed: []
+      };
+
+      if (options.send_external_email && options.external_recipients && options.external_recipients.length > 0) {
+        console.log(`📤 Envoi de ${options.external_recipients.length} email(s) externe(s) via SendGrid...`);
+        
+        // Vérifier que SENDGRID_FROM_EMAIL est configuré avant d'essayer d'envoyer
+        const verifiedSenderEmail = process.env.SENDGRID_FROM_EMAIL;
+        
+        if (!verifiedSenderEmail || verifiedSenderEmail === 'noreply@proflow.com') {
+          const errorMsg = 'SENDGRID_FROM_EMAIL n\'est pas configuré. Vous devez définir SENDGRID_FROM_EMAIL dans votre fichier .env avec une adresse email vérifiée dans SendGrid.';
+          console.error('❌', errorMsg);
+          emailResults.failed = options.external_recipients.map(email => ({
             email,
-            messageData.subject,
-            messageData.content,
-            attachments
-          );
+            error: errorMsg
+          }));
+          return res.json({ 
+            success: true, 
+            message: savedMessage,
+            external_emails_sent: 0,
+            external_emails_failed: emailResults.failed.length,
+            external_email_results: emailResults,
+            error: errorMsg
+          });
+        }
+        
+        console.log(`📧 Email expéditrice vérifié utilisé: ${verifiedSenderEmail}`);
+        
+        // Ajouter l'email de l'utilisateur réel dans le corps du message pour information
+        const originalContent = messageData.content;
+        const userEmail = req.user.email;
+        const enhancedContent = `${originalContent}\n\n---\nCet email a été envoyé via ProFlow par ${userEmail}`;
+        
+        for (const email of options.external_recipients) {
+          try {
+            await sendExternalEmail(
+              email,
+              messageData.subject,
+              enhancedContent, // Contenu avec information sur l'expéditeur réel
+              attachments,
+              null // Passer null pour utiliser l'email vérifié de la config
+            );
+            emailResults.success.push(email);
+            console.log(`✅ Email externe envoyé avec succès à: ${email}`);
+          } catch (emailError) {
+            const errorMessage = emailError.message || emailError.sendgridDetails?.errors?.[0]?.message || 'Erreur inconnue';
+            emailResults.failed.push({
+              email,
+              error: errorMessage
+            });
+            console.error(`❌ Erreur lors de l'envoi à ${email}:`, errorMessage);
+            
+            // Si l'erreur concerne la vérification de l'expéditeur, on n'essaie pas les autres
+            if (errorMessage.includes('verified Sender Identity') || errorMessage.includes('sender-identity')) {
+              console.error('❌ Erreur de vérification de l\'expéditeur. Arrêt de l\'envoi des autres emails.');
+              // Ajouter les emails restants comme échoués avec le même message
+              const remainingEmails = options.external_recipients.slice(options.external_recipients.indexOf(email) + 1);
+              remainingEmails.forEach(remainingEmail => {
+                emailResults.failed.push({
+                  email: remainingEmail,
+                  error: errorMessage
+                });
+              });
+              break; // Arrêter la boucle
+            }
+            // Continuer avec les autres emails même si un échoue (sauf erreur de vérification)
+          }
         }
       }
 
       return res.json({ 
         success: true, 
         message: savedMessage,
-        external_emails_sent: options.send_external_email ? options.external_recipients?.length || 0 : 0
+        external_emails_sent: emailResults.success.length,
+        external_emails_failed: emailResults.failed.length,
+        external_email_results: emailResults
       });
     }
 
@@ -297,6 +578,151 @@ router.post('/', authenticate, upload.array('attachments'), async (req, res) => 
     return res.status(500).json({ error: error.message || 'Erreur lors de l\'envoi du message' });
   }
 });
+
+// Fonction pour traiter et envoyer un message programmé
+async function processScheduledMessage(message) {
+  try {
+    console.log(`📅 Traitement du message programmé ID: ${message.id} (programmé pour: ${message.scheduled_at})`);
+    
+    // Récupérer les informations complètes du message
+    const { data: fullMessage, error: fetchError } = await supabase
+      .from('messages')
+      .select('*, sender:sender_id(*), recipient:recipient_id(*)')
+      .eq('id', message.id)
+      .single();
+    
+    if (fetchError || !fullMessage) {
+      console.error(`❌ Erreur récupération message ${message.id}:`, fetchError);
+      return { success: false, error: fetchError };
+    }
+    
+    // Vérifier que le message est toujours programmé et que la date est passée
+    const scheduledDate = new Date(fullMessage.scheduled_at);
+    const now = new Date();
+    
+    if (fullMessage.status !== 'scheduled') {
+      console.log(`⚠️ Message ${message.id} n'est plus programmé (statut: ${fullMessage.status})`);
+      return { success: false, error: 'Message already processed' };
+    }
+    
+    if (scheduledDate > now) {
+      console.log(`⏰ Message ${message.id} n'est pas encore prêt à être envoyé`);
+      return { success: false, error: 'Not ready yet' };
+    }
+    
+    // Récupérer le destinataire
+    let recipientEmail = fullMessage.recipient_email;
+    let recipientId = fullMessage.recipient_id;
+    
+    // Si pas de recipient_id, essayer de trouver l'utilisateur par email
+    if (!recipientId && recipientEmail) {
+      const { data: recipientUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', recipientEmail)
+        .maybeSingle();
+      
+      if (recipientUser) {
+        recipientId = recipientUser.id;
+      }
+    }
+    
+    // Préparer les données du message
+    const messageData = {
+      sender_id: fullMessage.sender_id,
+      recipient_email: recipientEmail,
+      recipient_id: recipientId,
+      subject: fullMessage.subject,
+      content: fullMessage.content,
+      attachments: fullMessage.attachments || [],
+      status: 'sent',
+      folder: 'sent',
+      priority: fullMessage.priority || 'normal',
+      reply_to_id: fullMessage.reply_to_id || null,
+      cc: fullMessage.cc || null,
+      bcc: fullMessage.bcc || null
+    };
+    
+    // Détecter les emails externes
+    const allRecipients = [
+      recipientEmail,
+      ...(fullMessage.cc ? fullMessage.cc.split(',').map(e => e.trim()) : []),
+      ...(fullMessage.bcc ? fullMessage.bcc.split(',').map(e => e.trim()) : [])
+    ].filter(Boolean);
+    
+    // Vérifier quels emails sont externes
+    const { data: existingUsers } = await supabase
+      .from('users')
+      .select('email')
+      .in('email', allRecipients);
+    
+    const existingEmails = new Set((existingUsers || []).map(u => u.email));
+    const externalEmails = allRecipients.filter(email => !existingEmails.has(email));
+    
+    // Envoyer les emails externes si nécessaire
+    if (externalEmails.length > 0) {
+      console.log(`📧 Envoi d'emails externes pour le message ${message.id}:`, externalEmails);
+      
+      for (const externalEmail of externalEmails) {
+        try {
+          await sendExternalEmail(
+            externalEmail,
+            fullMessage.subject,
+            fullMessage.content,
+            fullMessage.attachments || []
+          );
+          console.log(`✅ Email externe envoyé à ${externalEmail}`);
+        } catch (extError) {
+          console.error(`❌ Erreur envoi email externe à ${externalEmail}:`, extError);
+          // Continuer même si un email externe échoue
+        }
+      }
+    }
+    
+    // Créer le message pour le destinataire interne (si existe)
+    if (recipientId) {
+      const recipientMessage = {
+        ...messageData,
+        folder: 'inbox',
+        recipient_id: recipientId,
+        read: false
+      };
+      
+      const { data: sentMessage, error: sendError } = await supabase
+        .from('messages')
+        .insert(recipientMessage)
+        .select()
+        .single();
+      
+      if (sendError) {
+        console.error(`❌ Erreur création message destinataire:`, sendError);
+        throw sendError;
+      }
+    }
+    
+    // Mettre à jour le message original à 'sent'
+    const { error: updateError } = await supabase
+      .from('messages')
+      .update({
+        status: 'sent',
+        folder: 'sent',
+        scheduled_at: null
+      })
+      .eq('id', message.id);
+    
+    if (updateError) {
+      console.error(`❌ Erreur mise à jour message:`, updateError);
+      throw updateError;
+    }
+    
+    console.log(`✅ Message programmé ${message.id} envoyé avec succès`);
+    return { success: true, message: fullMessage };
+    
+  } catch (error) {
+    console.error(`❌ Erreur lors du traitement du message programmé ${message.id}:`, error);
+    return { success: false, error: error.message || 'Unknown error' };
+  }
+}
 
 // GET /api/messages/inbox - Liste des messages reçus
 router.get('/inbox', authenticate, async (req, res) => {
@@ -416,12 +842,12 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-// PUT /api/messages/:id - Mettre à jour un message
-router.put('/:id', authenticate, async (req, res) => {
+// PUT /api/messages/:id - Mettre à jour un message (gère aussi l'envoi de brouillons)
+router.put('/:id', authenticate, upload.array('attachments'), async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
-
+    const { message, options = {} } = req.body;
+    
     // Vérifier que le message existe et appartient à l'utilisateur
     const { data: existingMessage, error: fetchError } = await supabase
       .from('messages')
@@ -434,20 +860,183 @@ router.put('/:id', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Accès refusé' });
     }
 
-    // Mettre à jour
-    const { data, error } = await supabase
-      .from('messages')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+    // Si le body contient { message, options }, c'est une mise à jour complète avec potentiel envoi
+    if (message) {
+      const parsedMessage = typeof message === 'string' ? JSON.parse(message) : message;
 
-    if (error) throw error;
+      // Traiter les pièces jointes uploadées
+      let attachments = parsedMessage.attachments || existingMessage.attachments || [];
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const fileName = `${Date.now()}_${file.originalname}`;
+          const filePath = `${req.user.id}/${fileName}`;
 
-    return res.json({ success: true, message: data });
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('message-attachments')
+            .upload(filePath, file.buffer, {
+              contentType: file.mimetype,
+              upsert: false
+            });
+
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('message-attachments')
+              .getPublicUrl(filePath);
+
+            attachments.push({
+              name: file.originalname,
+              url: publicUrl,
+              size: file.size,
+              type: file.mimetype
+            });
+          }
+        }
+      }
+
+      // Récupérer l'ID du destinataire si c'est un email
+      let recipientId = parsedMessage.recipient_id || existingMessage.recipient_id;
+      if (!recipientId && parsedMessage.recipient_email) {
+        try {
+          const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+          
+          if (!listError && users) {
+            const recipient = users.find(u => u.email && u.email.toLowerCase() === parsedMessage.recipient_email.toLowerCase());
+            if (recipient) {
+              recipientId = recipient.id;
+            } else if (!options.send_external_email && parsedMessage.status !== 'draft') {
+              return res.status(404).json({ 
+                error: `Destinataire "${parsedMessage.recipient_email}" introuvable dans l'application. Activez l'option "Envoyer aussi par email externe" pour envoyer à un email externe.` 
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error finding user by email:', error);
+          if (!options.send_external_email && parsedMessage.status !== 'draft') {
+            return res.status(404).json({ error: 'Destinataire introuvable dans l\'application' });
+          }
+        }
+      }
+
+      // Calculer le score de spam
+      const spamScore = calculateSpamScore(
+        req.user.email,
+        parsedMessage.content || existingMessage.content,
+        parsedMessage.subject || existingMessage.subject
+      );
+      const isSpam = spamScore >= 50;
+
+      // Préparer les données du message
+      const finalRecipientId = parsedMessage.status === 'draft' 
+        ? req.user.id 
+        : (recipientId || req.user.id);
+
+      // Déterminer le status final
+      // Si un status est fourni dans parsedMessage, l'utiliser (important pour l'envoi de brouillons)
+      const finalStatus = parsedMessage.status !== undefined ? parsedMessage.status : 
+                         (existingMessage.status || 'sent');
+      
+      // Déterminer le folder : 
+      // - Si c'est un brouillon, garder 'drafts'
+      // - Si c'est un envoi et que le frontend envoie un folder, l'utiliser
+      // - Sinon, utiliser 'inbox' pour le destinataire
+      const finalFolder = finalStatus === 'draft' ? 'drafts' : 
+                          finalStatus === 'scheduled' ? 'drafts' : 
+                          (parsedMessage.folder !== undefined ? parsedMessage.folder : 'inbox');
+      
+      const messageData = {
+        subject: parsedMessage.subject || existingMessage.subject || '(Sans objet)',
+        content: parsedMessage.content !== undefined ? parsedMessage.content : existingMessage.content || '',
+        attachments: attachments,
+        status: finalStatus,
+        folder: finalFolder,
+        priority: parsedMessage.priority || existingMessage.priority || 'normal',
+        scheduled_at: parsedMessage.scheduled_at || existingMessage.scheduled_at || null,
+        reply_to_id: parsedMessage.reply_to_id || existingMessage.reply_to_id || null,
+        spam_score: spamScore,
+        is_spam: isSpam,
+        recipient_id: finalRecipientId
+      };
+
+      // Si c'est un brouillon, juste mettre à jour
+      if (messageData.status === 'draft') {
+        const { data, error } = await supabase
+          .from('messages')
+          .update(messageData)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.json({ success: true, message: data });
+      }
+
+      // Si on envoie le message (status !== 'draft')
+      // Pour l'expéditeur, le folder doit être 'sent' pour qu'il disparaisse des brouillons
+      // Pour le destinataire, le folder reste 'inbox'
+      if (options.send_immediately !== false && messageData.status === 'sent') {
+        // Le folder 'inbox' est pour le destinataire, mais comme le message est envoyé
+        // par l'expéditeur, il doit être dans 'sent' depuis sa perspective
+        // On laisse le folder à 'inbox' car il sera filtré dynamiquement côté client
+        // L'important est que le status ne soit plus 'draft'
+        // Mettre à jour le message
+        const { data: updatedMessage, error: updateError } = await supabase
+          .from('messages')
+          .update(messageData)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+
+        // Envoyer via SendGrid si demandé
+        if (options.send_external_email && options.external_recipients) {
+          for (const email of options.external_recipients) {
+            await sendExternalEmail(
+              email,
+              messageData.subject,
+              messageData.content,
+              attachments
+            );
+          }
+        }
+
+        return res.json({ 
+          success: true, 
+          message: updatedMessage,
+          external_emails_sent: options.send_external_email ? options.external_recipients?.length || 0 : 0
+        });
+      }
+
+      // Message programmé
+      if (messageData.status === 'scheduled' && messageData.scheduled_at) {
+        const { data, error } = await supabase
+          .from('messages')
+          .update(messageData)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.json({ success: true, message: data, scheduled: true });
+      }
+    } else {
+      // Format simple: mettre à jour directement avec les champs fournis
+      const { data, error } = await supabase
+        .from('messages')
+        .update(req.body)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return res.json({ success: true, message: data });
+    }
+
+    return res.status(400).json({ error: 'Données invalides' });
   } catch (error) {
     console.error('Error updating message:', error);
-    return res.status(500).json({ error: 'Erreur lors de la mise à jour du message' });
+    return res.status(500).json({ error: error.message || 'Erreur lors de la mise à jour du message' });
   }
 });
 
