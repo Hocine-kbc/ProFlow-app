@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Reply, Archive, ArchiveRestore, Trash2, Star, Download,
   Paperclip, User, ArrowLeft, ArrowRight,
-  ChevronDown, X, ChevronLeft, Mail, Calendar, Clock, MoreVertical, Tag
+  ChevronDown, X, ChevronLeft, Mail, MailOpen, Calendar, Clock, MoreVertical, Tag
 } from 'lucide-react';
 import { EmailMessage } from '../types/index.ts';
 import { format } from 'date-fns';
@@ -19,6 +19,8 @@ interface MessageViewProps {
   onArchive: () => void;
   onDelete: () => void;
   onStar: () => void;
+  onMarkRead?: (read: boolean) => void;
+  currentUserId?: string | null;
   isArchived?: boolean;
 }
 
@@ -33,6 +35,8 @@ export default function MessageView({
   onArchive,
   onDelete,
   onStar,
+  onMarkRead,
+  currentUserId,
   isArchived = false
 }: MessageViewProps) {
   const hasAttachments = message.attachments && message.attachments.length > 0;
@@ -58,6 +62,7 @@ export default function MessageView({
   const dateFormatted = format(new Date(message.created_at), 'EEEE d MMMM yyyy à HH:mm', { locale: fr });
   const dateShort = format(new Date(message.created_at), 'EEE d MMM yyyy à HH:mm', { locale: fr });
   const isRead = message.read;
+  const isFromMe = message.sender_id === currentUserId;
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
@@ -105,6 +110,24 @@ export default function MessageView({
 
           {/* Actions rapides */}
           <div className="flex items-center gap-2">
+            {!isFromMe && onMarkRead && (
+              <button
+                onClick={() => onMarkRead(!message.read)}
+                className={`p-2 rounded-full transition-all ${
+                  message.read
+                    ? 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400'
+                    : 'text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                }`}
+                title={message.read ? 'Marquer comme non lu' : 'Marquer comme lu'}
+              >
+                {message.read ? (
+                  <Mail className="w-5 h-5" />
+                ) : (
+                  <MailOpen className="w-5 h-5" />
+                )}
+              </button>
+            )}
+            
             <button
               onClick={onStar}
               className={`p-2 rounded-full transition-all ${
@@ -294,6 +317,29 @@ export default function MessageView({
           {/* Zone d'actions en bas */}
           <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-3">
+              {!isFromMe && onMarkRead && (
+                <button
+                  onClick={() => onMarkRead(!message.read)}
+                  className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 text-sm font-medium ${
+                    message.read
+                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
+                      : 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/30'
+                  }`}
+                >
+                  {message.read ? (
+                    <>
+                      <Mail className="w-4 h-4" />
+                      <span>Marquer comme non lu</span>
+                    </>
+                  ) : (
+                    <>
+                      <MailOpen className="w-4 h-4" />
+                      <span>Marquer comme lu</span>
+                    </>
+                  )}
+                </button>
+              )}
+              
               <button
                 onClick={onStar}
                 className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 text-sm font-medium ${

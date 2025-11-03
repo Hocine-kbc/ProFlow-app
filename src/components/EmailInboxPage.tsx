@@ -495,22 +495,61 @@ export default function EmailInboxPage() {
   };
 
   const handleBulkMarkRead = async (read: boolean) => {
-    if (selectedMessages.size === 0) return;
+    if (selectedMessages.size === 0 || !currentUserId) return;
+    
     try {
+      // Filtrer pour ne traiter que les messages reçus (pas ceux envoyés par l'utilisateur)
+      const selectedMessagesData = messages.filter(m => 
+        selectedMessages.has(m.id) && m.sender_id !== currentUserId
+      );
+      
+      if (selectedMessagesData.length === 0) {
+        return;
+      }
+      
+      const messageIds = selectedMessagesData.map(m => m.id);
+      
+      const updateData: { read: boolean; read_at: string | null } = { 
+        read, 
+        read_at: read ? new Date().toISOString() : null 
+      };
+      
       const { error } = await supabase
         .from('messages')
-        .update({ read })
-        .in('id', Array.from(selectedMessages));
+        .update(updateData)
+        .in('id', messageIds);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
       
-      setMessages(prev => prev.map(m => 
-        selectedMessages.has(m.id) ? { ...m, read } : m
-      ));
+      // Mettre à jour l'état local
+      setMessages(prev => prev.map(m => {
+        if (messageIds.includes(m.id)) {
+          return { 
+            ...m, 
+            read, 
+            read_at: updateData.read_at ? updateData.read_at : undefined 
+          };
+        }
+        return m;
+      }));
+      
+      // Mettre à jour le message sélectionné s'il est concerné
+      if (selectedMessage && messageIds.includes(selectedMessage.id)) {
+        setSelectedMessage(prev => prev ? { 
+          ...prev, 
+          read, 
+          read_at: updateData.read_at ? updateData.read_at : undefined 
+        } : null);
+      }
+      
       // Ne pas désélectionner automatiquement pour permettre d'autres actions
+      // La sélection reste intacte
       loadStats();
     } catch (error) {
-      showNotification('error', 'Erreur', 'Impossible de marquer les messages');
+      console.error('Error marking messages as read:', error);
     }
   };
 
@@ -736,8 +775,8 @@ export default function EmailInboxPage() {
           <div className="flex items-center gap-3">
             {/* Logo/Titre */}
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 flex items-center justify-center flex-shrink-0">
-                <Mail className="w-4 h-4 text-white" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/30 dark:shadow-blue-400/20 transition-transform hover:scale-105">
+                <Mail className="w-5 h-5 text-white drop-shadow-sm" />
               </div>
               <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Messagerie</span>
             </div>
@@ -777,20 +816,31 @@ export default function EmailInboxPage() {
                 {(() => {
                   // Vérifier si tous les messages sélectionnés sont lus ou non
                   const selectedMessagesData = messages.filter(m => selectedMessages.has(m.id) && m.sender_id !== currentUserId);
-                  const allRead = selectedMessagesData.length > 0 && selectedMessagesData.every(m => m.read);
+                  const hasReceivableMessages = selectedMessagesData.length > 0;
+                  const allRead = hasReceivableMessages && selectedMessagesData.every(m => m.read);
                   
                   // Si tous sont lus, afficher enveloppe fermée (pour marquer comme non lu)
                   // Si tous sont non lus ou mixte, afficher enveloppe ouverte (pour marquer comme lu)
                   const shouldMarkAsUnread = allRead;
+                  const actionRead = !shouldMarkAsUnread; // true = marquer comme lu, false = marquer comme non lu
+                  
+                  const handleClick = () => {
+                    if (hasSelection && hasReceivableMessages) {
+                      handleBulkMarkRead(actionRead);
+                    }
+                  };
                   
                   return (
                     <button
-                      onClick={() => hasSelection && handleBulkMarkRead(!shouldMarkAsUnread)}
-                      disabled={!hasSelection}
+                      onClick={handleClick}
+                      disabled={!hasSelection || !hasReceivableMessages}
                       className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all ${
-                        hasSelection ? 'cursor-pointer' : 'cursor-not-allowed'
+                        hasSelection && hasReceivableMessages ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
                       }`}
-                      title={shouldMarkAsUnread ? 'Marquer comme non lu' : 'Marquer comme lu'}
+                      title={hasReceivableMessages 
+                        ? (shouldMarkAsUnread ? 'Marquer comme non lu' : 'Marquer comme lu')
+                        : 'Vous ne pouvez marquer que les messages reçus'
+                      }
                     >
                       {shouldMarkAsUnread ? (
                         <Mail className="w-4 h-4 text-gray-700 dark:text-gray-300" />
@@ -1100,6 +1150,8 @@ export default function EmailInboxPage() {
                 setSelectedMessage(null);
               }}
               onStar={() => handleStar(selectedMessage.id, selectedMessage.is_starred)}
+              onMarkRead={(read) => handleMarkAsRead(selectedMessage.id, read)}
+              currentUserId={currentUserId}
             />
           </div>
         )}

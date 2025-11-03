@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Calculator, Calendar, AlertCircle, Info, Receipt, FileText, TrendingDown, DollarSign, CalendarDays, Shield, BookOpen, Scale, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calculator, Calendar, AlertCircle, Info, Receipt, FileText, TrendingDown, DollarSign, CalendarDays, Shield, BookOpen, Scale, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { useApp } from '../contexts/AppContext.tsx';
+import {
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LabelList
+} from 'recharts';
 
 interface URSSAFStatus {
   id: string;
@@ -44,6 +55,22 @@ export default function URSSAFPage() {
   const { state } = useApp();
   const { services } = state;
 
+  // Détecter le mode sombre
+  const [isDark, setIsDark] = useState(() => {
+    return document.documentElement.classList.contains('dark');
+  });
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    return () => observer.disconnect();
+  }, []);
+
   // Charger les paramètres une première fois
   const initialSettings = loadURSSAFSettings();
 
@@ -67,6 +94,7 @@ export default function URSSAFPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
   const [selectedQuarter, setSelectedQuarter] = useState<string>(getCurrentQuarter());
   const [selectedQuarterYear, setSelectedQuarterYear] = useState<number>(new Date().getFullYear());
+  const [showRules, setShowRules] = useState<boolean>(false);
 
   // Calculer le CA mensuel à partir des services
   useEffect(() => {
@@ -601,89 +629,164 @@ export default function URSSAFPage() {
 
           {/* Affichage détaillé du trimestre avec progression */}
           {periodType === 'trimestrielle' && quarterlyMonthlyBreakdown.total > 0 && (
-            <div className="mt-4 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-lg border border-teal-200 dark:border-teal-800">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                <Calculator className="w-4 h-4 mr-2 text-teal-600 dark:text-teal-400" />
-                Détail du trimestre {selectedQuarter} (calcul automatique)
-              </h4>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">
-                    {quarterlyMonthlyBreakdown.month1.name} :
-                  </span>
-                  <span className="text-gray-900 dark:text-white font-semibold">
-                    {quarterlyMonthlyBreakdown.month1.revenue.toFixed(2)}€
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">
-                    {quarterlyMonthlyBreakdown.month2.name} :
-                  </span>
-                  <span className="text-gray-900 dark:text-white font-semibold">
-                    {quarterlyMonthlyBreakdown.month2.revenue.toFixed(2)}€
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">
-                    {quarterlyMonthlyBreakdown.month3.name} :
-                  </span>
-                  <span className="text-gray-900 dark:text-white font-semibold">
-                    {quarterlyMonthlyBreakdown.month3.revenue.toFixed(2)}€
-                  </span>
-                </div>
-                <div className="border-t border-teal-300 dark:border-teal-700 pt-2 mt-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-base font-bold text-teal-700 dark:text-teal-300">
-                      Total trimestriel :
-                    </span>
-                    <span className="text-xl font-bold text-teal-900 dark:text-teal-100">
-                      {quarterlyMonthlyBreakdown.total.toFixed(2)}€
-                    </span>
+            <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden transition-all duration-500 ease-out hover:shadow-xl">
+              {/* En-tête */}
+              <div className="bg-gradient-to-r from-teal-500 to-cyan-500 dark:from-teal-600 dark:to-cyan-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Calculator className="w-5 h-5 text-white" />
+                    <div>
+                      <h4 className="text-base font-bold text-white">
+                        Détail du trimestre {selectedQuarter} {selectedQuarterYear}
+                      </h4>
+                      <p className="text-xs text-teal-100 dark:text-teal-200">
+                        Calcul automatique depuis vos prestations
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-teal-100 dark:text-teal-200 mb-1">Total trimestriel</div>
+                    <div className="text-2xl font-bold text-white">
+                      {quarterlyMonthlyBreakdown.total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Barre de progression visuelle */}
-              <div className="mt-4">
-                <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
-                  <span>Progression du trimestre</span>
-                  <span>
-                    {quarterlyMonthlyBreakdown.total > 0
-                      ? Math.round(
-                          ((quarterlyMonthlyBreakdown.month1.revenue + quarterlyMonthlyBreakdown.month2.revenue) /
-                            quarterlyMonthlyBreakdown.total) *
-                            100
-                        )
-                      : 0}
-                    % complété
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
-                  <div className="flex h-full">
-                    <div
-                      className="bg-gradient-to-r from-teal-400 to-teal-500 dark:from-teal-500 dark:to-teal-600 transition-all duration-500"
-                      style={{
-                        width: `${quarterlyMonthlyBreakdown.total > 0 ? (quarterlyMonthlyBreakdown.month1.revenue / quarterlyMonthlyBreakdown.total) * 100 : 0}%`
-                      }}
-                    />
-                    <div
-                      className="bg-gradient-to-r from-teal-500 to-cyan-500 dark:from-teal-600 dark:to-cyan-600 transition-all duration-500"
-                      style={{
-                        width: `${quarterlyMonthlyBreakdown.total > 0 ? (quarterlyMonthlyBreakdown.month2.revenue / quarterlyMonthlyBreakdown.total) * 100 : 0}%`
-                      }}
-                    />
-                    <div
-                      className="bg-gradient-to-r from-cyan-500 to-teal-600 dark:from-cyan-600 dark:to-teal-700 transition-all duration-500"
-                      style={{
-                        width: `${quarterlyMonthlyBreakdown.total > 0 ? (quarterlyMonthlyBreakdown.month3.revenue / quarterlyMonthlyBreakdown.total) * 100 : 0}%`
-                      }}
-                    />
+              {/* Cartes des mois */}
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  {/* Mois 1 */}
+                  <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 rounded-lg p-4 border border-teal-200 dark:border-teal-800 transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide">
+                        {quarterlyMonthlyBreakdown.month1.name}
+                      </span>
+                      <div className="w-2 h-2 rounded-full bg-teal-500"></div>
+                    </div>
+                    <div className="text-2xl font-bold text-teal-900 dark:text-teal-100 mb-1">
+                      {quarterlyMonthlyBreakdown.month1.revenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    </div>
+                    <div className="text-xs text-teal-600 dark:text-teal-400">
+                      {quarterlyMonthlyBreakdown.total > 0 
+                        ? `${((quarterlyMonthlyBreakdown.month1.revenue / quarterlyMonthlyBreakdown.total) * 100).toFixed(1)}% du trimestre`
+                        : '0% du trimestre'}
+                    </div>
+                  </div>
+
+                  {/* Mois 2 */}
+                  <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20 rounded-lg p-4 border border-cyan-200 dark:border-cyan-800 transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-cyan-700 dark:text-cyan-400 uppercase tracking-wide">
+                        {quarterlyMonthlyBreakdown.month2.name}
+                      </span>
+                      <div className="w-2 h-2 rounded-full bg-cyan-500"></div>
+                    </div>
+                    <div className="text-2xl font-bold text-cyan-900 dark:text-cyan-100 mb-1">
+                      {quarterlyMonthlyBreakdown.month2.revenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    </div>
+                    <div className="text-xs text-cyan-600 dark:text-cyan-400">
+                      {quarterlyMonthlyBreakdown.total > 0 
+                        ? `${((quarterlyMonthlyBreakdown.month2.revenue / quarterlyMonthlyBreakdown.total) * 100).toFixed(1)}% du trimestre`
+                        : '0% du trimestre'}
+                    </div>
+                  </div>
+
+                  {/* Mois 3 */}
+                  <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800 transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
+                        {quarterlyMonthlyBreakdown.month3.name}
+                      </span>
+                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    </div>
+                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100 mb-1">
+                      {quarterlyMonthlyBreakdown.month3.revenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    </div>
+                    <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                      {quarterlyMonthlyBreakdown.total > 0 
+                        ? `${((quarterlyMonthlyBreakdown.month3.revenue / quarterlyMonthlyBreakdown.total) * 100).toFixed(1)}% du trimestre`
+                        : '0% du trimestre'}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  <span>{quarterlyMonthlyBreakdown.month1.name}</span>
-                  <span>{quarterlyMonthlyBreakdown.month2.name}</span>
-                  <span>{quarterlyMonthlyBreakdown.month3.name}</span>
+
+                {/* Barre de progression visuelle améliorée */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Progression du trimestre
+                    </span>
+                    <span className="text-sm font-bold text-teal-600 dark:text-teal-400">
+                      {quarterlyMonthlyBreakdown.total > 0
+                        ? Math.round(
+                            ((quarterlyMonthlyBreakdown.month1.revenue + quarterlyMonthlyBreakdown.month2.revenue) /
+                              quarterlyMonthlyBreakdown.total) *
+                              100
+                          )
+                        : 0}% complété
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden shadow-inner">
+                    <div className="flex h-full">
+                      <div
+                        className="bg-gradient-to-r from-teal-400 to-teal-500 dark:from-teal-500 dark:to-teal-600 transition-all duration-1000 ease-out flex items-center justify-center relative overflow-hidden"
+                        style={{
+                          width: `${quarterlyMonthlyBreakdown.total > 0 ? (quarterlyMonthlyBreakdown.month1.revenue / quarterlyMonthlyBreakdown.total) * 100 : 0}%`,
+                          transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                        {quarterlyMonthlyBreakdown.total > 0 && (quarterlyMonthlyBreakdown.month1.revenue / quarterlyMonthlyBreakdown.total) * 100 > 15 && (
+                          <span className="text-[10px] font-bold text-white px-1 relative z-10">
+                            {quarterlyMonthlyBreakdown.month1.name.substring(0, 3)}
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        className="bg-gradient-to-r from-cyan-400 to-cyan-500 dark:from-cyan-500 dark:to-cyan-600 transition-all duration-1000 ease-out flex items-center justify-center relative overflow-hidden"
+                        style={{
+                          width: `${quarterlyMonthlyBreakdown.total > 0 ? (quarterlyMonthlyBreakdown.month2.revenue / quarterlyMonthlyBreakdown.total) * 100 : 0}%`,
+                          transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                        {quarterlyMonthlyBreakdown.total > 0 && (quarterlyMonthlyBreakdown.month2.revenue / quarterlyMonthlyBreakdown.total) * 100 > 15 && (
+                          <span className="text-[10px] font-bold text-white px-1 relative z-10">
+                            {quarterlyMonthlyBreakdown.month2.name.substring(0, 3)}
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        className="bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600 transition-all duration-1000 ease-out flex items-center justify-center relative overflow-hidden"
+                        style={{
+                          width: `${quarterlyMonthlyBreakdown.total > 0 ? (quarterlyMonthlyBreakdown.month3.revenue / quarterlyMonthlyBreakdown.total) * 100 : 0}%`,
+                          transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                        {quarterlyMonthlyBreakdown.total > 0 && (quarterlyMonthlyBreakdown.month3.revenue / quarterlyMonthlyBreakdown.total) * 100 > 15 && (
+                          <span className="text-[10px] font-bold text-white px-1 relative z-10">
+                            {quarterlyMonthlyBreakdown.month3.name.substring(0, 3)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-3 text-xs text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center gap-2 transition-transform duration-200 hover:scale-105">
+                      <div className="w-2 h-2 rounded-full bg-teal-500"></div>
+                      <span>{quarterlyMonthlyBreakdown.month1.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 transition-transform duration-200 hover:scale-105">
+                      <div className="w-2 h-2 rounded-full bg-cyan-500"></div>
+                      <span>{quarterlyMonthlyBreakdown.month2.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 transition-transform duration-200 hover:scale-105">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      <span>{quarterlyMonthlyBreakdown.month3.name}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -700,41 +803,277 @@ export default function URSSAFPage() {
           )}
         </div>
 
-        {/* Résultats */}
+        {/* Graphiques visuels */}
+        <div className="mt-6 mb-6">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+            <Calculator className="w-5 h-5 mr-2 text-teal-600 dark:text-teal-400" />
+            Visualisation des données
+          </h3>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Graphique en barres */}
+            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <h4 className="text-base font-bold text-gray-900 dark:text-white animate-in fade-in slide-in-from-left duration-500">Montants comparatifs</h4>
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-300 animate-in fade-in slide-in-from-right duration-500 delay-100">
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 animate-pulse"></div>
+                  <span className="dark:text-gray-200">CA</span>
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-red-700 ml-2 animate-pulse delay-100"></div>
+                  <span className="dark:text-gray-200">Cotisations</span>
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 ml-2 animate-pulse delay-200"></div>
+                  <span className="dark:text-gray-200">Net</span>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart 
+                  data={[
+                    { name: 'Chiffre d\'affaires', montant: revenue, label: 'CA', gradient: ['#3b82f6', '#2563eb', '#1d4ed8'] },
+                    { name: 'Cotisations URSSAF', montant: contributions, label: 'Cotisations', gradient: ['#ef4444', '#dc2626', '#b91c1c'] },
+                    { name: 'Revenu net', montant: netRevenue, label: 'Net', gradient: ['#10b981', '#059669', '#047857'] }
+                  ]}
+                  margin={{ top: 30, right: 30, left: 20, bottom: 10 }}
+                >
+                  <defs>
+                    <linearGradient id="colorCa" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#1d4ed8" stopOpacity={1}/>
+                    </linearGradient>
+                    <linearGradient id="colorCotisations" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#b91c1c" stopOpacity={1}/>
+                    </linearGradient>
+                    <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#047857" stopOpacity={1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#374151' : '#e5e7eb'} opacity={0.3} />
+                  <XAxis 
+                    dataKey="label" 
+                    stroke={isDark ? '#9ca3af' : '#6b7280'}
+                    tick={{ fontSize: 12, fill: isDark ? '#d1d5db' : '#6b7280' }}
+                    tickLine={{ stroke: isDark ? '#6b7280' : '#9ca3af' }}
+                  />
+                  <YAxis 
+                    stroke={isDark ? '#9ca3af' : '#6b7280'}
+                    tick={{ fontSize: 12, fill: isDark ? '#d1d5db' : '#6b7280' }}
+                    tickLine={{ stroke: isDark ? '#6b7280' : '#9ca3af' }}
+                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => [`${value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`, 'Montant']}
+                    contentStyle={{ 
+                      backgroundColor: isDark ? '#1f2937' : 'white', 
+                      border: isDark ? '1px solid #374151' : '1px solid #e5e7eb', 
+                      borderRadius: '12px',
+                      boxShadow: isDark ? '0 4px 6px -1px rgba(0, 0, 0, 0.3)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                      padding: '12px'
+                    }}
+                    labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: isDark ? '#f9fafb' : '#111827' }}
+                    itemStyle={{ color: isDark ? '#d1d5db' : '#374151' }}
+                  />
+                  <Bar 
+                    dataKey="montant" 
+                    radius={[12, 12, 0, 0]}
+                    animationDuration={1200}
+                    animationBegin={200}
+                    animationEasing="ease-out"
+                  >
+                    <LabelList 
+                      dataKey="montant" 
+                      position="top" 
+                      formatter={(value: number) => `${(value / 1000).toFixed(1)}k€`}
+                      style={{ fill: isDark ? '#e5e7eb' : '#374151', fontSize: '11px', fontWeight: '600' }}
+                    />
+                    {[
+                      { name: 'Chiffre d\'affaires', montant: revenue, label: 'CA', gradientId: 'colorCa' },
+                      { name: 'Cotisations URSSAF', montant: contributions, label: 'Cotisations', gradientId: 'colorCotisations' },
+                      { name: 'Revenu net', montant: netRevenue, label: 'Net', gradientId: 'colorNet' }
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={`url(#${entry.gradientId})`} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Jauges de progression et indicateurs */}
+            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 hover:shadow-xl transition-all duration-300">
+              <h4 className="text-base font-bold text-gray-900 dark:text-white mb-6 animate-in fade-in slide-in-from-left duration-500">Répartition du CA</h4>
+              
+              {/* Jauge pour le revenu net */}
+              <div className="mb-6 animate-in fade-in slide-in-from-left duration-500 delay-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 animate-pulse"></div>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Revenu net</span>
+                  </div>
+                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400 animate-in fade-in zoom-in duration-500 delay-700">
+                    {revenue > 0 ? ((netRevenue / revenue) * 100).toFixed(1).replace('.', ',') : '0,0'}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden shadow-inner">
+                  <div 
+                    className="h-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 rounded-full transition-all duration-1500 ease-out flex items-center justify-end pr-2 animate-in slide-in-from-left duration-1000 delay-300 relative overflow-hidden"
+                    style={{ width: `${revenue > 0 ? (netRevenue / revenue) * 100 : 0}%` }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                    {revenue > 0 && (netRevenue / revenue) * 100 > 15 && (
+                      <span className="text-[10px] font-bold text-white relative z-10 animate-in fade-in duration-500 delay-1000">
+                        {netRevenue.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 animate-in fade-in duration-500 delay-500">
+                  {netRevenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                </div>
+              </div>
+
+              {/* Jauge pour les cotisations */}
+              <div className="mb-6 animate-in fade-in slide-in-from-left duration-500 delay-300">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-red-700 animate-pulse delay-100"></div>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Cotisations URSSAF</span>
+                  </div>
+                  <span className="text-sm font-bold text-red-700 dark:text-red-400 animate-in fade-in zoom-in duration-500 delay-800">
+                    {revenue > 0 ? ((contributions / revenue) * 100).toFixed(1).replace('.', ',') : '0,0'}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden shadow-inner">
+                  <div 
+                    className="h-full bg-gradient-to-r from-red-500 via-red-600 to-red-700 rounded-full transition-all duration-1500 ease-out flex items-center justify-end pr-2 animate-in slide-in-from-left duration-1000 delay-400 relative overflow-hidden"
+                    style={{ width: `${revenue > 0 ? (contributions / revenue) * 100 : 0}%` }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                    {revenue > 0 && (contributions / revenue) * 100 > 15 && (
+                      <span className="text-[10px] font-bold text-white relative z-10 animate-in fade-in duration-500 delay-1100">
+                        {contributions.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 animate-in fade-in duration-500 delay-600">
+                  {contributions.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                </div>
+              </div>
+
+              {/* Indicateurs visuels */}
+              <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 animate-in fade-in slide-in-from-bottom duration-500 delay-700">
+                <div className="text-center transform transition-transform duration-300 hover:scale-105">
+                  <div className="text-2xl font-bold text-blue-700 dark:text-blue-400 mb-1 animate-in fade-in zoom-in duration-500 delay-900">
+                    {revenue.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Chiffre d'affaires</div>
+                </div>
+                <div className="text-center transform transition-transform duration-300 hover:scale-105">
+                  <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-400 mb-1 animate-in fade-in zoom-in duration-500 delay-1000">
+                    {rate.toFixed(2)}%
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Taux de cotisation</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tableau récapitulatif détaillé */}
+        <div className="mt-6">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+            <Receipt className="w-5 h-5 mr-2 text-teal-600 dark:text-teal-400" />
+            Tableau récapitulatif
+          </h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-100 dark:bg-gray-700">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Élément</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">Montant</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">Pourcentage</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tr className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-3"></div>
+                      Chiffre d'affaires {periodType === 'mensuelle' ? 'mensuel' : 'trimestriel'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-right text-blue-700 dark:text-blue-400">
+                    {revenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                  </td>
+                  <td className="px-6 py-4 text-sm text-right text-gray-600 dark:text-gray-400">100,00 %</td>
+                </tr>
+                <tr className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 rounded-full bg-red-500 mr-3"></div>
+                      Cotisations URSSAF ({rate.toFixed(2)}%)
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-right text-red-700 dark:text-red-400">
+                    − {contributions.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                  </td>
+                  <td className="px-6 py-4 text-sm text-right text-red-700 dark:text-red-400">
+                    {revenue > 0 ? ((contributions / revenue) * 100).toFixed(2).replace('.', ',') : '0,00'} %
+                  </td>
+                </tr>
+                <tr className="bg-gray-50 dark:bg-gray-900/50 border-t-2 border-gray-300 dark:border-gray-600">
+                  <td className="px-6 py-4 text-base font-bold text-gray-900 dark:text-white">
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 mr-3"></div>
+                      Revenu net
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-lg font-bold text-right text-emerald-700 dark:text-emerald-400">
+                    {netRevenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                  </td>
+                  <td className="px-6 py-4 text-base font-semibold text-right text-emerald-700 dark:text-emerald-400">
+                    {revenue > 0 ? ((netRevenue / revenue) * 100).toFixed(2).replace('.', ',') : '0,00'} %
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Cartes récapitulatives */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-xl p-6 border border-indigo-200 dark:border-indigo-800">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-indigo-700 dark:text-indigo-400">Taux de cotisation</span>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Taux de cotisation</span>
               <Receipt className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <p className="text-3xl font-bold text-indigo-900 dark:text-indigo-100">{rate.toFixed(2)}%</p>
-            <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+            <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-400 mb-2">{rate.toFixed(2)} %</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
               {urssafStatuses.find(s => s.id === selectedStatus)?.activities.find(a => a.type === selectedActivity)?.description}
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900/20 dark:to-rose-800/20 rounded-xl p-6 border border-rose-200 dark:border-rose-800">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-rose-700 dark:text-rose-400">Cotisations à payer</span>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Cotisations à payer</span>
               <TrendingDown className="w-5 h-5 text-rose-600 dark:text-rose-400" />
             </div>
-            <p className="text-3xl font-bold text-rose-900 dark:text-rose-100">
-              {contributions.toFixed(2)}€
+            <p className="text-3xl font-bold text-rose-700 dark:text-rose-400 mb-2">
+              {contributions.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
             </p>
-            <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">
-              {revenue > 0 ? (contributions / revenue * 100).toFixed(1) : 0}% du CA
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              {revenue > 0 ? ((contributions / revenue) * 100).toFixed(1).replace('.', ',') : '0,0'} % du CA
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-xl p-6 border border-emerald-200 dark:border-emerald-800">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Revenu net</span>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Revenu net</span>
               <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
-              {netRevenue.toFixed(2)}€
+            <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-400 mb-2">
+              {netRevenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
             </p>
-            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
               Après déduction des cotisations
             </p>
           </div>
@@ -923,14 +1262,26 @@ export default function URSSAFPage() {
         </div>
       </div>
 
-      {/* Informations légales et règles */}
+      {/* Informations légales et règles - Collapsible */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-        <div className="flex items-center space-x-3 mb-6">
+        <button
+          type="button"
+          onClick={() => setShowRules(!showRules)}
+          className="w-full flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-2 -m-2 transition-colors"
+        >
+          <div className="flex items-center space-x-3">
           <BookOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Règles et Informations Légales</h2>
         </div>
+          {showRules ? (
+            <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          )}
+        </button>
 
-        <div className="space-y-6">
+        {showRules && (
+          <div className="mt-6 space-y-6">
           {/* Micro-entreprise */}
           <div className="border-l-4 border-blue-500 pl-4">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
@@ -1031,8 +1382,6 @@ export default function URSSAFPage() {
                   <li>En cas de retard de paiement, majoration de 0,4% par mois de retard</li>
                   <li>Au-delà des plafonds, passage automatique au régime réel normal</li>
                 </ul>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -1076,6 +1425,9 @@ export default function URSSAFPage() {
             </ul>
           </div>
         </div>
+          </div>
+        </div>
+        )}
       </div>
     </div>
   );

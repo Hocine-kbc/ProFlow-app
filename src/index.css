@@ -320,3 +320,17 @@ body:has(.email-inbox-container) {
   margin: 4px 0;
   padding-left: 4px;
 }
+
+/* Animation shimmer pour les jauges de progression */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}

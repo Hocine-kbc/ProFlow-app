@@ -191,7 +191,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         </div>
         
         {/* Navigation moderne */}
-        <nav className="p-4 pt-[60px] lg:pt-4 space-y-2 flex-1 overflow-y-auto scrollbar-hide">
+        <nav className="p-3 pt-[60px] lg:pt-3 space-y-1.5 flex-1 overflow-y-auto scrollbar-hide">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
@@ -210,7 +210,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                       ? `${colors.active} text-white`
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                   }`}
-                  style={{ height: '54px', minHeight: '54px' }}
+                  style={{ height: '48px', minHeight: '48px' }}
                   title={sidebarCollapsed ? item.label : ''}
                 >
                   <div className={`rounded-lg relative ${
@@ -218,15 +218,15 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                       ? 'bg-white/20' 
                       : `${colors.icon} ${colors.iconHover}`
                   }`} style={{ 
-                    minWidth: '42px', 
-                    minHeight: '42px', 
+                    minWidth: '38px', 
+                    minHeight: '38px', 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center',
                     marginRight: sidebarCollapsed ? '0' : '8px',
-                    padding: '8px'
+                    padding: '6px'
                   }}>
-                    <Icon size={18} className={isActive ? 'text-white' : `${colors.iconColor} group-hover:${colors.iconColor.split(' ')[0]}`} />
+                    <Icon size={16} className={isActive ? 'text-white' : `${colors.iconColor} group-hover:${colors.iconColor.split(' ')[0]}`} />
                     {/* Badge pour les messages non lus - visible même quand la sidebar est réduite */}
                     {item.id === 'messages' && unreadMessagesCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-4 px-1 text-[10px] font-bold text-white bg-red-500 dark:bg-red-600 rounded-full shadow-lg z-10">

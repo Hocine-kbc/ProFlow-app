@@ -87,12 +87,18 @@ export default function CustomSelect({
         <button
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
+          onMouseDown={(e) => {
+            // Empêcher le focus automatique au clic
+            if (className.includes('focus:ring-0')) {
+              e.preventDefault();
+            }
+          }}
           disabled={disabled}
           className={`
             w-full px-3 py-2.5 sm:px-4 sm:py-3 
             border border-gray-300 dark:border-gray-600 
             rounded-lg sm:rounded-xl 
-            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+            ${className.includes('focus:ring-0') ? '' : 'focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}
             transition-colors 
             bg-white dark:bg-gray-700 
             text-gray-900 dark:text-white 
@@ -100,6 +106,7 @@ export default function CustomSelect({
             flex items-center justify-between
             ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400 dark:hover:border-gray-500'}
             ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+            ${className.includes('focus:ring-0') ? 'focus:ring-0 focus:ring-offset-0 focus:border-none outline-none focus-visible:ring-0 focus-visible:outline-none' : ''}
           `}
         >
           <span className={selectedOption ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
