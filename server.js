@@ -751,6 +751,15 @@ app.use('/api/messages', messagesRouter);
 // Fonction pour traiter les messages programmés
 async function checkAndProcessScheduledMessages() {
   try {
+    // Vérifier que Supabase est configuré
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('⚠️ Supabase non configuré. Variables d\'environnement manquantes.');
+      return;
+    }
+    
     const now = new Date().toISOString();
     
     // Récupérer tous les messages programmés dont la date est passée
@@ -762,7 +771,23 @@ async function checkAndProcessScheduledMessages() {
       .lte('scheduled_at', now);
     
     if (error) {
-      console.error('❌ Erreur récupération messages programmés:', error);
+      // Détecter les erreurs de connexion réseau (fetch failed, timeout, etc.)
+      const isNetworkError = 
+        (error.message && (error.message.includes('fetch failed') || error.message.includes('Timeout'))) ||
+        (error.details && typeof error.details === 'string' && error.details.includes('fetch failed')) ||
+        error.name === 'TypeError';
+      
+      if (isNetworkError) {
+        // Logger seulement une fois toutes les 10 minutes pour éviter le spam
+        const lastErrorLog = checkAndProcessScheduledMessages.lastErrorLog || 0;
+        const currentTime = Date.now();
+        if (currentTime - lastErrorLog > 600000) { // 10 minutes
+          console.error('⚠️ Erreur de connexion Supabase (réseau/timeout). Vérifiez votre connexion internet et les variables d\'environnement.');
+          checkAndProcessScheduledMessages.lastErrorLog = currentTime;
+        }
+      } else {
+        console.error('❌ Erreur récupération messages programmés:', error);
+      }
       return;
     }
     
@@ -888,7 +913,23 @@ async function checkAndProcessScheduledMessages() {
       }
     }
   } catch (error) {
-    console.error('❌ Erreur lors du traitement des messages programmés:', error);
+    // Détecter les erreurs de connexion réseau
+    const isNetworkError = 
+      (error.message && (error.message.includes('fetch failed') || error.message.includes('Timeout'))) ||
+      (error.details && typeof error.details === 'string' && error.details.includes('fetch failed')) ||
+      error.name === 'TypeError';
+    
+    if (isNetworkError) {
+      // Logger seulement une fois toutes les 10 minutes pour éviter le spam
+      const lastErrorLog = checkAndProcessScheduledMessages.lastErrorLog || 0;
+      const currentTime = Date.now();
+      if (currentTime - lastErrorLog > 600000) { // 10 minutes
+        console.error('⚠️ Erreur de connexion Supabase (réseau/timeout). Vérifiez votre connexion internet et les variables d\'environnement.');
+        checkAndProcessScheduledMessages.lastErrorLog = currentTime;
+      }
+    } else {
+      console.error('❌ Erreur lors du traitement des messages programmés:', error);
+    }
   }
 }
 

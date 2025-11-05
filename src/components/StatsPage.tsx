@@ -304,7 +304,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
     fetchStatistics(false);
   }, [selectedYear]);
 
-  // Calculer la position et la taille de l'indicateur
+  // Mettre à jour la position de l'indicateur (même approche que ServicesPage)
   useEffect(() => {
     const updateIndicator = () => {
       let activeButton: HTMLButtonElement | null = null;
@@ -331,15 +331,64 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       }
     };
 
-    // Délai pour s'assurer que le DOM est rendu
-    const timeoutId = setTimeout(updateIndicator, 0);
-    window.addEventListener('resize', updateIndicator);
+    // Utiliser requestAnimationFrame pour un rendu fluide et immédiat
+    const rafId = requestAnimationFrame(() => {
+      // Double raf pour s'assurer que le DOM est mis à jour
+      requestAnimationFrame(updateIndicator);
+    });
     
+    window.addEventListener('resize', updateIndicator);
     return () => {
-      clearTimeout(timeoutId);
+      cancelAnimationFrame(rafId);
       window.removeEventListener('resize', updateIndicator);
     };
   }, [periodFilter]);
+  
+  // Calcul initial après le chargement des données
+  useEffect(() => {
+    // Attendre que les données soient chargées
+    if (loading) return;
+    
+    const updateIndicator = () => {
+      let activeButton: HTMLButtonElement | null = null;
+      
+      if (periodFilter === 'year') {
+        activeButton = yearButtonRef.current;
+      } else if (periodFilter === 'quarter') {
+        activeButton = quarterButtonRef.current;
+      } else if (periodFilter === 'month') {
+        activeButton = monthButtonRef.current;
+      }
+
+      if (activeButton) {
+        const container = activeButton.parentElement;
+        if (container) {
+          const containerRect = container.getBoundingClientRect();
+          const buttonRect = activeButton.getBoundingClientRect();
+          
+          if (buttonRect.width > 0 && containerRect.width > 0) {
+            setIndicatorStyle({
+              width: buttonRect.width,
+              left: buttonRect.left - containerRect.left
+            });
+          }
+        }
+      }
+    };
+
+    // Utiliser requestAnimationFrame pour un calcul immédiat et synchronisé
+    let rafId2: number | null = null;
+    const rafId1 = requestAnimationFrame(() => {
+      rafId2 = requestAnimationFrame(() => {
+        updateIndicator();
+      });
+    });
+    
+    return () => {
+      cancelAnimationFrame(rafId1);
+      if (rafId2 !== null) cancelAnimationFrame(rafId2);
+    };
+  }, [loading, periodFilter]); // Après le chargement et à chaque changement de période
 
   const fetchStatistics = async (showLoading: boolean = true) => {
     try {
@@ -1831,57 +1880,98 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             </div>
           </div>
           <div className="flex justify-start">
-            <div className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full">
-            {/* Indicateur animé qui glisse */}
-            {indicatorStyle.width > 0 && (
-              <div
-                className="absolute h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 shadow-md transition-all duration-300 ease-out"
-                style={{
-                  width: `${indicatorStyle.width}px`,
-                  left: `${indicatorStyle.left}px`,
-                  transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                }}
-              />
-            )}
-            <button
-              ref={yearButtonRef}
-              type="button"
-              onClick={() => setPeriodFilter('year')}
-              className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 ${
-                periodFilter === 'year'
-                  ? 'text-white'
-                  : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
-              }`}
+            <div 
+              ref={(node) => {
+                // Calculer immédiatement quand le conteneur est monté
+                if (node) {
+                  const updateIndicator = () => {
+                    let activeButton: HTMLButtonElement | null = null;
+                    
+                    if (periodFilter === 'year') {
+                      activeButton = yearButtonRef.current;
+                    } else if (periodFilter === 'quarter') {
+                      activeButton = quarterButtonRef.current;
+                    } else if (periodFilter === 'month') {
+                      activeButton = monthButtonRef.current;
+                    }
+
+                    if (activeButton) {
+                      const container = activeButton.parentElement;
+                      if (container) {
+                        const containerRect = container.getBoundingClientRect();
+                        const buttonRect = activeButton.getBoundingClientRect();
+                        
+                        if (buttonRect.width > 0 && containerRect.width > 0) {
+                          setIndicatorStyle({
+                            width: buttonRect.width,
+                            left: buttonRect.left - containerRect.left
+                          });
+                        }
+                      }
+                    }
+                  };
+                  
+                  // Double requestAnimationFrame pour synchroniser avec le navigateur
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      updateIndicator();
+                    });
+                  });
+                }
+              }}
+              className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full"
             >
-              Année
-            </button>
-            <button
-              ref={quarterButtonRef}
-              type="button"
-              onClick={() => setPeriodFilter('quarter')}
-              className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 ${
-                periodFilter === 'quarter'
-                  ? 'text-white'
-                  : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
-              }`}
-            >
-              Trimestre
-            </button>
-            <button
-              ref={monthButtonRef}
-              type="button"
-              onClick={() => setPeriodFilter('month')}
-              className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 ${
-                periodFilter === 'month'
-                  ? 'text-white'
-                  : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
-              }`}
-            >
-              Mois
-            </button>
-          </div>
+              {/* Indicateur animé qui glisse */}
+              {indicatorStyle.width > 0 && (
+                <div
+                  className="absolute h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 shadow-md"
+                  style={{
+                    width: `${indicatorStyle.width}px`,
+                    left: `${indicatorStyle.left}px`,
+                    transition: 'left 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    willChange: 'left, width'
+                  }}
+                />
+              )}
+              <button
+                ref={yearButtonRef}
+                type="button"
+                onClick={() => setPeriodFilter('year')}
+                className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-150 ${
+                  periodFilter === 'year'
+                    ? 'text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+              >
+                Année
+              </button>
+              <button
+                ref={quarterButtonRef}
+                type="button"
+                onClick={() => setPeriodFilter('quarter')}
+                className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-150 ${
+                  periodFilter === 'quarter'
+                    ? 'text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+              >
+                Trimestre
+              </button>
+              <button
+                ref={monthButtonRef}
+                type="button"
+                onClick={() => setPeriodFilter('month')}
+                className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-150 ${
+                  periodFilter === 'month'
+                    ? 'text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+              >
+                Mois
+              </button>
             </div>
           </div>
+        </div>
         <div className="overflow-x-auto overflow-y-visible">
           <div className="min-w-full">
             <table className="w-full">

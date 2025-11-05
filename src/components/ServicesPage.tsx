@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle, ChevronLeft, ChevronRight, Circle, Clock, Edit2, Filter, Plus, Search, Trash, Trash2, X, Package, Calendar, List } from 'lucide-react';
 import { useApp } from '../contexts/AppContext.tsx';
 import { useSettings } from '../hooks/useSettings.ts';
@@ -15,6 +15,11 @@ export default function ServicesPage() {
   const [currentTab, setCurrentTab] = useState<'services' | 'articles'>('services');
   const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  // Refs pour les boutons de vue
+  const listButtonRef = useRef<HTMLButtonElement>(null);
+  const calendarButtonRef = useRef<HTMLButtonElement>(null);
+  const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, left: 0 });
   
   // États pour la navigation tactile
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -263,6 +268,37 @@ export default function ServicesPage() {
   useEffect(() => {
     loadArticles();
   }, []);
+
+  // Mettre à jour la position de l'indicateur de vue
+  useEffect(() => {
+    const updateIndicator = () => {
+      const activeButton = currentView === 'list' ? listButtonRef.current : calendarButtonRef.current;
+      if (activeButton) {
+        const container = activeButton.parentElement;
+        if (container) {
+          const containerRect = container.getBoundingClientRect();
+          const buttonRect = activeButton.getBoundingClientRect();
+          
+          setIndicatorStyle({
+            width: buttonRect.width,
+            left: buttonRect.left - containerRect.left
+          });
+        }
+      }
+    };
+
+    // Utiliser requestAnimationFrame pour un rendu fluide et immédiat
+    const rafId = requestAnimationFrame(() => {
+      // Double raf pour s'assurer que le DOM est mis à jour
+      requestAnimationFrame(updateIndicator);
+    });
+    
+    window.addEventListener('resize', updateIndicator);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updateIndicator);
+    };
+  }, [currentView]);
 
   const loadArticles = () => {
     try {
@@ -637,26 +673,40 @@ export default function ServicesPage() {
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Vue des prestations
             </h3>
-            <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+            <div className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full">
+              {/* Indicateur animé qui glisse */}
+              {indicatorStyle.width > 0 && (
+                <div
+                  className="absolute h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 shadow-md"
+                  style={{
+                    width: `${indicatorStyle.width}px`,
+                    left: `${indicatorStyle.left}px`,
+                    transition: 'left 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    willChange: 'left, width'
+                  }}
+                />
+              )}
               <button
+                ref={listButtonRef}
                 type="button"
                 onClick={() => setCurrentView('list')}
-                className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`relative z-10 inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 ${
                   currentView === 'list' 
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' 
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    ? 'text-white' 
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
                 <List className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Liste</span>
               </button>
               <button
+                ref={calendarButtonRef}
                 type="button"
                 onClick={() => setCurrentView('calendar')}
-                className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`relative z-10 inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 ${
                   currentView === 'calendar' 
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' 
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    ? 'text-white' 
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
                 <Calendar className="w-4 h-4 mr-2" />
