@@ -819,20 +819,8 @@ export default function ServicesPage() {
                       </div>
                     </div>
                     
-                    {/* Actions rapides */}
-                    <div className="flex items-center space-x-2 mt-3 sm:mt-0">
-                      <button
-                        type="button"
-                        onClick={() => setIsSelectionMode(!isSelectionMode)}
-                        className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                          isSelectionMode 
-                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
-                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                        }`}
-                      >
-                        {isSelectionMode ? 'Annuler sélection' : 'Sélection multiple'}
-                      </button>
-                    </div>
+                    {/* Actions rapides (sélection multiple supprimée) */}
+                    <div className="flex items-center space-x-2 mt-3 sm:mt-0"></div>
                   </div>
                 </div>
               </div>
@@ -868,19 +856,7 @@ export default function ServicesPage() {
         </div>
       )}
 
-      {/* Bouton pour activer le mode sélection */}
-      {!isSelectionMode && services.length > 0 && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={toggleSelectionMode}
-            className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm"
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Mode sélection
-          </button>
-        </div>
-      )}
+      
 
       {/* Debug: Orphaned services */}
       {(() => {
@@ -991,6 +967,20 @@ export default function ServicesPage() {
           </div>
         </div>
       </div>
+
+    {/* Bouton pour activer le mode sélection (déplacé après Total mensuel) */}
+    {!isSelectionMode && services.length > 0 && (
+      <div className="flex justify-end mb-4">
+        <button
+          type="button"
+          onClick={toggleSelectionMode}
+          className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm"
+        >
+          <CheckCircle className="w-4 h-4 mr-2" />
+          Mode sélection
+        </button>
+      </div>
+    )}
 
       {/* Tableau des prestations */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
