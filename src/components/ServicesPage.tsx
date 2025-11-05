@@ -825,36 +825,7 @@ export default function ServicesPage() {
                 </div>
               </div>
 
-      {/* Sélection multiple */}
-      {isSelectionMode && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center">
-              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                {selectedServices.size} prestation(s) sélectionnée(s)
-              </span>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={handleBulkDelete}
-                disabled={selectedServices.size === 0}
-                className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
-              >
-                <Trash className="w-4 h-4 mr-2" />
-                Supprimer sélection
-              </button>
-              <button
-                type="button"
-                onClick={toggleSelectionMode}
-                className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
-              >
-                Annuler
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Sélection multiple: panneau supprimé, actions déplacées à l'emplacement du bouton */}
 
       
 
@@ -968,17 +939,38 @@ export default function ServicesPage() {
         </div>
       </div>
 
-    {/* Bouton pour activer le mode sélection (déplacé après Total mensuel) */}
-    {!isSelectionMode && services.length > 0 && (
+    {/* Actions de sélection à l'emplacement du bouton */}
+    {services.length > 0 && (
       <div className="flex justify-end mb-4">
-        <button
-          type="button"
-          onClick={toggleSelectionMode}
-          className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm"
-        >
-          <CheckCircle className="w-4 h-4 mr-2" />
-          Mode sélection
-        </button>
+        {!isSelectionMode ? (
+          <button
+            type="button"
+            onClick={toggleSelectionMode}
+            className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm"
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Mode sélection
+          </button>
+        ) : (
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              disabled={selectedServices.size === 0}
+              className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
+            >
+              <Trash className="w-4 h-4 mr-2" />
+              Supprimer sélection
+            </button>
+            <button
+              type="button"
+              onClick={toggleSelectionMode}
+              className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+            >
+              Annuler
+            </button>
+          </div>
+        )}
       </div>
     )}
 
