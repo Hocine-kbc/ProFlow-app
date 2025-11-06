@@ -464,7 +464,13 @@ export default function InvoicesPage() {
     const invoice = invoices.find(inv => inv.id === invoiceId);
     if (invoice) {
       try {
-        const saved = await updateInvoiceApi(invoiceId, { status });
+        // Si on marque comme payée, définir la date de paiement
+        const updatePayload: any = { status };
+        if (status === 'paid') {
+          updatePayload.paid_date = new Date().toISOString().split('T')[0];
+        }
+        
+        const saved = await updateInvoiceApi(invoiceId, updatePayload);
         dispatch({
           type: 'UPDATE_INVOICE',
           payload: { ...invoice, ...saved }

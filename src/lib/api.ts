@@ -97,6 +97,8 @@ interface DatabaseInvoice {
   status: string;
   urssaf_deduction: number;
   payment_method?: string;
+  paid_date?: string;
+  paid_amount?: number;
   services?: unknown[];
   // Paramètres spécifiques à la facture
   invoice_terms?: string;
@@ -648,7 +650,21 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
   // if (updateData.payment_method !== undefined) dbUpdateData.payment_method = updateData.payment_method;
   if (updateData.subtotal !== undefined) dbUpdateData.subtotal = updateData.subtotal;
   if (updateData.net_amount !== undefined) dbUpdateData.net_amount = updateData.net_amount;
-  if (updateData.status !== undefined) dbUpdateData.status = updateData.status;
+  if (updateData.status !== undefined) {
+    dbUpdateData.status = updateData.status;
+    // Si la facture est marquée comme payée et qu'il n'y a pas de paid_date, définir la date actuelle
+    if (updateData.status === 'paid' && !updateData.paid_date) {
+      dbUpdateData.paid_date = new Date().toISOString();
+    }
+  }
+  // Gérer paid_date explicitement si fourni
+  if (updateData.paid_date !== undefined) {
+    dbUpdateData.paid_date = updateData.paid_date;
+  }
+  // Gérer paid_amount si fourni
+  if (updateData.paid_amount !== undefined) {
+    dbUpdateData.paid_amount = updateData.paid_amount;
+  }
   // Toujours définir urssaf_deduction à 0 pour éviter les erreurs de contrainte
   if (updateData.subtotal !== undefined || updateData.net_amount !== undefined) {
     dbUpdateData.urssaf_deduction = 0;

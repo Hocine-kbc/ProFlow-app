@@ -512,9 +512,11 @@ export default function ClientDetailView({
   // Fonction pour marquer une facture comme payée
   const handleMarkAsPaid = async (invoice: any) => {
     try {
-      // Mettre à jour le statut dans la base de données
+      const paidDate = new Date().toISOString().split('T')[0];
+      // Mettre à jour le statut dans la base de données avec la date de paiement
       await updateInvoiceApi(invoice.id, { 
-        status: 'paid'
+        status: 'paid',
+        paid_date: paidDate
       } as any);
       
       // Mettre à jour le state global
@@ -523,7 +525,8 @@ export default function ClientDetailView({
         payload: { 
           ...invoice, 
           status: 'paid',
-          paidDate: new Date().toISOString().split('T')[0],
+          paidDate: paidDate,
+          paid_date: paidDate,
           updated_at: new Date().toISOString()
         }
       });

@@ -813,6 +813,20 @@ export default function URSSAFPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Graphique en barres */}
             <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 hover:shadow-xl transition-all duration-300">
+              <style>{`
+                .recharts-tooltip-cursor {
+                  fill: transparent !important;
+                  opacity: 0 !important;
+                }
+                rect.recharts-tooltip-cursor {
+                  fill: transparent !important;
+                  opacity: 0 !important;
+                  display: none !important;
+                }
+                .recharts-tooltip-wrapper {
+                  background-color: transparent !important;
+                }
+              `}</style>
               <div className="flex items-center justify-between mb-6">
                 <h4 className="text-base font-bold text-gray-900 dark:text-white animate-in fade-in slide-in-from-left duration-500">Montants comparatifs</h4>
                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-300 animate-in fade-in slide-in-from-right duration-500 delay-100">
@@ -871,6 +885,7 @@ export default function URSSAFPage() {
                     }}
                     labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: isDark ? '#f9fafb' : '#111827' }}
                     itemStyle={{ color: isDark ? '#d1d5db' : '#374151' }}
+                    cursor={{ fill: 'transparent' }}
                   />
                   <Bar 
                     dataKey="montant" 
