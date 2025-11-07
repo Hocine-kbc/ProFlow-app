@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Home, Users, Clock, FileText, BarChart3, User, ChevronLeft, ChevronRight, Moon, Sun, Power, Archive, Scale, MessageCircle } from 'lucide-react';
+import { X, Home, Users, Clock, FileText, BarChart3, User, ChevronLeft, ChevronRight, Moon, Sun, Power, Archive, Scale, MessageCircle, CreditCard } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext.tsx';
 import { supabase } from '../lib/supabase.ts';
 import NotificationContainer from './NotificationContainer.tsx';
@@ -20,6 +20,7 @@ const menuItems = [
   { id: 'invoices', label: 'Factures', icon: FileText, color: 'purple' },
   { id: 'messages', label: 'Messages', icon: MessageCircle, color: 'cyan' },
   { id: 'stats', label: 'Statistiques', icon: BarChart3, color: 'indigo' },
+  { id: 'pricing', label: 'Plans & offres', icon: CreditCard, color: 'emerald' },
   { id: 'urssaf', label: 'URSSAF', icon: Scale, color: 'red' },
   { id: 'archive', label: 'Archive', icon: Archive, color: 'gray' },
   { id: 'profile', label: 'Profil', icon: User, color: 'pink' },
@@ -132,6 +133,12 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         icon: 'bg-red-100 dark:bg-red-900/30',
         iconHover: 'group-hover:bg-red-100 dark:group-hover:bg-red-900/30',
         iconColor: 'text-red-600 dark:text-red-400'
+      },
+      emerald: {
+        active: 'bg-gradient-to-r from-emerald-500 to-emerald-600',
+        icon: 'bg-emerald-100 dark:bg-emerald-900/30',
+        iconHover: 'group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30',
+        iconColor: 'text-emerald-600 dark:text-emerald-400'
       }
     };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Euro, 
   Users, 
@@ -14,7 +14,10 @@ import {
   ChevronRight,
   BarChart3,
   PieChart as PieChartIcon,
-  FileX
+  FileX,
+  FileSpreadsheet as FileSpreadsheetIcon,
+  FileText as FileTextIcon,
+  Download
 } from 'lucide-react';
 import { 
   PieChart, 
@@ -32,6 +35,21 @@ import {
   ComposedChart
 } from 'recharts';
 import { supabase } from '../lib/supabase.ts';
+import { 
+  exportStatsToExcel, 
+  exportStatsToPdf, 
+  StatsExportPayload, 
+  StatsExportKpiEntry, 
+  StatsExportPeriodRow, 
+  StatsExportInvoiceRow, 
+  StatsExportClientRow 
+} from '../lib/exports/statsExport';
+import {
+  exportReceiptsLedgerToExcel,
+  exportReceiptsLedgerToPdf,
+  ReceiptsLedgerPayload,
+  ReceiptEntry
+} from '../lib/exports/livretRecettes';
 
 interface KPIData {
   totalRevenueBrut: number;
@@ -207,6 +225,33 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
   const [isDarkMode, setIsDarkMode] = useState(() => 
     document.documentElement.classList.contains('dark')
   );
+  const [exportingFormat, setExportingFormat] = useState<'excel' | 'pdf' | null>(null);
+  const [receiptsExportingFormat, setReceiptsExportingFormat] = useState<'excel' | 'pdf' | null>(null);
+  const [allInvoices, setAllInvoices] = useState<any[]>([]);
+  const [allClients, setAllClients] = useState<any[]>([]);
+
+  const clientMap = useMemo(() => {
+    const map = new Map<string, any>();
+    allClients.forEach((client: any) => {
+      if (client && client.id) {
+        map.set(client.id, client);
+      }
+    });
+    return map;
+  }, [allClients]);
+
+  const companyIdentity = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('business-settings');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return {
+        companyName: parsed.companyName || parsed.companyname || ''
+      };
+    } catch {
+      return null;
+    }
+  }, []);
   
   // Refs pour les boutons de période
   const yearButtonRef = useRef<HTMLButtonElement>(null);
@@ -342,10 +387,10 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           const buttonRect = activeButton.getBoundingClientRect();
           
           if (buttonRect.width > 0 && containerRect.width > 0) {
-            setIndicatorStyle({
-              width: buttonRect.width,
-              left: buttonRect.left - containerRect.left
-            });
+          setIndicatorStyle({
+            width: buttonRect.width,
+            left: buttonRect.left - containerRect.left
+          });
           }
         }
       }
@@ -362,7 +407,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       window.removeEventListener('resize', updateIndicator);
     };
   }, [periodFilter, loading]);
-
+  
   // Mettre à jour la position de l'indicateur animé pour les KPI
   useEffect(() => {
     if (loading) return;
@@ -425,6 +470,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       }
 
       const invoices = invoicesData || [];
+      setAllInvoices(invoices);
 
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
@@ -436,6 +482,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       }
 
       const clients = clientsData || [];
+      setAllClients(clients);
 
       const now = new Date();
       const currentDate = now.toISOString().split('T')[0];
@@ -983,17 +1030,272 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-FR', { 
-      style: 'currency', 
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
       currency: 'EUR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(value);
-  };
+    })
+      .format(value)
+      .replace(/[\u00A0\u202F]/g, ' ');
 
   const formatPercent = (value: number) => {
     return `${value.toFixed(1)}%`;
+  };
+
+  const capitalize = (value: string) => {
+    if (!value) return value;
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  };
+
+  const getClientNameById = (clientId: string) => {
+    if (!clientId) return 'Client inconnu';
+    return clientMap.get(clientId)?.name || 'Client inconnu';
+  };
+
+  const normalizeDateOnly = (dateValue: any): string | null => {
+    if (!dateValue) return null;
+    if (typeof dateValue === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        return dateValue;
+      }
+      if (dateValue.includes('T')) {
+        return dateValue.split('T')[0];
+      }
+    }
+    const parsed = new Date(dateValue);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const summarizeInvoiceServices = (invoice: any): string => {
+    if (!invoice) return '';
+    let servicesData: any[] = [];
+
+    if (Array.isArray(invoice.services)) {
+      servicesData = invoice.services;
+    } else if (typeof invoice.services === 'string') {
+      try {
+        const parsed = JSON.parse(invoice.services);
+        if (Array.isArray(parsed)) {
+          servicesData = parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const descriptions = servicesData
+      .map((service: any) => {
+        if (!service) return null;
+        if (typeof service === 'string') return service;
+        if (typeof service.description === 'string') return service.description;
+        if (typeof service.title === 'string') return service.title;
+        return null;
+      })
+      .filter((desc): desc is string => !!desc);
+
+    if (descriptions.length > 0) {
+      const summary = descriptions.slice(0, 3).join(', ');
+      return descriptions.length > 3 ? `${summary}…` : summary;
+    }
+
+    if (typeof invoice.additional_terms === 'string' && invoice.additional_terms.trim().length > 0) {
+      return invoice.additional_terms;
+    }
+
+    return '';
+  };
+
+  const buildReceiptsLedgerPayload = (): ReceiptsLedgerPayload => {
+    const entries: ReceiptEntry[] = [];
+
+    allInvoices
+      .filter(inv => inv && inv.status === 'paid')
+      .forEach(inv => {
+        const paidDate = normalizeDateOnly(inv.paid_date || inv.date);
+        if (!paidDate) return;
+        const paidYear = Number(paidDate.slice(0, 4));
+        if (paidYear !== selectedYear) return;
+
+        const amount = Number(inv.subtotal || 0);
+        const paymentMethodRaw = inv.payment_method || inv.paymentMethod;
+        const paymentMethod = paymentMethodRaw
+          ? capitalize(String(paymentMethodRaw))
+          : 'Non précisé';
+
+        const entry: ReceiptEntry = {
+          date: paidDate,
+          invoiceNumber: inv.invoice_number || inv.number || '—',
+          clientName: getClientNameById(inv.client_id),
+          description: summarizeInvoiceServices(inv) || 'Prestation facturée',
+          amount,
+          paymentMethod,
+          notes: ''
+        };
+
+        entries.push(entry);
+      });
+
+    entries.sort((a, b) => {
+      const dateCompare = a.date.localeCompare(b.date);
+      if (dateCompare !== 0) return dateCompare;
+      return a.invoiceNumber.localeCompare(b.invoiceNumber);
+    });
+
+    const totalAmount = entries.reduce((sum, entry) => sum + entry.amount, 0);
+
+    return {
+      year: selectedYear,
+      companyName: companyIdentity?.companyName,
+      generatedAt: new Date().toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }),
+      entries,
+      totalAmount
+    };
+  };
+
+  const getChartPeriodLabel = () => {
+    if (periodFilter === 'year') {
+      return `Année ${selectedYear}`;
+    }
+    if (periodFilter === 'quarter') {
+      return `Trimestres ${selectedYear}`;
+    }
+    return `Vue mensuelle ${selectedYear}`;
+  };
+
+  const getKpiPeriodLabel = () => {
+    if (kpiPeriodFilter === 'year') {
+      return `Année ${selectedKpiYear}`;
+    }
+    if (kpiPeriodFilter === 'quarter') {
+      return `T${selectedKpiQuarter} ${selectedKpiYear}`;
+    }
+    const monthLabel = new Date(selectedKpiYear, selectedKpiMonth - 1, 1).toLocaleDateString('fr-FR', { month: 'long' });
+    return `${capitalize(monthLabel)} ${selectedKpiYear}`;
+  };
+
+  const buildExportPayload = (): StatsExportPayload => {
+    const metadata = {
+      chartLabel: getChartPeriodLabel(),
+      kpiLabel: getKpiPeriodLabel(),
+      generatedAt: new Date().toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })
+    };
+
+    const kpiEntries: StatsExportKpiEntry[] = [
+      { label: 'CA Brut total', value: kpiData.totalRevenueBrut, format: 'currency' },
+      { label: 'CA Net total', value: kpiData.totalRevenueNet, format: 'currency' },
+      { label: 'Cotisations totales', value: kpiData.totalContributions, format: 'currency' },
+      { label: 'Factures payées', value: kpiData.paidInvoices, format: 'number' },
+      { label: 'Clients actifs', value: kpiData.activeClients, format: 'number' },
+      { label: 'Factures en attente', value: kpiData.pendingInvoices, format: 'number' },
+      { label: 'Factures en retard', value: kpiData.overdueInvoices, format: 'number' },
+      { label: 'Montant en retard', value: kpiData.overdueAmount, format: 'currency' },
+      { label: 'Taux paiement à temps', value: kpiData.onTimePaymentRate, format: 'percent' },
+      { label: 'Montant moyen facture', value: kpiData.averageInvoiceAmount, format: 'currency' },
+      { label: 'Temps de paiement moyen', value: kpiData.averagePaymentTime, format: 'days' }
+    ];
+
+    const periodDataSource: (MonthlyRevenue | QuarterlyRevenue)[] =
+      periodFilter === 'quarter'
+        ? quarterlyRevenue
+        : periodFilter === 'month'
+          ? monthlyRevenue.slice(-3)
+          : monthlyRevenue;
+
+    const periodRows: StatsExportPeriodRow[] = periodDataSource.map((item) => {
+      if ('quarter' in item) {
+        const contributionRate = item.revenueBrut > 0 ? (item.contributions / item.revenueBrut) * 100 : 0;
+        return {
+          label: `${item.quarter} ${selectedYear}`,
+          revenueBrut: item.revenueBrut,
+          revenueNet: item.revenueNet,
+          contributions: item.contributions,
+          invoices: item.invoices,
+          contributionRate
+        };
+      }
+
+      return {
+        label: `${capitalize(item.month)} ${selectedYear}`,
+        revenueBrut: item.revenueBrut,
+        revenueNet: item.revenueNet,
+        contributions: item.contributions,
+        invoices: item.invoices,
+        contributionRate: item.contributionRate
+      };
+    });
+
+    const invoicesRows: StatsExportInvoiceRow[] = monthlyInvoices.map((item) => ({
+      label: `${capitalize(item.month)} ${selectedYear}`,
+      paid: item.paid,
+      pending: item.pending,
+      overdue: item.overdue,
+      total: item.count
+    }));
+
+    const topClients: StatsExportClientRow[] = clientRevenue.map((client) => ({
+      name: client.name,
+      revenueBrut: client.revenueBrut,
+      revenueNet: client.revenueNet,
+      contributions: client.contributions,
+      invoices: client.invoices,
+      percentage: client.percentage
+    }));
+
+    return {
+      metadata,
+      kpis: kpiEntries,
+      periodRows,
+      invoicesRows,
+      topClients
+    };
+  };
+
+  const handleExport = (format: 'excel' | 'pdf') => {
+    if (exportingFormat) return;
+    setExportingFormat(format);
+    try {
+      const payload: StatsExportPayload = buildExportPayload();
+      if (format === 'excel') {
+        exportStatsToExcel(payload);
+      } else {
+        exportStatsToPdf(payload);
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'export des statistiques:', error);
+      window.alert('Impossible de générer le fichier. Merci de réessayer.');
+    } finally {
+      setExportingFormat(null);
+    }
+  };
+
+  const handleReceiptsExport = (format: 'excel' | 'pdf') => {
+    if (receiptsExportingFormat) return;
+    setReceiptsExportingFormat(format);
+    try {
+      const payload: ReceiptsLedgerPayload = buildReceiptsLedgerPayload();
+      if (payload.entries.length === 0) {
+        window.alert('Aucune recette enregistrée pour cette année.');
+        return;
+      }
+      if (format === 'excel') {
+        exportReceiptsLedgerToExcel(payload);
+      } else {
+        exportReceiptsLedgerToPdf(payload);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la génération du livret de recettes:', error);
+      window.alert('Impossible de générer le livret de recettes. Merci de réessayer.');
+    } finally {
+      setReceiptsExportingFormat(null);
+    }
   };
 
   if (loading) {
@@ -1386,7 +1688,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         <div className="flex flex-col gap-4 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Statistiques détaillées par période</h3>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center sm:justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setSelectedYear(selectedYear - 1)}
@@ -1415,7 +1717,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
               </button>
             </div>
           </div>
-          <div className="flex justify-start">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div 
               className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full"
             >
@@ -1467,6 +1769,76 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
               >
                 Mois
               </button>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 flex-wrap">
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleExport('excel')}
+                  disabled={exportingFormat !== null}
+                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 text-white text-sm font-semibold shadow-sm hover:bg-emerald-700 transition-transform duration-200 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                >
+                  {exportingFormat === 'excel' ? (
+                    <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <Download className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110" />
+                      <FileSpreadsheetIcon className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 delay-75" />
+                    </span>
+                  )}
+                  <span>{exportingFormat === 'excel' ? 'Export...' : 'Excel'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport('pdf')}
+                  disabled={exportingFormat !== null}
+                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 transition-transform duration-200 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                >
+                  {exportingFormat === 'pdf' ? (
+                    <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <Download className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110" />
+                      <FileTextIcon className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 delay-75" />
+                    </span>
+                  )}
+                  <span>{exportingFormat === 'pdf' ? 'Export...' : 'PDF'}</span>
+                </button>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleReceiptsExport('excel')}
+                  disabled={receiptsExportingFormat !== null}
+                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-600 text-white text-sm font-semibold shadow-sm hover:bg-teal-700 transition-transform duration-200 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                >
+                  {receiptsExportingFormat === 'excel' ? (
+                    <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <Download className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110" />
+                      <FileSpreadsheetIcon className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 delay-75" />
+                    </span>
+                  )}
+                  <span>{receiptsExportingFormat === 'excel' ? 'Livret...' : 'Livret (Excel)'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleReceiptsExport('pdf')}
+                  disabled={receiptsExportingFormat !== null}
+                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-600 text-white text-sm font-semibold shadow-sm hover:bg-sky-700 transition-transform duration-200 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                >
+                  {receiptsExportingFormat === 'pdf' ? (
+                    <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <Download className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110" />
+                      <FileTextIcon className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 delay-75" />
+                    </span>
+                  )}
+                  <span>{receiptsExportingFormat === 'pdf' ? 'Livret...' : 'Livret (PDF)'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1552,7 +1924,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                       {formatPercent('contributionRate' in item ? item.contributionRate : (item.contributions / item.revenueBrut) * 100)}
                     </span>
                   </td>
-                </tr>
+              </tr>
               ))}
             </tbody>
             <tfoot>
@@ -1598,9 +1970,9 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       {/* Section 2: Graphiques d'évolution */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white px-2">📈 Graphiques d'évolution</h2>
-        
-        {/* Graphique Principal - Évolution Complète CA Brut, Net et Cotisations */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+
+      {/* Graphique Principal - Évolution Complète CA Brut, Net et Cotisations */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Évolution Mensuelle du Chiffre d'Affaires</h3>
           <div className="flex items-center space-x-2">
@@ -1864,8 +2236,8 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         }
       `}</style>
 
-        {/* Graphiques Comparatifs */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Graphiques Comparatifs */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Comparaison Trimestrielle */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Comparaison Trimestrielle</h3>
@@ -2076,9 +2448,9 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       {/* Section 3: Analyses détaillées */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white px-2">🔍 Analyses détaillées</h2>
-        
-        {/* 💳 Détails Paiements */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+
+      {/* 💳 Détails Paiements */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">💳 Détails Paiements</h3>
         
         {/* Répartition par méthode de paiement */}
@@ -2117,10 +2489,10 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(kpiData.refundsAmount)}</p>
           </div>
         </div>
-        </div>
+      </div>
 
-        {/* 👥 Statistiques Clients */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+      {/* 👥 Statistiques Clients */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">👥 Statistiques Clients</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
@@ -2140,10 +2512,10 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatPercent(kpiData.clientRetentionRate)}</p>
           </div>
         </div>
-        </div>
+      </div>
 
-        {/* 🧾 Statistiques Factures */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+      {/* 🧾 Statistiques Factures */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">🧾 Statistiques Factures</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
@@ -2333,10 +2705,10 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             <p className="text-gray-500 dark:text-gray-400 text-sm animate-pulse">Aucune donnée disponible pour {selectedYear}</p>
           </div>
         )}
-        </div>
+      </div>
 
-        {/* 🧰 Statistiques Prestations / Services */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+      {/* 🧰 Statistiques Prestations / Services */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">🧰 Statistiques Prestations / Services</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
@@ -2378,40 +2750,40 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       {/* Section 4: Comparaisons et classements */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white px-2">🏆 Comparaisons et classements</h2>
-        
-        {/* 📅 Statistiques Temporelles - Comparaison */}
-        {comparisonData && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">📅 Comparaison Annuelle</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Année {selectedYear}</p>
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(comparisonData.current)}</p>
-              </div>
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700/20 dark:to-gray-800/20 p-6 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Année {selectedYear - 1}</p>
-                <p className="text-3xl font-bold text-gray-600 dark:text-gray-400">{formatCurrency(comparisonData.previous)}</p>
-              </div>
+
+      {/* 📅 Statistiques Temporelles - Comparaison */}
+      {comparisonData && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">📅 Comparaison Annuelle</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Année {selectedYear}</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(comparisonData.current)}</p>
             </div>
-            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Évolution</span>
-                <div className="flex items-center space-x-2">
-                  <span className={`text-lg font-bold ${comparisonData.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {comparisonData.change >= 0 ? '+' : ''}{formatCurrency(comparisonData.change)}
-                  </span>
-                  <span className={`text-sm font-semibold ${comparisonData.changePercent >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    ({comparisonData.changePercent >= 0 ? '+' : ''}{formatPercent(comparisonData.changePercent)})
-                  </span>
-                </div>
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700/20 dark:to-gray-800/20 p-6 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Année {selectedYear - 1}</p>
+              <p className="text-3xl font-bold text-gray-600 dark:text-gray-400">{formatCurrency(comparisonData.previous)}</p>
+            </div>
+          </div>
+          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Évolution</span>
+              <div className="flex items-center space-x-2">
+                <span className={`text-lg font-bold ${comparisonData.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {comparisonData.change >= 0 ? '+' : ''}{formatCurrency(comparisonData.change)}
+                </span>
+                <span className={`text-sm font-semibold ${comparisonData.changePercent >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  ({comparisonData.changePercent >= 0 ? '+' : ''}{formatPercent(comparisonData.changePercent)})
+                </span>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Top Clients par CA */}
-        {clientRevenue.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+      {/* Top Clients par CA */}
+      {clientRevenue.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Top clients par CA Brut</h3>
           <div className="space-y-4">
             {clientRevenue.slice().reverse().map((client, index) => {
@@ -2465,8 +2837,8 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             })}
           </div>
         </div>
-        )}
-      </div>
+      )}
+                  </div>
 
 
     </div>

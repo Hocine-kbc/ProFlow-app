@@ -9,6 +9,7 @@ import ProfilePage from './components/ProfilePage.tsx';
 import ArchivePage from './components/ArchivePage.tsx';
 import URSSAFPage from './components/URSSAFPage.tsx';
 import MessagesPage from './components/MessagesPage.tsx';
+import PricingPage from './components/PricingPage.tsx';
 import EmailInboxPage from './components/EmailInboxPage.tsx';
 import { AppProvider, useApp } from './contexts/AppContext.tsx';
 import { ThemeProvider } from './contexts/ThemeContext.tsx';
@@ -224,6 +225,8 @@ function AppContent() {
         return <URSSAFPage />;
       case 'messages':
         return <EmailInboxPage />;
+      case 'pricing':
+        return <PricingPage />;
       default:
         return <Dashboard onNavigate={handlePageChange} />;
     }
