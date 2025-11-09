@@ -17,7 +17,7 @@ import {
   FileX,
   FileSpreadsheet as FileSpreadsheetIcon,
   FileText as FileTextIcon,
-  Download
+  BookOpen
 } from 'lucide-react';
 import { 
   PieChart, 
@@ -298,18 +298,26 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
     };
   };
 
-  // Palette de couleurs élégantes avec dégradés
+  const chartPalette = {
+    revenueBrut: { base: '#4B6BFB', dark: '#1D4ED8' },
+    revenueNet: { base: '#2DD4BF', dark: '#0F766E' },
+    contributions: { base: '#E76F51', dark: '#C2410C' },
+    invoicesPaid: { base: '#0EA5E9', dark: '#0369A1' },
+    invoicesPending: { base: '#F4A261', dark: '#B45309' },
+    invoicesOverdue: { base: '#F97316', dark: '#C2410C' }
+  } as const;
+
   const COLORS = [
-    '#6366F1', // Indigo élégant
-    '#10B981', // Vert émeraude
-    '#F59E0B', // Ambre doré
-    '#F472B6', // Rose moderne
-    '#8B5CF6', // Violet profond
-    '#06B6D4', // Cyan vif
-    '#84CC16', // Vert citron
-    '#F97316', // Orange vibrant
-    '#EC4899', // Rose fuchsia
-    '#3B82F6'  // Bleu royal
+    '#4B6BFB',
+    '#0EA5E9',
+    '#2DD4BF',
+    '#E76F51',
+    '#F4A261',
+    '#A855F7',
+    '#22C55E',
+    '#38BDF8',
+    '#F472B6',
+    '#64748B'
   ];
 
   // Composant Tooltip personnalisé qui s'adapte au mode sombre
@@ -1504,10 +1512,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           </div>
           {/* Boutons de type de période - alignés à gauche */}
           <div className="flex justify-start">
-            <div 
-              className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full"
-            >
-              {/* Indicateur animé qui glisse */}
+            <div className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full">
               {kpiIndicatorStyle.width > 0 && (
                 <div
                   className="absolute h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 shadow-md z-0"
@@ -1683,6 +1688,97 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         </div>
       </div>
 
+      {/* Actions d'export */}
+      <div className="flex flex-col xl:flex-row gap-3">
+        <div className="flex-1 min-w-[240px] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800/80 shadow-sm p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200">
+                <BarChart3 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">Rapport statistiques</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Téléchargez le tableau de bord complet</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleExport('excel')}
+                disabled={exportingFormat !== null}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                aria-label="Exporter les statistiques en Excel"
+              >
+                {exportingFormat === 'excel' ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                ) : (
+                  <FileSpreadsheetIcon className="h-4 w-4" />
+                )}
+                <span>{exportingFormat === 'excel' ? 'Export…' : 'Excel (.xlsx)'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport('pdf')}
+                disabled={exportingFormat !== null}
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                aria-label="Exporter les statistiques en PDF"
+              >
+                {exportingFormat === 'pdf' ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                ) : (
+                  <FileTextIcon className="h-4 w-4" />
+                )}
+                <span>{exportingFormat === 'pdf' ? 'Export…' : 'PDF (.pdf)'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 min-w-[240px] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800/80 shadow-sm p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-200">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">Livret de recettes</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Générez le registre conforme à l'administration</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleReceiptsExport('excel')}
+                disabled={receiptsExportingFormat !== null}
+                className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                aria-label="Exporter le livret de recettes en Excel"
+              >
+                {receiptsExportingFormat === 'excel' ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                ) : (
+                  <FileSpreadsheetIcon className="h-4 w-4" />
+                )}
+                <span>{receiptsExportingFormat === 'excel' ? 'Export…' : 'Excel (.xlsx)'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleReceiptsExport('pdf')}
+                disabled={receiptsExportingFormat !== null}
+                className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                aria-label="Exporter le livret de recettes en PDF"
+              >
+                {receiptsExportingFormat === 'pdf' ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                ) : (
+                  <FileTextIcon className="h-4 w-4" />
+                )}
+                <span>{receiptsExportingFormat === 'pdf' ? 'Export…' : 'PDF (.pdf)'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Tableau détaillé par période */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
         <div className="flex flex-col gap-4 mb-4">
@@ -1717,11 +1813,8 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
               </button>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div 
-              className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full"
-            >
-              {/* Indicateur animé qui glisse */}
+          <div className="flex justify-start">
+            <div className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full">
               {indicatorStyle.width > 0 && (
                 <div
                   className="absolute h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 shadow-md z-0"
@@ -1769,76 +1862,6 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
               >
                 Mois
               </button>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 flex-wrap">
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleExport('excel')}
-                  disabled={exportingFormat !== null}
-                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 text-white text-sm font-semibold shadow-sm hover:bg-emerald-700 transition-transform duration-200 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                >
-                  {exportingFormat === 'excel' ? (
-                    <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    <span className="flex items-center gap-1">
-                      <Download className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110" />
-                      <FileSpreadsheetIcon className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 delay-75" />
-                    </span>
-                  )}
-                  <span>{exportingFormat === 'excel' ? 'Export...' : 'Excel'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleExport('pdf')}
-                  disabled={exportingFormat !== null}
-                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 transition-transform duration-200 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                >
-                  {exportingFormat === 'pdf' ? (
-                    <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    <span className="flex items-center gap-1">
-                      <Download className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110" />
-                      <FileTextIcon className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 delay-75" />
-                    </span>
-                  )}
-                  <span>{exportingFormat === 'pdf' ? 'Export...' : 'PDF'}</span>
-                </button>
-              </div>
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleReceiptsExport('excel')}
-                  disabled={receiptsExportingFormat !== null}
-                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-600 text-white text-sm font-semibold shadow-sm hover:bg-teal-700 transition-transform duration-200 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                >
-                  {receiptsExportingFormat === 'excel' ? (
-                    <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    <span className="flex items-center gap-1">
-                      <Download className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110" />
-                      <FileSpreadsheetIcon className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 delay-75" />
-                    </span>
-                  )}
-                  <span>{receiptsExportingFormat === 'excel' ? 'Livret...' : 'Livret (Excel)'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleReceiptsExport('pdf')}
-                  disabled={receiptsExportingFormat !== null}
-                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-600 text-white text-sm font-semibold shadow-sm hover:bg-sky-700 transition-transform duration-200 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                >
-                  {receiptsExportingFormat === 'pdf' ? (
-                    <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    <span className="flex items-center gap-1">
-                      <Download className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110" />
-                      <FileTextIcon className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 delay-75" />
-                    </span>
-                  )}
-                  <span>{receiptsExportingFormat === 'pdf' ? 'Livret...' : 'Livret (PDF)'}</span>
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -2018,37 +2041,37 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                 margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
               >
                 <defs>
-                  {/* CA Brut - Dégradé bleu-gris élégant */}
+                  {/* CA Brut - dégradé indigo raffiné */}
                   <linearGradient id="monthlyBrutGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#5B8FA3" stopOpacity={0.7}/>
-                    <stop offset="50%" stopColor="#4A7C8F" stopOpacity={0.4}/>
-                    <stop offset="100%" stopColor="#4A7C8F" stopOpacity={0}/>
+                    <stop offset="0%" stopColor={chartPalette.revenueBrut.base} stopOpacity={0.72} />
+                    <stop offset="55%" stopColor={chartPalette.revenueBrut.base} stopOpacity={0.32} />
+                    <stop offset="100%" stopColor={chartPalette.revenueBrut.base} stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="monthlyBrutStroke" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#5B8FA3"/>
-                    <stop offset="100%" stopColor="#4A7C8F"/>
+                    <stop offset="0%" stopColor={chartPalette.revenueBrut.base} />
+                    <stop offset="100%" stopColor={chartPalette.revenueBrut.dark} />
                   </linearGradient>
                   
-                  {/* CA Net - Dégradé vert-sage élégant */}
+                  {/* CA Net - dégradé jade doux */}
                   <linearGradient id="monthlyNetGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6B9B7A" stopOpacity={0.7}/>
-                    <stop offset="50%" stopColor="#5A8A6A" stopOpacity={0.4}/>
-                    <stop offset="100%" stopColor="#5A8A6A" stopOpacity={0}/>
+                    <stop offset="0%" stopColor={chartPalette.revenueNet.base} stopOpacity={0.7} />
+                    <stop offset="55%" stopColor={chartPalette.revenueNet.base} stopOpacity={0.3} />
+                    <stop offset="100%" stopColor={chartPalette.revenueNet.base} stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="monthlyNetStroke" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#6B9B7A"/>
-                    <stop offset="100%" stopColor="#5A8A6A"/>
+                    <stop offset="0%" stopColor={chartPalette.revenueNet.base} />
+                    <stop offset="100%" stopColor={chartPalette.revenueNet.dark} />
                   </linearGradient>
                   
-                  {/* Cotisations - Dégradé terracotta élégant */}
+                  {/* Cotisations - dégradé terracotta feutré */}
                   <linearGradient id="monthlyContributionsGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#B88A7A" stopOpacity={0.7}/>
-                    <stop offset="50%" stopColor="#A67A6A" stopOpacity={0.4}/>
-                    <stop offset="100%" stopColor="#A67A6A" stopOpacity={0}/>
+                    <stop offset="0%" stopColor={chartPalette.contributions.base} stopOpacity={0.7} />
+                    <stop offset="55%" stopColor={chartPalette.contributions.base} stopOpacity={0.32} />
+                    <stop offset="100%" stopColor={chartPalette.contributions.base} stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="monthlyContributionsStroke" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#B88A7A"/>
-                    <stop offset="100%" stopColor="#A67A6A"/>
+                    <stop offset="0%" stopColor={chartPalette.contributions.base} />
+                    <stop offset="100%" stopColor={chartPalette.contributions.dark} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={getThemeColors().grid} strokeOpacity={0.3} vertical={false} />
@@ -2066,6 +2089,8 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend 
+                  iconType="circle"
+                  iconSize={12}
                   formatter={(value) => (
                     <span style={{ color: getThemeColors().text, fontSize: '12px', fontWeight: '500' }}>
                       {value}
@@ -2079,7 +2104,9 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                   stroke="url(#monthlyBrutStroke)" 
                   strokeWidth={2}
                   name="CA Brut"
-                  isAnimationActive={false}
+                  isAnimationActive={monthlyRevenue.length > 0}
+                  animationDuration={900}
+                  animationEasing="ease-out"
                 />
                 <Area 
                   type="monotone" 
@@ -2088,7 +2115,9 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                   stroke="url(#monthlyNetStroke)" 
                   strokeWidth={2}
                   name="CA Net"
-                  isAnimationActive={false}
+                  isAnimationActive={monthlyRevenue.length > 0}
+                  animationDuration={900}
+                  animationEasing="ease-out"
                 />
                 <Area 
                   type="monotone" 
@@ -2097,7 +2126,9 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                   stroke="url(#monthlyContributionsStroke)" 
                   strokeWidth={2}
                   name="Cotisations"
-                  isAnimationActive={false}
+                  isAnimationActive={monthlyRevenue.length > 0}
+                  animationDuration={900}
+                  animationEasing="ease-out"
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -2253,16 +2284,16 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                 <BarChart data={quarterlyRevenue} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <defs>
                     <linearGradient id="barBrutGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#5B8FA3"/>
-                      <stop offset="100%" stopColor="#4A7C8F"/>
+                      <stop offset="0%" stopColor={chartPalette.revenueBrut.base} />
+                      <stop offset="100%" stopColor={chartPalette.revenueBrut.dark} />
                     </linearGradient>
                     <linearGradient id="barNetGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6B9B7A"/>
-                      <stop offset="100%" stopColor="#5A8A6A"/>
+                      <stop offset="0%" stopColor={chartPalette.revenueNet.base} />
+                      <stop offset="100%" stopColor={chartPalette.revenueNet.dark} />
                     </linearGradient>
                     <linearGradient id="barContributionsGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#B88A7A"/>
-                      <stop offset="100%" stopColor="#A67A6A"/>
+                      <stop offset="0%" stopColor={chartPalette.contributions.base} />
+                      <stop offset="100%" stopColor={chartPalette.contributions.dark} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={getThemeColors().grid} strokeOpacity={0.3} vertical={false} />
@@ -2283,6 +2314,8 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                     cursor={{ fill: 'transparent' }}
                   />
                   <Legend 
+                    iconType="circle"
+                    iconSize={12}
                     formatter={(value) => (
                       <span style={{ color: getThemeColors().text, fontSize: '12px', fontWeight: '500' }}>
                         {value}
@@ -2294,21 +2327,27 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                     fill="url(#barBrutGradient)" 
                     name="CA Brut" 
                     radius={[8, 8, 0, 0]}
-                    isAnimationActive={false}
+                    isAnimationActive={quarterlyRevenue.length > 0}
+                    animationDuration={850}
+                    animationEasing="ease"
                   />
                   <Bar 
                     dataKey="revenueNet" 
                     fill="url(#barNetGradient)" 
                     name="CA Net" 
                     radius={[8, 8, 0, 0]}
-                    isAnimationActive={false}
+                    isAnimationActive={quarterlyRevenue.length > 0}
+                    animationDuration={850}
+                    animationEasing="ease"
                   />
                   <Bar 
                     dataKey="contributions" 
                     fill="url(#barContributionsGradient)" 
                     name="Cotisations" 
                     radius={[8, 8, 0, 0]}
-                    isAnimationActive={false}
+                    isAnimationActive={quarterlyRevenue.length > 0}
+                    animationDuration={850}
+                    animationEasing="ease"
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -2339,23 +2378,23 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                 <PieChart>
                   <defs>
                     <linearGradient id="pieBrutGradient" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#7BA8B8" />
-                      <stop offset="100%" stopColor="#5B8FA3" />
+                      <stop offset="0%" stopColor={chartPalette.revenueBrut.base} />
+                      <stop offset="100%" stopColor={chartPalette.revenueBrut.dark} />
                     </linearGradient>
                     <linearGradient id="pieContributionsGradient" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#C89A8A" />
-                      <stop offset="100%" stopColor="#B88A7A" />
+                      <stop offset="0%" stopColor={chartPalette.contributions.base} />
+                      <stop offset="100%" stopColor={chartPalette.contributions.dark} />
                     </linearGradient>
                     <linearGradient id="pieNetGradient" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#8BAB8A" />
-                      <stop offset="100%" stopColor="#6B9B7A" />
+                      <stop offset="0%" stopColor={chartPalette.revenueNet.base} />
+                      <stop offset="100%" stopColor={chartPalette.revenueNet.dark} />
                     </linearGradient>
                   </defs>
                   <Pie
                     data={[
-                      { name: 'CA Brut', value: kpiData.annualRevenueBrut, color: '#5B8FA3' },
-                      { name: 'Cotisations', value: kpiData.annualContributions, color: '#B88A7A' },
-                      { name: 'CA Net', value: kpiData.annualRevenueNet, color: '#6B9B7A' }
+                      { name: 'CA Brut', value: kpiData.annualRevenueBrut, color: chartPalette.revenueBrut.base },
+                      { name: 'Cotisations', value: kpiData.annualContributions, color: chartPalette.contributions.base },
+                      { name: 'CA Net', value: kpiData.annualRevenueNet, color: chartPalette.revenueNet.base }
                     ]}
                     cx="50%"
                     cy="50%"
@@ -2364,7 +2403,9 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                     innerRadius={70}
                     fill="#8884d8"
                     dataKey="value"
-                    isAnimationActive={false}
+                    isAnimationActive={kpiData.annualRevenueBrut + kpiData.annualContributions + kpiData.annualRevenueNet > 0}
+                    animationDuration={950}
+                    animationEasing="ease-out"
                     stroke={isDarkMode ? '#1f2937' : '#ffffff'}
                     strokeWidth={3}
                     activeShape={false}
@@ -2409,8 +2450,8 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                     {formatCurrency(kpiData.annualRevenueBrut)} brut
                   </text>
                   <Legend 
-                    verticalAlign="bottom" 
-                    height={36}
+                    iconType="circle"
+                    iconSize={12}
                     formatter={(value) => (
                       <span style={{ color: getThemeColors().text, fontSize: '12px', fontWeight: '500' }}>
                         {value}
@@ -2545,16 +2586,16 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                 <BarChart data={monthlyInvoices} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <defs>
                     <linearGradient id="paidGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6B9B7A" stopOpacity={0.8}/>
-                      <stop offset="100%" stopColor="#5A8A6A" stopOpacity={0.5}/>
+                      <stop offset="0%" stopColor={chartPalette.invoicesPaid.base} stopOpacity={0.85} />
+                      <stop offset="100%" stopColor={chartPalette.invoicesPaid.dark} stopOpacity={0.55} />
                     </linearGradient>
                     <linearGradient id="pendingGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#D4A574" stopOpacity={0.8}/>
-                      <stop offset="100%" stopColor="#C49564" stopOpacity={0.5}/>
+                      <stop offset="0%" stopColor={chartPalette.invoicesPending.base} stopOpacity={0.85} />
+                      <stop offset="100%" stopColor={chartPalette.invoicesPending.dark} stopOpacity={0.55} />
                     </linearGradient>
                     <linearGradient id="overdueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#C88A7A" stopOpacity={0.8}/>
-                      <stop offset="100%" stopColor="#B77A6A" stopOpacity={0.5}/>
+                      <stop offset="0%" stopColor={chartPalette.invoicesOverdue.base} stopOpacity={0.85} />
+                      <stop offset="100%" stopColor={chartPalette.invoicesOverdue.dark} stopOpacity={0.55} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={getThemeColors().grid} strokeOpacity={0.3} vertical={false} />
@@ -2590,15 +2631,15 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                           <p style={{ marginBottom: '8px', fontWeight: 600, color: themeColors.tooltipText }}>
                             {label} {selectedYear}
                           </p>
-                          <p style={{ margin: '4px 0', color: '#6B9B7A' }}>
+                          <p style={{ margin: '4px 0', color: chartPalette.invoicesPaid.base }}>
                             <span style={{ marginRight: '8px' }}>●</span>
                             Payées: <strong>{data.paid}</strong>
                           </p>
-                          <p style={{ margin: '4px 0', color: '#D4A574' }}>
+                          <p style={{ margin: '4px 0', color: chartPalette.invoicesPending.base }}>
                             <span style={{ marginRight: '8px' }}>●</span>
                             En attente: <strong>{data.pending}</strong>
                           </p>
-                          <p style={{ margin: '4px 0', color: '#C88A7A' }}>
+                          <p style={{ margin: '4px 0', color: chartPalette.invoicesOverdue.base }}>
                             <span style={{ marginRight: '8px' }}>●</span>
                             En retard: <strong>{data.overdue}</strong>
                           </p>
@@ -2611,6 +2652,8 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                     cursor={{ fill: 'transparent' }} 
                   />
                   <Legend 
+                    iconType="circle"
+                    iconSize={12}
                     formatter={(value) => (
                       <span style={{ color: getThemeColors().text, fontSize: '12px', fontWeight: '500' }}>
                         {value === 'paid' ? 'Payées' : value === 'pending' ? 'En attente' : 'En retard'}
@@ -2622,78 +2665,24 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                     stackId="a" 
                     fill="url(#paidGradient)" 
                     name="paid"
-                    isAnimationActive={false}
-                    shape={(props: any) => {
-                      const { payload, x, y, width, height, fill } = props;
-                      const isTop = payload.overdue === 0 && payload.pending === 0 && payload.paid > 0;
-                      return (
-                        <rect
-                          x={x}
-                          y={y}
-                          width={width}
-                          height={height}
-                          fill={fill}
-                          rx={0}
-                          ry={0}
-                          style={{
-                            clipPath: isTop 
-                              ? 'inset(0 0 0 0 round 8px 8px 8px 8px)'
-                              : 'inset(0 0 0 0 round 0px 0px 8px 8px)'
-                          }}
-                        />
-                      );
-                    }}
+                    isAnimationActive={monthlyInvoices.length > 0}
+                    animationDuration={700}
                   />
                   <Bar 
                     dataKey="pending" 
                     stackId="a" 
                     fill="url(#pendingGradient)" 
                     name="pending"
-                    isAnimationActive={false}
-                    shape={(props: any) => {
-                      const { payload, x, y, width, height, fill } = props;
-                      const isTop = payload.overdue === 0 && payload.pending > 0;
-                      return (
-                        <rect
-                          x={x}
-                          y={y}
-                          width={width}
-                          height={height}
-                          fill={fill}
-                          rx={0}
-                          ry={0}
-                          style={{
-                            clipPath: isTop 
-                              ? 'inset(0 0 0 0 round 8px 8px 0px 0px)'
-                              : 'inset(0 0 0 0 round 0px 0px 0px 0px)'
-                          }}
-                        />
-                      );
-                    }}
+                    isAnimationActive={monthlyInvoices.length > 0}
+                    animationDuration={700}
                   />
                   <Bar 
                     dataKey="overdue" 
                     stackId="a" 
                     fill="url(#overdueGradient)" 
                     name="overdue"
-                    isAnimationActive={false}
-                    shape={(props: any) => {
-                      const { x, y, width, height, fill } = props;
-                      return (
-                        <rect
-                          x={x}
-                          y={y}
-                          width={width}
-                          height={height}
-                          fill={fill}
-                          rx={0}
-                          ry={0}
-                          style={{
-                            clipPath: 'inset(0 0 0 0 round 8px 8px 0px 0px)'
-                          }}
-                        />
-                      );
-                    }}
+                    isAnimationActive={monthlyInvoices.length > 0}
+                    animationDuration={700}
                   />
                 </BarChart>
               </ResponsiveContainer>

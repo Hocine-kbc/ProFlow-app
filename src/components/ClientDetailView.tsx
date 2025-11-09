@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   ArrowLeft, 
   Edit, 
@@ -24,7 +24,8 @@ import {
   Trash2,
   Archive,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react';
 import { ClientDetail } from '../types/clientDetail.ts';
 import { supabase } from '../lib/supabase.ts';
@@ -35,6 +36,7 @@ import { updateInvoice as updateInvoiceApi, deleteInvoice as deleteInvoiceApi, f
 import { useApp } from '../contexts/AppContext.tsx';
 import AlertModal from './AlertModal.tsx';
 import CustomSelect from './CustomSelect.tsx';
+import { exportFiscalAttestationToPdf, FiscalAttestationPayload } from '../lib/exports/attestationFiscale.ts';
 
 interface ClientDetailViewProps {
   clientId: string;
@@ -110,6 +112,8 @@ export default function ClientDetailView({
   const [noteType, setNoteType] = useState<'general' | 'call' | 'email' | 'meeting'>('general');
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [notesLoading, setNotesLoading] = useState(false);
+  const [attestationYear, setAttestationYear] = useState<number | null>(null);
+  const [attestationLoading, setAttestationLoading] = useState(false);
   
   // Fonctions pour gérer les notes
   const addNote = async () => {
@@ -196,7 +200,7 @@ export default function ClientDetailView({
     
     loadNotes();
   }, [clientId]);
-  
+
   // États pour les modals
   const [previewInvoice, setPreviewInvoice] = useState<any>(null);
   const [emailModal, setEmailModal] = useState<any>(null);
@@ -459,7 +463,7 @@ export default function ClientDetailView({
         to_email: emailData.to,
         to_name: clientName,
         subject: emailData.subject || `Facture N° ${emailModal.invoice_number} - ${new Date(emailModal.date).toLocaleDateString('fr-FR')}`,
-        message: emailData.message || `Bonjour ${client.name || 'Madame, Monsieur'},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question, je reste à votre disposition.\n\nCordialement,\n${settings?.companyName || 'ProFlow'}`,
+        message: emailData.message || `Bonjour ${client?.name || 'Madame, Monsieur'},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question, je reste à votre disposition.\n\nCordialement,\n${settings?.companyName || 'ProFlow'}`,
         invoice_number: emailModal.invoice_number,
         invoice_date: new Date(emailModal.date).toLocaleDateString('fr-FR'),
         invoice_due_date: new Date(emailModal.due_date).toLocaleDateString('fr-FR'),
@@ -1057,6 +1061,97 @@ export default function ClientDetailView({
     }
   };
 
+  const handleExportFiscalAttestation = async () => {
+    if (!client || !effectiveAttestationYear) {
+      showNotification(
+        'warning',
+        'Aucune donnée disponible',
+        `Aucune facture confirmée n'est encore enregistrée pour ${client?.name || 'ce client'}.`
+      );
+      return;
+    }
+
+    const targetYear = effectiveAttestationYear;
+
+    setAttestationLoading(true);
+
+    try {
+      if (attestationInvoicesForYear.length === 0) {
+        showNotification(
+          'warning',
+          'Aucune facture confirmée',
+          `Aucune facture finalisée pour ${targetYear} n'a été trouvée pour ${client.name}.`
+        );
+        return;
+      }
+
+      const payload: FiscalAttestationPayload = {
+        year: targetYear,
+        issueDate: new Date().toISOString(),
+        client: {
+          name: client.name,
+          company: client.company,
+          address: client.address,
+          postalCode: client.postalCode,
+          city: client.city,
+          country: client.country || 'France',
+          email: client.email,
+          phone: client.phone
+        },
+        provider: {
+          name: settings?.ownerName || settings?.companyName || 'Micro-entrepreneur',
+          ownerName: settings?.ownerName,
+          company: settings?.companyName,
+          address: settings?.address,
+          postalCode: settings?.postalCode,
+          city: settings?.city,
+          country: settings?.country || 'France',
+          email: settings?.email,
+          phone: settings?.phone,
+          siret: settings?.siret,
+          siren: settings?.siren,
+          vatNumber: settings?.vatNumber
+        },
+        invoices: attestationInvoicesForYear.map((invoice) => ({
+          number: invoice.number,
+          issueDate: invoice.issueDate,
+          paidDate: invoice.paidDate,
+          description: invoice.description,
+          amount: invoice.amount,
+          status: invoice.status,
+          paidAmount: invoice.paidAmount
+        })),
+        totals: {
+          totalBilled: attestationSummary.totalBilled,
+          totalPaid: attestationSummary.totalPaid,
+          totalOutstanding: attestationSummary.totalOutstanding,
+          invoiceCount: attestationSummary.invoiceCount
+        },
+        vatExempt: settings?.urssafActivity ? settings.urssafActivity !== 'ventes' : true,
+        notes: [
+          `Document généré automatiquement via ProFlow le ${new Date().toLocaleDateString('fr-FR')}.`,
+          'Pour obtenir une attestation de régularité fiscale officielle, consultez votre espace professionnel sur impots.gouv.fr (formulaire 3666-SD).'
+        ]
+      };
+
+      exportFiscalAttestationToPdf(payload);
+      showNotification(
+        'success',
+        'Attestation générée',
+        `Le certificat fiscal ${targetYear} de ${client.name} a été téléchargé.`
+      );
+    } catch (error) {
+      console.error('Erreur lors de la génération de l’attestation fiscale:', error);
+      showNotification(
+        'error',
+        'Export impossible',
+        'Une erreur est survenue lors de la création de l’attestation fiscale.'
+      );
+    } finally {
+      setAttestationLoading(false);
+    }
+  };
+
   // Fonction pour filtrer les factures
   const getFilteredInvoices = () => {
     if (!client) return [];
@@ -1097,6 +1192,144 @@ export default function ClientDetailView({
   const servicesStartIndex = (servicesCurrentPage - 1) * servicesItemsPerPage;
   const servicesEndIndex = servicesStartIndex + servicesItemsPerPage;
   const currentServices = filteredServices.slice(servicesStartIndex, servicesEndIndex);
+
+  const normalizedAttestationInvoices = useMemo(() => {
+    if (!client?.invoices || client.invoices.length === 0) {
+      return [];
+    }
+    return client.invoices.map((invoice: any) => {
+      const amount = calculateInvoiceAmount(invoice);
+      const number =
+        invoice.number ||
+        invoice.invoice_number ||
+        (invoice.id ? `FAC-${String(invoice.id).slice(0, 8).toUpperCase()}` : 'FAC-XXXXX');
+      const issueDate = invoice.date || invoice.created_at || '';
+      const paidDate = invoice.paidDate || invoice.paid_date || invoice.payment_date || null;
+      const description = invoice.description || invoice.notes || '';
+      const status = invoice.status || 'draft';
+      const paidAmountRaw = invoice.paidAmount ?? invoice.paid_amount;
+      const paidAmount =
+        typeof paidAmountRaw === 'number'
+          ? paidAmountRaw
+          : status === 'paid'
+          ? amount
+          : undefined;
+
+      const dateCandidates: Array<string | undefined> = [
+        paidDate || undefined,
+        issueDate || undefined,
+        invoice.created_at
+      ];
+
+      const referenceDate = dateCandidates.find(Boolean);
+      const referenceYear = referenceDate ? new Date(referenceDate).getFullYear() : undefined;
+
+      return {
+        number,
+        issueDate,
+        paidDate: paidDate || undefined,
+        description,
+        amount,
+        status,
+        paidAmount,
+        referenceYear: Number.isNaN(referenceYear as number) ? undefined : referenceYear
+      };
+    });
+  }, [client]);
+
+  const attestationInvoices = useMemo(
+    () =>
+      normalizedAttestationInvoices.filter(
+        (invoice) => invoice.status !== 'draft' && invoice.status !== 'cancelled'
+      ),
+    [normalizedAttestationInvoices]
+  );
+
+  const attestationAvailableYears = useMemo(() => {
+    const years = new Set<number>();
+    attestationInvoices.forEach((invoice) => {
+      if (typeof invoice.referenceYear === 'number') {
+        years.add(invoice.referenceYear);
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [attestationInvoices]);
+
+  const effectiveAttestationYear = useMemo(() => {
+    if (attestationAvailableYears.length === 0) {
+      return null;
+    }
+    if (attestationYear && attestationAvailableYears.includes(attestationYear)) {
+      return attestationYear;
+    }
+    return attestationAvailableYears[0];
+  }, [attestationYear, attestationAvailableYears]);
+
+  const attestationInvoicesForYear = useMemo(() => {
+    if (attestationInvoices.length === 0 || !effectiveAttestationYear) {
+      return [];
+    }
+    return attestationInvoices.filter(
+      (invoice) =>
+        typeof invoice.referenceYear === 'number' && invoice.referenceYear === effectiveAttestationYear
+    );
+  }, [attestationInvoices, effectiveAttestationYear]);
+
+  const attestationSummary = useMemo(() => {
+    if (attestationInvoicesForYear.length === 0) {
+      return {
+        totalBilled: 0,
+        totalPaid: 0,
+        totalOutstanding: 0,
+        invoiceCount: 0,
+        recentNumbers: [] as string[]
+      };
+    }
+
+    const totalBilled = attestationInvoicesForYear.reduce(
+      (sum, invoice) => sum + invoice.amount,
+      0
+    );
+
+    const totalPaid = attestationInvoicesForYear.reduce((sum, invoice) => {
+      if (invoice.status === 'paid') {
+        return sum + invoice.amount;
+      }
+      if (invoice.status === 'partial' && typeof invoice.paidAmount === 'number') {
+        return sum + invoice.paidAmount;
+      }
+      return sum;
+    }, 0);
+
+    const sortedByDate = [...attestationInvoicesForYear].sort((a, b) => {
+      const dateA = a.paidDate || a.issueDate || '';
+      const dateB = b.paidDate || b.issueDate || '';
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+
+    const recentNumbers = sortedByDate.slice(0, 3).map((invoice) => invoice.number);
+
+    return {
+      totalBilled,
+      totalPaid,
+      totalOutstanding: Math.max(0, totalBilled - totalPaid),
+      invoiceCount: attestationInvoicesForYear.length,
+      recentNumbers
+    };
+  }, [attestationInvoicesForYear]);
+
+  useEffect(() => {
+    if (attestationAvailableYears.length > 0) {
+      setAttestationYear((prev) => {
+        if (prev && attestationAvailableYears.includes(prev)) {
+          return prev;
+        }
+        return attestationAvailableYears[0];
+      });
+    } else {
+      setAttestationYear(null);
+    }
+  }, [attestationAvailableYears]);
 
   if (loading) {
     return (
@@ -2918,6 +3151,171 @@ export default function ClientDetailView({
           </div>
         </div>
       )}
+
+      {/* Attestation fiscale */}
+      <section className="mt-12 sm:mt-16">
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
+          <div className="p-6 sm:p-8 space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Attestation fiscale</h2>
+                    <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/30 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-200">
+                      {attestationAvailableYears.length > 0
+                        ? `Années ${attestationAvailableYears[attestationAvailableYears.length - 1]}–${attestationAvailableYears[0]}`
+                        : 'En attente de données'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Générer et archiver l’attestation annuelle pour {client?.name ?? 'ce client'}. Les montants sont établis d’après vos factures clôturées et payées.
+                  </p>
+                </div>
+              </div>
+              <div className="inline-flex items-center gap-3 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-300">
+                <span>Synchronisation automatique</span>
+                <span className="text-gray-400 dark:text-gray-500">•</span>
+                <span>TVA art. 293 B</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/50 p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total facturé</p>
+                    <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(attestationSummary.totalBilled)}</p>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-200">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/50 p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total encaissé</p>
+                    <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(attestationSummary.totalPaid)}</p>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-200">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/50 p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Factures retenues</p>
+                    <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{attestationSummary.invoiceCount}</p>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-200">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {attestationSummary.totalOutstanding > 0 && (
+              <div className="flex items-start gap-3 rounded-xl border border-rose-200 dark:border-rose-500/40 bg-rose-50 dark:bg-rose-500/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span>
+                  {formatCurrency(attestationSummary.totalOutstanding)} restent à encaisser pour {effectiveAttestationYear ?? 'cet exercice'}.
+                </span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr),minmax(0,0.7fr)] gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Sélectionner l’exercice
+                  </label>
+                  <select
+                    value={effectiveAttestationYear ?? ''}
+                    onChange={(event) => {
+                      const next = Number(event.target.value);
+                      setAttestationYear(Number.isNaN(next) ? null : next);
+                    }}
+                    disabled={attestationAvailableYears.length === 0}
+                    className="mt-2 w-full appearance-none rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm font-medium text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {attestationAvailableYears.length === 0 ? (
+                      <option value="">Aucune donnée disponible</option>
+                    ) : (
+                      attestationAvailableYears.map((year) => (
+                        <option key={year} value={year}>
+                          Exercice {year}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                  L’attestation reprend uniquement les factures marquées comme payées pour l’exercice sélectionné.
+                </p>
+                {attestationSummary.recentNumbers.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Références récentes
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {attestationSummary.recentNumbers.map((ref) => (
+                        <span
+                          key={ref}
+                          className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800/80 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-200"
+                        >
+                          {ref}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleExportFiscalAttestation}
+                  disabled={attestationAvailableYears.length === 0 || attestationLoading}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                >
+                  {attestationLoading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  <span>
+                    {attestationLoading
+                      ? 'Génération…'
+                      : effectiveAttestationYear
+                      ? `Télécharger l’attestation ${effectiveAttestationYear}`
+                      : 'Télécharger l’attestation'}
+                  </span>
+                </button>
+                {attestationSummary.invoiceCount === 0 && (
+                  <p className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3">
+                    Ajoutez des factures payées pour activer l’export d’attestation fiscale.
+                  </p>
+                )}
+                {attestationAvailableYears.length === 0 && (
+                  <p className="text-xs text-blue-700 dark:text-blue-200 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl px-4 py-3">
+                    Ajoutez des factures envoyées et payées pour permettre la génération automatique du certificat.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/60 px-5 py-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">Rappel administratif</p>
+              <p>
+                Cette attestation récapitule vos échanges commerciaux {effectiveAttestationYear ?? 'en cours'}. Pour une attestation de régularité fiscale officielle, déposez le formulaire n° 3666-SD via votre espace professionnel impots.gouv.fr ou contactez votre SIE.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Email Modal */}
       {emailModal && (

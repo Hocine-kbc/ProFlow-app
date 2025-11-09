@@ -9,3 +9,4 @@ add column if not exists bcc text;
 -- Index optionnels pour améliorer les performances
 create index if not exists idx_messages_recipient_email on public.messages using btree (recipient_email) where recipient_email is not null;
 
+ 
