@@ -1,29 +1,25 @@
 import React from 'react';
 import { Users, X } from 'lucide-react';
 
+type ClientType = 'particulier' | 'professionnel';
+
+interface ClientFormData {
+  name: string;
+  email: string;
+  phone: string;
+  siren: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  country: string;
+  clientType: ClientType;
+}
+
 interface ClientModalProps {
   isOpen: boolean;
   onSubmit: (e: React.FormEvent) => void;
-  formData: {
-    name: string;
-    email: string;
-    phone: string;
-    siren?: string;
-    street: string;
-    postalCode: string;
-    city: string;
-    country: string;
-  };
-  setFormData: (data: {
-    name: string;
-    email: string;
-    phone: string;
-    siren?: string;
-    street: string;
-    postalCode: string;
-    city: string;
-    country: string;
-  }) => void;
+  formData: ClientFormData;
+  setFormData: React.Dispatch<React.SetStateAction<ClientFormData>>;
   editingClient: { id: string; name: string } | null;
   resetForm: () => void;
 }
@@ -37,6 +33,16 @@ export default function ClientModal({
   resetForm
 }: ClientModalProps) {
   if (!isOpen) return null;
+
+  const handleTypeChange = (clientType: ClientType) => {
+    setFormData((prev) => ({
+      ...prev,
+      clientType,
+      siren: clientType === 'professionnel' ? prev.siren : ''
+    }));
+  };
+
+  const isProfessional = formData.clientType === 'professionnel';
 
   return (
     <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200 fixed inset-0">
@@ -79,6 +85,43 @@ export default function ClientModal({
         
         <div className="flex-1 overflow-y-auto">
           <form onSubmit={onSubmit} className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Type de client *
+              </label>
+              <div className="relative grid grid-cols-2 bg-gray-200/80 dark:bg-gray-700 rounded-full p-1 overflow-hidden transition-colors">
+                <span
+                  className={`absolute inset-[4px] w-[calc(50%-4px)] rounded-full shadow transition-all duration-300 ease-out ${
+                    formData.clientType === 'particulier'
+                      ? 'translate-x-0 bg-gradient-to-r from-green-500 to-green-600'
+                      : 'translate-x-full bg-gradient-to-r from-blue-500 to-blue-600'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleTypeChange('particulier')}
+                  className={`relative z-10 flex items-center justify-center px-3 py-2 text-sm font-medium transition-colors duration-200 ${
+                    formData.clientType === 'particulier'
+                      ? 'text-white'
+                      : 'text-gray-600 dark:text-gray-300'
+                  }`}
+                >
+                  Particulier
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTypeChange('professionnel')}
+                  className={`relative z-10 flex items-center justify-center px-3 py-2 text-sm font-medium transition-colors duration-200 ${
+                    formData.clientType === 'professionnel'
+                      ? 'text-white'
+                      : 'text-gray-600 dark:text-gray-300'
+                  }`}
+                >
+                  Professionnel
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
@@ -88,7 +131,12 @@ export default function ClientModal({
                   type="text"
                   required
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      name: e.target.value
+                    }))
+                  }
                   className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
@@ -101,7 +149,12 @@ export default function ClientModal({
                   type="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      email: e.target.value
+                    }))
+                  }
                   className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
@@ -115,21 +168,42 @@ export default function ClientModal({
                 <input
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      phone: e.target.value
+                    }))
+                  }
                   className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                  SIREN (facultatif)
+                  SIREN {isProfessional ? '(obligatoire)' : '(non requis)'}
                 </label>
                 <input
                   type="text"
                   value={formData.siren || ''}
-                  onChange={(e) => setFormData({ ...formData, siren: e.target.value })}
-                  placeholder="ex: 123 456 789"
-                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      siren: e.target.value
+                    }))
+                  }
+                  placeholder="ex : 123 456 789"
+                  disabled={!isProfessional}
+                  required={isProfessional}
+                  className={`w-full px-3 py-2.5 sm:px-3 sm:py-2 border rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base ${
+                    isProfessional
+                      ? 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
+                      : 'border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                  }`}
                 />
+                {!isProfessional && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Le numéro SIREN n’est pas requis pour un client particulier.
+                  </p>
+                )}
               </div>
             
               <div>
@@ -139,7 +213,12 @@ export default function ClientModal({
                 <input
                   type="text"
                   value={formData.street}
-                  onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      street: e.target.value
+                    }))
+                  }
                   className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
@@ -153,7 +232,12 @@ export default function ClientModal({
                 <input
                   type="text"
                   value={formData.postalCode}
-                  onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      postalCode: e.target.value
+                    }))
+                  }
                   className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
@@ -164,7 +248,12 @@ export default function ClientModal({
                 <input
                   type="text"
                   value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      city: e.target.value
+                    }))
+                  }
                   className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
@@ -175,7 +264,12 @@ export default function ClientModal({
                 <input
                   type="text"
                   value={formData.country}
-                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      country: e.target.value
+                    }))
+                  }
                   className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>

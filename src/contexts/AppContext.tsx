@@ -8,6 +8,7 @@ interface Client {
   name: string;
   email: string;
   phone?: string;
+  siren?: string;
   address?: string;
   status?: 'active' | 'inactive' | 'archived';
   created_at: string;

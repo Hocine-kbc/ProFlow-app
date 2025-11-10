@@ -15,6 +15,20 @@ type Client = {
   created_at: string;
   updated_at: string;
 };
+
+type ClientType = 'particulier' | 'professionnel';
+
+type ClientFormData = {
+  name: string;
+  email: string;
+  phone: string;
+  siren: string;
+  street: string;
+  postalCode: string;
+  city: string;
+  country: string;
+  clientType: ClientType;
+};
 import { createClient, updateClient as updateClientApi, deleteClient as deleteClientApi } from '../lib/api.ts';
 import AlertModal from './AlertModal.tsx';
 import { supabase } from '../lib/supabase.ts';
@@ -44,7 +58,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
     type: 'warning',
     onConfirm: () => {}
   });
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ClientFormData>({
     name: '',
     email: '',
     phone: '',
@@ -53,6 +67,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
     postalCode: '',
     city: '',
     country: '',
+    clientType: 'particulier',
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,11 +85,19 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
     const fullAddress = addressParts.join(', ');
     
     // Créer l'objet client avec seulement les champs existants dans la base de données
+    if (formData.clientType === 'professionnel') {
+      const sirenTrim = (formData.siren || '').trim();
+      if (!sirenTrim) {
+        showNotification('error', 'SIREN requis', 'Veuillez renseigner le numéro SIREN pour un client professionnel.');
+        return;
+      }
+    }
+
     const clientData = {
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
-      siren: formData.siren || undefined,
+      siren: formData.clientType === 'professionnel' ? formData.siren.trim() || undefined : undefined,
       address: fullAddress
     };
     
@@ -129,7 +152,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', siren: '', street: '', postalCode: '', city: '', country: '' });
+    setFormData({ name: '', email: '', phone: '', siren: '', street: '', postalCode: '', city: '', country: '', clientType: 'particulier' });
     setEditingClient(null);
     setShowModal(false);
   };
@@ -158,6 +181,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
       postalCode: postalCode,
       city: city,
       country: country,
+      clientType: client.siren ? 'professionnel' : 'particulier',
     });
     setEditingClient(client);
     setShowModal(true);
@@ -342,14 +366,19 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
       country = addressParts[3] || '';
     }
     
-    const formDataToSet = {
+    const originalClient = clients.find((c) => c.id === client.id) as (typeof clients[number] & { siren?: string }) | undefined;
+    const originalSiren = (originalClient?.siren ?? '') as string;
+
+    const formDataToSet: ClientFormData = {
       name: client.name || '',
       email: client.email || '',
       phone: client.phone || '',
-      street: street,
-      postalCode: postalCode,
-      city: city,
-      country: country,
+      siren: originalSiren,
+      street,
+      postalCode,
+      city,
+      country,
+      clientType: originalSiren ? 'professionnel' : 'particulier',
     };
     
     console.log('🔍 FormData à définir:', formDataToSet);
@@ -373,9 +402,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
       showNotification('error', 'Erreur', 'Impossible de rediriger vers la page de création de facture.');
     }
   };
-
-
-
+  
   // Filtrer les clients (exclure les clients archivés)
   const filteredClients = clients.filter(client =>
     (client.status !== 'archived') && (

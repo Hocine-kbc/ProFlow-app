@@ -11,6 +11,8 @@ export interface ClientDetail {
   country?: string;
   company?: string;
   vatNumber?: string;
+  siren?: string;
+  clientType?: 'particulier' | 'professionnel';
   status: 'active' | 'inactive' | 'prospect';
   createdAt: string;
   updatedAt: string;

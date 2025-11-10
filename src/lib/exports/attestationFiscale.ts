@@ -1,6 +1,4 @@
 import jsPDF from 'jspdf';
-// @ts-ignore - la lib n'expose pas de types officiels
-import autoTable from 'jspdf-autotable';
 
 export interface FiscalAttestationParty {
   name: string;
@@ -44,13 +42,19 @@ export interface FiscalAttestationPayload {
   fileName?: string;
 }
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('fr-FR', {
+const formatCurrency = (value: number) => {
+  const formatted = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(value);
+  return formatted
+    .replace(/\u202f|\u00a0/g, ' ')
+    .replace(/\//g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
 
 const formatDate = (value?: string) => {
   if (!value) {
@@ -76,345 +80,527 @@ const slugify = (value: string) =>
     .replace(/^-+/, '')
     .replace(/-+$/, '');
 
-const drawLabelValue = (doc: jsPDF, label: string, value: string, x: number, y: number) => {
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(100, 116, 139);
-  doc.text(label.toUpperCase(), x, y);
-  doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(11.5);
-  doc.setTextColor(30, 41, 59);
-  const lines = doc.splitTextToSize(value, 220);
-  doc.text(lines, x, y + 16);
-  return y + 16 + lines.length * 14;
-};
-
-const drawInfoCard = (
-  doc: jsPDF,
-  title: string,
-  lines: string[],
-  x: number,
-  y: number,
-  width: number,
-  accentColor: [number, number, number]
-) => {
-  const contentLines = lines.flatMap((line) =>
-    doc.splitTextToSize(line, width - 40)
-  );
-  const height = Math.max(110, 56 + contentLines.length * 14);
-
-  doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(x, y, width, height, 12, 12, 'DF');
-
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
-  doc.text(title, x + 20, y + 30);
-
-  doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(55, 65, 81);
-  const startY = y + 52;
-  contentLines.forEach((line, index) => {
-    doc.text(line, x + 20, startY + index * 14);
-  });
-};
-
-const statusChip = (status: string) => {
-  const normalized = status.toLowerCase();
-  if (normalized === 'paid' || normalized === 'payée') {
-    return { label: 'Payée', color: [16, 185, 129] };
+const formatStatus = (status: string) => {
+  const normalized = status?.toLowerCase() ?? '';
+  if (['paid', 'payée', 'payee'].includes(normalized)) {
+    return 'Payée';
   }
-  if (normalized === 'partial' || normalized === 'partielle') {
-    return { label: 'Paiement partiel', color: [59, 130, 246] };
+  if (['sent', 'envoyée', 'envoyee'].includes(normalized)) {
+    return 'Envoyée';
   }
-  if (normalized === 'overdue' || normalized === 'en retard') {
-    return { label: 'En retard', color: [239, 68, 68] };
+  if (['partial', 'partielle', 'partially paid'].includes(normalized)) {
+    return 'Paiement partiel';
   }
-  if (normalized === 'sent' || normalized === 'envoyée') {
-    return { label: 'Envoyée', color: [249, 115, 22] };
+  if (['overdue', 'retard', 'late'].includes(normalized)) {
+    return 'En retard';
   }
-  return { label: 'Brouillon', color: [148, 163, 184] };
+  if (['draft', 'brouillon'].includes(normalized)) {
+    return 'Brouillon';
+  }
+  return status || '—';
 };
 
 export function exportFiscalAttestationToPdf(payload: FiscalAttestationPayload) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 48;
+  const mm = (value: number) => value * 2.83465;
 
-  const primaryColor: [number, number, number] = [79, 70, 229];
-  const secondaryColor: [number, number, number] = [14, 165, 233];
-  const neutralColor: [number, number, number] = [30, 41, 59];
+  const margin = mm(20);
+  const primaryColor: [number, number, number] = [29, 66, 138];
+  const accentSolid: [number, number, number] = [46, 91, 173];
+  const accentLight: [number, number, number] = [237, 244, 255];
+  const accentBorder: [number, number, number] = [199, 216, 255];
+  const neutralColor: [number, number, number] = [55, 65, 81];
+  const mutedColor: [number, number, number] = [107, 114, 128];
+  const sectionSpacing = mm(16);
 
-  // Background accents
-  doc.setFillColor(247, 250, 252);
-  doc.rect(0, 0, pageWidth, pageHeight, 'F');
-  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.setLineWidth(0);
-  doc.triangle(
-    pageWidth * 0.7,
-    -40,
-    pageWidth + 80,
-    -40,
-    pageWidth + 80,
-    pageHeight * 0.35,
-    'F'
-  );
+  const formatShortDate = (value?: string) => {
+    if (!value) {
+      return '—';
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '—';
+    }
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(date);
+  };
 
-  // Header block
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(margin, margin, pageWidth - margin * 2, 120, 18, 18, 'F');
+  const footerReserved = margin + mm(12);
 
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.text('Attestation fiscale annuelle', margin + 28, margin + 42);
+  let cursorY = 0;
+  let footerDrawn = false;
 
-  doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(12);
-  doc.setTextColor(71, 85, 105);
-  doc.text(
-    [
-      `Année fiscale ${payload.year}`,
-      `Document généré le ${formatDate(payload.issueDate)}`
-    ],
-    margin + 28,
-    margin + 68
-  );
-
-  if (payload.vatExempt !== false) {
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(107, 114, 128);
-    doc.text('TVA non applicable, article 293 B du CGI', margin + 28, margin + 96);
-  }
-
-  // Provider & client cards
-  const providerLines = [
-    payload.provider.company || payload.provider.name,
-    payload.provider.company ? payload.provider.name : undefined,
-    payload.provider.address,
-    [payload.provider.postalCode, payload.provider.city].filter(Boolean).join(' '),
-    payload.provider.country,
-    payload.provider.email,
-    payload.provider.phone,
-    payload.provider.siret ? `SIRET : ${payload.provider.siret}` : undefined,
-    payload.provider.siren ? `SIREN : ${payload.provider.siren}` : undefined,
-    payload.provider.vatNumber ? `TVA : ${payload.provider.vatNumber}` : undefined
-  ].filter((line): line is string => Boolean(line));
-
-  const clientLines = [
-    payload.client.company || payload.client.name,
-    payload.client.company ? payload.client.name : undefined,
-    payload.client.address,
-    [payload.client.postalCode, payload.client.city].filter(Boolean).join(' '),
-    payload.client.country,
-    payload.client.email,
-    payload.client.phone
-  ].filter((line): line is string => Boolean(line));
-
-  const cardWidth = (pageWidth - margin * 2 - 24) / 2;
-  const cardsY = margin + 150;
-  const leftCardHeight = Math.max(110, 56 + providerLines.flatMap((line) => doc.splitTextToSize(line, cardWidth - 40)).length * 14);
-  const rightCardHeight = Math.max(110, 56 + clientLines.flatMap((line) => doc.splitTextToSize(line, cardWidth - 40)).length * 14);
-  drawInfoCard(doc, 'Émetteur', providerLines, margin, cardsY, cardWidth, primaryColor);
-  drawInfoCard(doc, 'Destinataire', clientLines, margin + cardWidth + 24, cardsY, cardWidth, secondaryColor);
-
-  let cursorY = cardsY + Math.max(leftCardHeight, rightCardHeight) + 30;
-
-  // Declaration
-  doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(neutralColor[0], neutralColor[1], neutralColor[2]);
-  doc.text('Déclaration', margin, cursorY);
-  cursorY += 22;
-
-  const declaration = [
-    `Je soussigné(e) ${payload.provider.ownerName || payload.provider.name}, ${
-      payload.provider.company ? `représentant(e) légal(e) de ${payload.provider.company}` : 'entrepreneur'
-    }, certifie sur l'honneur que le montant total des prestations facturées à ${
-      payload.client.company || payload.client.name
-    } durant l'année fiscale ${payload.year} s'élève à ${formatCurrency(payload.totals.totalBilled)} TTC, dont ${
-      formatCurrency(payload.totals.totalPaid)
-    } encaissés au ${formatDate(payload.issueDate)}.`,
-    `Cette attestation reprend l'intégralité des factures émises et réglées pour l'exercice concerné, conformément aux informations détaillées ci-après.`
-  ];
-
-  doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(71, 85, 105);
-  const declarationLines = doc.splitTextToSize(declaration.join('\n\n'), pageWidth - margin * 2);
-  doc.text(declarationLines, margin, cursorY);
-  cursorY += declarationLines.length * 14 + 20;
-
-  // Summary chips
-  doc.setFont('Helvetica', 'bold');
-  doc.setTextColor(neutralColor[0], neutralColor[1], neutralColor[2]);
-  doc.setFontSize(12);
-  doc.text('Synthèse annuelle', margin, cursorY);
-  cursorY += 20;
-
-  const summaryWidth = (pageWidth - margin * 2 - 30) / 3;
-  const summaryItems = [
-    { label: 'Total facturé', value: formatCurrency(payload.totals.totalBilled), color: primaryColor },
-    { label: 'Total encaissé', value: formatCurrency(payload.totals.totalPaid), color: [16, 185, 129] },
-    { label: 'En attente', value: formatCurrency(payload.totals.totalOutstanding), color: [249, 115, 22] },
-    { label: 'Factures', value: `${payload.totals.invoiceCount}`, color: [59, 130, 246] }
-  ];
-
-  summaryItems.forEach((item, index) => {
-    const row = Math.floor(index / 3);
-    const col = index % 3;
-    const boxX = margin + col * (summaryWidth + 15);
-    const boxY = cursorY + row * 66;
-
-    doc.setDrawColor(item.color[0], item.color[1], item.color[2]);
+  const drawPageFrame = () => {
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(boxX, boxY, summaryWidth, 60, 10, 10, 'DF');
+  doc.rect(0, 0, pageWidth, pageHeight, 'F');
+  };
 
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(100, 116, 139);
-    doc.text(item.label.toUpperCase(), boxX + 16, boxY + 22);
+  const drawFooter = () => {
+    if (footerDrawn) {
+      return;
+    }
+    const lines = [
+      `Document officiel - ${payload.provider.company || payload.provider.name || ''}${
+        payload.provider.siret ? ` - SIRET : ${payload.provider.siret}` : ''
+      }`,
+      payload.provider.email || payload.provider.phone
+        ? `Contact : ${[payload.provider.email, payload.provider.phone].filter(Boolean).join(' • ')}`
+        : ''
+    ].filter(Boolean);
 
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(item.color[0], item.color[1], item.color[2]);
-    doc.text(item.value, boxX + 16, boxY + 44);
+    doc.setFont('Times', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+    doc.setDrawColor(224, 224, 224);
+    doc.line(margin, pageHeight - margin - 24, pageWidth - margin, pageHeight - margin - 24);
+    lines.forEach((line, index) => {
+      doc.text(line, pageWidth / 2, pageHeight - margin - 6 + index * 12, { align: 'center' });
+    });
+    footerDrawn = true;
+  };
+
+  const startNewPage = (isFirstPage: boolean) => {
+    drawPageFrame();
+    footerDrawn = false;
+    cursorY = margin;
+    doc.setFont('Times', 'normal');
+    doc.setFontSize(13);
+    doc.setTextColor(neutralColor[0], neutralColor[1], neutralColor[2]);
+    if (!isFirstPage) {
+      doc.setFont('Times', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.text('Attestation fiscale (suite)', pageWidth / 2, cursorY + 18, { align: 'center' });
+      cursorY += mm(16) + 32;
+      doc.setFont('Times', 'normal');
+      doc.setFontSize(13);
+      doc.setTextColor(neutralColor[0], neutralColor[1], neutralColor[2]);
+    }
+  };
+
+  const ensureSpace = (heightNeeded: number) => {
+    const limit = pageHeight - footerReserved;
+    if (cursorY + heightNeeded > limit) {
+      drawFooter();
+      doc.addPage();
+      startNewPage(false);
+    }
+  };
+
+  const contentWidth = pageWidth - margin * 2;
+
+  startNewPage(true);
+
+  // Header
+  const headerLabel = payload.provider.company || payload.provider.name || 'Votre entreprise';
+  const headerBandHeight = mm(26);
+
+  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.roundedRect(margin, cursorY, contentWidth, headerBandHeight, 8, 8, 'F');
+
+  doc.setFont('Times', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.text(headerLabel, margin + 18, cursorY + headerBandHeight / 2, {
+    baseline: 'middle'
+  } as any);
+
+  doc.setFont('Times', 'italic');
+  doc.setFontSize(12);
+  doc.text(`Attestation fiscale – Exercice ${payload.year}`, margin + contentWidth - 18, cursorY + headerBandHeight / 2, {
+    align: 'right',
+    baseline: 'middle'
+  } as any);
+
+  cursorY += headerBandHeight + mm(6);
+
+  ensureSpace(mm(36));
+
+  // Company info strip
+  const providerDetailLines = [
+    payload.provider.company || payload.provider.name || '',
+    payload.provider.ownerName ? `Représentant : ${payload.provider.ownerName}` : '',
+    [payload.provider.address, [payload.provider.postalCode, payload.provider.city].filter(Boolean).join(' ')].filter(Boolean).join(', '),
+    payload.provider.country || '',
+    payload.provider.siret ? `SIRET : ${payload.provider.siret}` : '',
+    payload.provider.siren ? `SIREN : ${payload.provider.siren}` : '',
+    payload.provider.vatNumber ? `N° TVA : ${payload.provider.vatNumber}` : '',
+    payload.provider.phone ? `Téléphone : ${payload.provider.phone}` : '',
+    payload.provider.email ? `Courriel : ${payload.provider.email}` : ''
+  ].filter(Boolean);
+
+  const providerWrapped = providerDetailLines.map((line) =>
+    doc.splitTextToSize(line, contentWidth - 48)
+  );
+  const providerBoxHeight = providerWrapped.reduce((acc, rows) => acc + rows.length * 14, 0) + 36;
+  ensureSpace(providerBoxHeight);
+
+  doc.setFont('Times', 'normal');
+  doc.setFontSize(12);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setFillColor(accentLight[0], accentLight[1], accentLight[2]);
+  doc.setDrawColor(accentBorder[0], accentBorder[1], accentBorder[2]);
+  doc.setLineWidth(1.5);
+  doc.roundedRect(margin, cursorY, contentWidth, providerBoxHeight, 6, 6, 'FD');
+
+  let providerLineY = cursorY + 22;
+  providerWrapped.forEach((rows) => {
+    doc.text(rows, margin + 24, providerLineY);
+    providerLineY += rows.length * 14;
   });
 
-  cursorY += Math.ceil(summaryItems.length / 3) * 70 + 20;
+  cursorY = cursorY + providerBoxHeight + sectionSpacing / 2;
 
-  // Invoice table
-  if (payload.invoices.length > 0) {
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(neutralColor[0], neutralColor[1], neutralColor[2]);
-    doc.text('Détail des factures', margin, cursorY);
-    cursorY += 12;
+  // Intro
+  doc.setFont('Times', 'normal');
+  doc.setFontSize(13);
+  doc.setTextColor(51, 51, 51);
+  const introLines = doc.splitTextToSize(
+    `Je soussigné(e), représentant(e) légal(e) de ${payload.provider.company || payload.provider.name}, atteste que les informations suivantes reflètent fidèlement les prestations réalisées au bénéfice de ${payload.client.company || payload.client.name}.`,
+    contentWidth
+  );
+  ensureSpace(introLines.length * 14 + 10);
+  doc.text(introLines, margin, cursorY);
+  cursorY += introLines.length * 14 + 10;
 
-    const rows = payload.invoices.map((invoice) => {
-      const chip = statusChip(invoice.status);
-      return [
-        invoice.number,
-        formatDate(invoice.issueDate),
-        formatDate(invoice.paidDate),
-        formatCurrency(invoice.amount),
-        chip,
-        invoice.description ? invoice.description.replace(/\s+/g, ' ') : '—'
-      ];
-    });
+  ensureSpace(mm(12) + 24);
+  doc.setFont('Times', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.text('CERTIFIE QUE', pageWidth / 2, cursorY + 18, { align: 'center' });
+  cursorY += mm(10) + 16;
 
-    autoTable(doc, {
-      startY: cursorY + 10,
-      head: [['Facture', 'Émise le', 'Réglée le', 'Montant TTC', 'Statut', 'Description']],
-      body: rows,
-      styles: {
-        font: 'Helvetica',
-        fontSize: 9.5,
-        cellPadding: { top: 6, right: 6, bottom: 6, left: 6 },
-        textColor: [55, 65, 81],
-        overflow: 'linebreak'
-      },
-      headStyles: {
-        fillColor: [primaryColor[0], primaryColor[1], primaryColor[2]],
-        textColor: 255,
-        fontStyle: 'bold',
-        halign: 'center'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 247, 252]
-      },
-      columnStyles: {
-        0: { cellWidth: 82 },
-        1: { cellWidth: 82 },
-        2: { cellWidth: 82 },
-        3: { cellWidth: 82, halign: 'right' },
-        4: {
-          cellWidth: 80,
-          halign: 'center',
-          fontStyle: 'bold',
-          textColor: [30, 41, 59]
-        },
-        5: { cellWidth: 'auto' }
-      },
-      willDrawCell: (data: any) => {
-        if (data.column.index !== 4) {
-          return true;
-        }
-        const chip = data.cell?.raw as { label?: string; color?: [number, number, number] } | undefined;
-        if (!chip || !Array.isArray(chip.color) || chip.color.length < 3 || typeof chip.label !== 'string') {
-          return true;
-        }
-        const { x = 0, y = 0, width = 0, height = 0 } = data.cell || {};
-        doc.setFillColor(chip.color[0], chip.color[1], chip.color[2]);
-        doc.roundedRect(x + 6, y + 4, Math.max(0, width - 12), Math.max(0, height - 8), 11, 11, 'F');
-        doc.setFont('Helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(255, 255, 255);
-        doc.text(chip.label, x + width / 2, y + height / 2 + 3, { align: 'center' });
-        return false;
-      },
-      didDrawPage: () => {
-        doc.setFont('Helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(148, 163, 184);
-        doc.text(`Page ${doc.getCurrentPageInfo().pageNumber}`, pageWidth - margin, pageHeight - 20, {
-          align: 'right'
-        });
-      },
-      theme: 'plain',
-      margin: { left: margin, right: margin }
-    });
+  // Client info box
+  const infoRows: Array<[string, string]> = [
+    ['Nom et prénom', payload.client.name || '—'],
+    ['Entreprise / structure', payload.client.company || '—'],
+    [
+      'Adresse complète',
+      [payload.client.address, [payload.client.postalCode, payload.client.city].filter(Boolean).join(' ')].filter(Boolean).join(' • ') ||
+        '—'
+    ],
+    ['Courriel', payload.client.email || '—'],
+    ['Téléphone', payload.client.phone || '—'],
+    ['Période couverte', `Du 01/01/${payload.year} au 31/12/${payload.year}`]
+  ];
 
-    cursorY = (doc as any).lastAutoTable.finalY + 20;
-  }
+  const infoLabelWidth = 120;
+  const infoValueWidth = contentWidth - 48 - infoLabelWidth - 12;
+  const infoLinesCount = infoRows.reduce((accumulator, [label, value]) => {
+    const labelText = doc.splitTextToSize(`${label} :`, infoLabelWidth);
+    const valueText = doc.splitTextToSize(value || '—', infoValueWidth);
+    return accumulator + Math.max(labelText.length, valueText.length);
+  }, 0);
+  const clientBoxHeight = mm(24) + infoLinesCount * 16;
 
-  // Notes
-  if (payload.notes && payload.notes.length > 0) {
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(neutralColor[0], neutralColor[1], neutralColor[2]);
-    doc.text('Notes complémentaires', margin, cursorY);
-    cursorY += 18;
+  ensureSpace(clientBoxHeight + sectionSpacing / 2);
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(accentBorder[0], accentBorder[1], accentBorder[2]);
+  doc.setLineWidth(1.5);
+  doc.roundedRect(margin, cursorY, contentWidth, clientBoxHeight, 6, 6, 'FD');
 
-    doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(10.5);
-    doc.setTextColor(71, 85, 105);
+  doc.setFont('Times', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.text('Bénéficiaire', margin + 18, cursorY + 18);
 
-    payload.notes.forEach((note) => {
-      const noteLines = doc.splitTextToSize(`• ${note}`, pageWidth - margin * 2);
-      doc.text(noteLines, margin, cursorY);
-      cursorY += noteLines.length * 14;
-    });
-    cursorY += 10;
-  }
+  doc.setLineWidth(1);
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin + 18, cursorY + 24, margin + contentWidth - 18, cursorY + 24);
 
-  // Signature
-  doc.setFont('Helvetica', 'bold');
+  doc.setFont('Times', 'normal');
   doc.setFontSize(12);
   doc.setTextColor(neutralColor[0], neutralColor[1], neutralColor[2]);
-  doc.text('Signature', margin, cursorY);
-  cursorY += 24;
 
-  doc.setDrawColor(209, 213, 219);
+  let infoY = cursorY + 40;
+  infoRows.forEach(([label, value]) => {
+    const labelText = doc.splitTextToSize(`${label} :`, infoLabelWidth);
+    const valueText = doc.splitTextToSize(value || '—', infoValueWidth);
+    doc.setFont('Times', 'bold');
+    doc.text(labelText, margin + 24, infoY);
+    doc.setFont('Times', 'normal');
+    doc.text(valueText, margin + 24 + infoLabelWidth + 12, infoY);
+    const consumed = Math.max(labelText.length, valueText.length);
+    infoY += consumed * 16;
+  });
+
+  cursorY = cursorY + clientBoxHeight + sectionSpacing / 2;
+
+  // Legal paragraph
+  doc.setFont('Times', 'normal');
+  doc.setFontSize(13);
+  const legalLines = doc.splitTextToSize(
+    `A bénéficié de prestations de services à la personne conformément aux dispositions des articles L. 7231-1 et suivants du Code du travail. Ces prestations ouvrent droit au crédit d'impôt prévu à l'article 199 sexdecies du Code général des impôts, sous réserve du respect des plafonds en vigueur.`,
+    contentWidth
+  );
+  ensureSpace(legalLines.length * 14 + mm(10));
+  doc.text(legalLines, margin, cursorY);
+  cursorY += legalLines.length * 14 + mm(10);
+
+  // Tableau des factures
+  const headerHeight = 26;
+  const rowPaddingY = 5;
+  const baseColumnWidths = {
+    date: mm(32),
+    statut: mm(36),
+    amount: mm(48)
+  };
+  const descriptionWidth = Math.max(
+    contentWidth - baseColumnWidths.date - baseColumnWidths.statut - baseColumnWidths.amount,
+    140
+  );
+  const tableColumns = [
+    { label: 'DATE', width: baseColumnWidths.date, align: 'left' as const },
+    { label: 'DESCRIPTION', width: descriptionWidth, align: 'left' as const },
+    { label: 'STATUT', width: baseColumnWidths.statut, align: 'center' as const },
+    { label: 'MONTANT TTC', width: baseColumnWidths.amount, align: 'right' as const }
+  ];
+  const paddingX = 8;
+  const lineHeight = 12;
+
+  const maxRows = 12;
+  const sortedInvoices = [...payload.invoices].sort(
+    (a, b) => new Date(a.issueDate).getTime() - new Date(b.issueDate).getTime()
+  );
+  const rowsToRender = sortedInvoices.slice(0, maxRows);
+
+  const preparedRows = rowsToRender.map((invoice) => {
+    const cells = [
+      formatShortDate(invoice.issueDate),
+      invoice.description || `Facture ${invoice.number}`,
+      formatStatus(invoice.status),
+      formatCurrency(invoice.amount)
+    ];
+    const linesPerCell = cells.map((value, index) => {
+      const availableWidth = Math.max(tableColumns[index].width - paddingX * 2, 16);
+      const wrapped = doc.splitTextToSize(value, availableWidth);
+      return wrapped.slice(0, 3);
+    });
+    const maxLines = Math.max(...linesPerCell.map((arr) => Math.max(arr.length, 1)));
+    const rowHeight = rowPaddingY * 2 + maxLines * lineHeight;
+    return { linesPerCell, rowHeight };
+  });
+
+  const tableBodyHeight = preparedRows.reduce((sum, row) => sum + row.rowHeight, 0);
+  const tableHeight = headerHeight + tableBodyHeight;
+  const extraNoticeHeight = sortedInvoices.length > maxRows ? mm(16) : mm(6);
+  ensureSpace(tableHeight + extraNoticeHeight);
+
+  const tableTop = cursorY;
+  doc.setDrawColor(accentBorder[0], accentBorder[1], accentBorder[2]);
   doc.setLineWidth(1);
-  doc.line(margin, cursorY, margin + 220, cursorY);
-  cursorY += 18;
+  doc.roundedRect(margin, tableTop, contentWidth, tableHeight, 6, 6, 'S');
 
-  doc.setFont('Helvetica', 'normal');
+  doc.setFillColor(accentSolid[0], accentSolid[1], accentSolid[2]);
+  doc.roundedRect(margin, tableTop, contentWidth, headerHeight, 6, 6, 'F');
+
+  doc.setFont('Times', 'bold');
   doc.setFontSize(11);
-  doc.setTextColor(71, 85, 105);
+  doc.setTextColor(255, 255, 255);
+
+  let headerX = margin;
+  tableColumns.forEach((column) => {
+    const textX =
+      column.align === 'right'
+        ? headerX + column.width - paddingX
+        : column.align === 'center'
+        ? headerX + column.width / 2
+        : headerX + paddingX;
+    doc.text(column.label, textX, tableTop + headerHeight / 2 + 1, {
+      align: column.align,
+      baseline: 'middle'
+    } as any);
+    headerX += column.width;
+  });
+
+  doc.setFont('Times', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(neutralColor[0], neutralColor[1], neutralColor[2]);
+
+  let rowY = tableTop + headerHeight;
+  preparedRows.forEach((row, index) => {
+    const effectiveHeight = Math.max(row.rowHeight, rowPaddingY * 2 + lineHeight);
+
+    if (index % 2 === 1) {
+      doc.setFillColor(accentLight[0], accentLight[1], accentLight[2]);
+      doc.rect(margin, rowY, contentWidth, effectiveHeight, 'F');
+    }
+
+    let cellX = margin;
+    row.linesPerCell.forEach((lines, columnIndex) => {
+      const column = tableColumns[columnIndex];
+      const textX =
+        column.align === 'right'
+          ? cellX + column.width - paddingX
+          : column.align === 'center'
+          ? cellX + column.width / 2
+          : cellX + paddingX;
+
+      lines.forEach((line: string, lineIdx: number) => {
+        doc.text(line, textX, rowY + rowPaddingY + lineHeight + lineIdx * lineHeight, {
+          align: column.align
+        });
+      });
+
+      cellX += column.width;
+    });
+
+    doc.setDrawColor(accentBorder[0], accentBorder[1], accentBorder[2]);
+    doc.line(margin, rowY + effectiveHeight, margin + contentWidth, rowY + effectiveHeight);
+    rowY += effectiveHeight;
+  });
+
+  cursorY = rowY;
+
+  if (sortedInvoices.length > maxRows) {
+    doc.setFont('Times', 'italic');
+    doc.setFontSize(11);
+    doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+    doc.text(
+      `(Liste tronquée – ${sortedInvoices.length - maxRows} factures supplémentaires disponibles sur demande)`,
+      margin + contentWidth / 2,
+      cursorY + 10,
+      { align: 'center' }
+    );
+    cursorY += mm(16);
+  } else {
+    cursorY += mm(6);
+  }
+
+  // Totals section
+  const totalsLines = [
+    `Nombre total de factures : ${payload.totals.invoiceCount}`,
+    `Montant total facturé : ${formatCurrency(payload.totals.totalBilled)}`,
+    `Montant encaissé : ${formatCurrency(payload.totals.totalPaid)}`,
+    `Solde restant dû : ${formatCurrency(payload.totals.totalOutstanding)}`
+  ];
+
+  const totalsWrapped = totalsLines.map((line) => doc.splitTextToSize(line, contentWidth - 36));
+  const totalsHeight = totalsWrapped.reduce((acc, lines) => acc + lines.length * 14, 0) + 36;
+  ensureSpace(totalsHeight);
+
+  doc.setDrawColor(accentBorder[0], accentBorder[1], accentBorder[2]);
+  doc.setFillColor(accentLight[0], accentLight[1], accentLight[2]);
+  doc.setLineWidth(1);
+  doc.roundedRect(margin, cursorY, contentWidth, totalsHeight, 6, 6, 'FD');
+
+  const totalsInnerX = margin + 18;
+  doc.setFont('Times', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.text('Synthèse des montants', totalsInnerX, cursorY + 18);
+
+  doc.setFont('Times', 'normal');
+    doc.setFontSize(12);
+    doc.setTextColor(neutralColor[0], neutralColor[1], neutralColor[2]);
+  let totalY = cursorY + 34;
+  totalsWrapped.forEach((lines) => {
+    doc.text(lines, totalsInnerX, totalY);
+    totalY += lines.length * 14;
+  });
+
+  cursorY = cursorY + totalsHeight + sectionSpacing / 2;
+
+  // Tax benefit
+  const creditAmount = formatCurrency(Math.max(0, payload.totals.totalPaid / 2));
+  const taxLines = [
+    `Montant estimé du crédit d'impôt (50 % des dépenses déclarées) : ${creditAmount}.`,
+    `Ce montant reste soumis aux plafonds annuels et conditions prévues à l'article 199 sexdecies du CGI.`
+  ];
+
+  const taxWrapped = taxLines.map((line) => doc.splitTextToSize(line, contentWidth - 36));
+  const taxHeight = taxWrapped.reduce((acc, lines) => acc + lines.length * 14, 0) + 36;
+  ensureSpace(taxHeight);
+
+  doc.setDrawColor(accentBorder[0], accentBorder[1], accentBorder[2]);
+  doc.setFillColor(255, 255, 255);
+  doc.setLineWidth(1);
+  doc.roundedRect(margin, cursorY, contentWidth, taxHeight, 6, 6, 'FD');
+
+  const taxInnerX = margin + 18;
+  doc.setFont('Times', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.text('Avantage fiscal', taxInnerX, cursorY + 18);
+
+  doc.setFont('Times', 'normal');
+  doc.setFontSize(12);
+  doc.setTextColor(neutralColor[0], neutralColor[1], neutralColor[2]);
+  let taxY = cursorY + 34;
+  taxWrapped.forEach((lines) => {
+    doc.text(lines, taxInnerX, taxY);
+    taxY += lines.length * 14;
+  });
+
+  cursorY = cursorY + taxHeight + sectionSpacing / 2;
+
+  // Notes / legal info
+  const legalNotes =
+    payload.notes && payload.notes.length > 0
+      ? payload.notes
+      : [
+          'Conservez cette attestation et reportez les montants sur le formulaire 2042 RICI (cases 7DB à 7GG selon votre situation).',
+          'Le crédit d’impôt est plafonné à 12 000 € de dépenses annuelles, majorations comprises selon les situations particulières.',
+          'Les prestations doivent avoir été réalisées à votre résidence située en France.',
+          'En cas de contrôle, la présente attestation tient lieu de justificatif des sommes effectivement acquittées.'
+        ];
+
+  const notesWrapped = legalNotes.map((note) => doc.splitTextToSize(`• ${note}`, contentWidth - 36));
+  const notesHeight = notesWrapped.reduce((acc, lines) => acc + lines.length * 14, 0) + 36;
+
+  ensureSpace(notesHeight);
+  doc.setDrawColor(accentBorder[0], accentBorder[1], accentBorder[2]);
+  doc.setFillColor(accentLight[0], accentLight[1], accentLight[2]);
+  doc.setLineWidth(1);
+  doc.roundedRect(margin, cursorY, contentWidth, notesHeight, 6, 6, 'FD');
+
+  const notesInnerX = margin + 18;
+  doc.setFont('Times', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.text('Rappels utiles', notesInnerX, cursorY + 18);
+
+  doc.setFont('Times', 'normal');
+  doc.setFontSize(12);
+  doc.setTextColor(neutralColor[0], neutralColor[1], neutralColor[2]);
+  let noteY = cursorY + 34;
+  notesWrapped.forEach((lines) => {
+    doc.text(lines, notesInnerX, noteY);
+    noteY += lines.length * 14;
+  });
+
+  cursorY = cursorY + notesHeight + sectionSpacing / 2;
+
+  // Signature
+  ensureSpace(mm(36) + mm(12));
+  doc.setFont('Times', 'normal');
+  doc.setFontSize(12);
+  doc.setTextColor(102, 102, 102);
   doc.text(
     `Fait à ${payload.provider.city || payload.provider.country || '…'}, le ${formatDate(payload.issueDate)}`,
     margin,
-    cursorY
+    cursorY + 18
   );
-  cursorY += 18;
-  doc.text(payload.provider.ownerName || payload.provider.name, margin, cursorY);
+
+  doc.setFont('Times', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.text(payload.provider.ownerName || payload.provider.name || '', margin, cursorY + 36);
+
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(1);
+  doc.line(pageWidth - margin - mm(70), cursorY + 32, pageWidth - margin, cursorY + 32);
+  doc.setFont('Times', 'italic');
+  doc.setFontSize(11);
+  doc.setTextColor(102, 102, 102);
+  doc.text('Signature et cachet', pageWidth - margin - mm(35), cursorY + 46, { align: 'center' });
+
+  drawFooter();
 
   const fileName =
     payload.fileName ||

@@ -923,6 +923,8 @@ export default function ClientDetailView({
         country: client.country,
         company: client.company,
         vatNumber: client.vat_number,
+        siren: client.siren,
+        clientType: client.siren ? 'professionnel' : 'particulier',
         status: client.status || 'active',
         createdAt: client.created_at,
         updatedAt: client.updated_at,
@@ -1061,12 +1063,41 @@ export default function ClientDetailView({
     }
   };
 
+  const isProfessionalClient = Boolean(client?.siren);
+
   const handleExportFiscalAttestation = async () => {
-    if (!client || !effectiveAttestationYear) {
+    if (!client) {
+      showNotification(
+        'error',
+        'Client introuvable',
+        "Impossible de générer l'attestation sans client associé."
+      );
+      return;
+    }
+
+    if (client.siren) {
       showNotification(
         'warning',
-        'Aucune donnée disponible',
-        `Aucune facture confirmée n'est encore enregistrée pour ${client?.name || 'ce client'}.`
+        'Attestation indisponible',
+        "L'attestation fiscale est réservée aux clients particuliers (sans numéro SIREN)."
+      );
+      return;
+    }
+
+    if (!effectiveAttestationYear) {
+      showNotification(
+        'warning',
+        'Année manquante',
+        "Veuillez sélectionner l'année à exporter."
+      );
+      return;
+    }
+
+    if (attestationInvoicesForYear.length === 0) {
+      showNotification(
+        'warning',
+        'Aucune facture confirmée',
+        `Aucune facture finalisée pour ${effectiveAttestationYear} n'a été trouvée pour ${client.name}.`
       );
       return;
     }
@@ -1076,15 +1107,6 @@ export default function ClientDetailView({
     setAttestationLoading(true);
 
     try {
-      if (attestationInvoicesForYear.length === 0) {
-        showNotification(
-          'warning',
-          'Aucune facture confirmée',
-          `Aucune facture finalisée pour ${targetYear} n'a été trouvée pour ${client.name}.`
-        );
-        return;
-      }
-
       const payload: FiscalAttestationPayload = {
         year: targetYear,
         issueDate: new Date().toISOString(),
@@ -1141,11 +1163,11 @@ export default function ClientDetailView({
         `Le certificat fiscal ${targetYear} de ${client.name} a été téléchargé.`
       );
     } catch (error) {
-      console.error('Erreur lors de la génération de l’attestation fiscale:', error);
+      console.error("Erreur lors de la génération de l'attestation fiscale:", error);
       showNotification(
         'error',
         'Export impossible',
-        'Une erreur est survenue lors de la création de l’attestation fiscale.'
+        "Une erreur est survenue lors de la création de l'attestation fiscale."
       );
     } finally {
       setAttestationLoading(false);
@@ -3153,169 +3175,282 @@ export default function ClientDetailView({
       )}
 
       {/* Attestation fiscale */}
-      <section className="mt-12 sm:mt-16">
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
-          <div className="p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Attestation fiscale</h2>
-                    <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/30 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-200">
-                      {attestationAvailableYears.length > 0
-                        ? `Années ${attestationAvailableYears[attestationAvailableYears.length - 1]}–${attestationAvailableYears[0]}`
-                        : 'En attente de données'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Générer et archiver l’attestation annuelle pour {client?.name ?? 'ce client'}. Les montants sont établis d’après vos factures clôturées et payées.
-                  </p>
-                </div>
-              </div>
-              <div className="inline-flex items-center gap-3 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-300">
-                <span>Synchronisation automatique</span>
-                <span className="text-gray-400 dark:text-gray-500">•</span>
-                <span>TVA art. 293 B</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/50 p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total facturé</p>
-                    <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(attestationSummary.totalBilled)}</p>
-                  </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-200">
-                    <TrendingUp className="w-5 h-5" />
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/50 p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total encaissé</p>
-                    <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(attestationSummary.totalPaid)}</p>
-                  </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-200">
-                    <CreditCard className="w-5 h-5" />
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/50 p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Factures retenues</p>
-                    <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{attestationSummary.invoiceCount}</p>
-                  </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-200">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {attestationSummary.totalOutstanding > 0 && (
-              <div className="flex items-start gap-3 rounded-xl border border-rose-200 dark:border-rose-500/40 bg-rose-50 dark:bg-rose-500/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span>
-                  {formatCurrency(attestationSummary.totalOutstanding)} restent à encaisser pour {effectiveAttestationYear ?? 'cet exercice'}.
-                </span>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr),minmax(0,0.7fr)] gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Sélectionner l’exercice
-                  </label>
-                  <select
-                    value={effectiveAttestationYear ?? ''}
-                    onChange={(event) => {
-                      const next = Number(event.target.value);
-                      setAttestationYear(Number.isNaN(next) ? null : next);
-                    }}
-                    disabled={attestationAvailableYears.length === 0}
-                    className="mt-2 w-full appearance-none rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm font-medium text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {attestationAvailableYears.length === 0 ? (
-                      <option value="">Aucune donnée disponible</option>
-                    ) : (
-                      attestationAvailableYears.map((year) => (
-                        <option key={year} value={year}>
-                          Exercice {year}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                  L’attestation reprend uniquement les factures marquées comme payées pour l’exercice sélectionné.
+      {isProfessionalClient ? (
+        <section className="mt-12 sm:mt-16">
+          <div className="rounded-3xl border border-blue-200 dark:border-blue-500/40 bg-blue-50/80 dark:bg-blue-500/10 px-6 sm:px-10 py-8 text-sm text-blue-700 dark:text-blue-100 shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 mt-0.5" />
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold text-blue-900 dark:text-blue-50 mb-1">Attestation fiscale indisponible</h2>
+                <p>
+                  Cette attestation est réservée aux clients particuliers (sans numéro SIREN). Ce client est enregistré comme professionnel.
                 </p>
-                {attestationSummary.recentNumbers.length > 0 && (
-                  <div className="space-y-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Références récentes
-                    </span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {attestationSummary.recentNumbers.map((ref) => (
-                        <span
-                          key={ref}
-                          className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800/80 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-200"
-                        >
-                          {ref}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={handleExportFiscalAttestation}
-                  disabled={attestationAvailableYears.length === 0 || attestationLoading}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-                >
-                  {attestationLoading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
-                  <span>
-                    {attestationLoading
-                      ? 'Génération…'
-                      : effectiveAttestationYear
-                      ? `Télécharger l’attestation ${effectiveAttestationYear}`
-                      : 'Télécharger l’attestation'}
-                  </span>
-                </button>
-                {attestationSummary.invoiceCount === 0 && (
-                  <p className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3">
-                    Ajoutez des factures payées pour activer l’export d’attestation fiscale.
-                  </p>
-                )}
-                {attestationAvailableYears.length === 0 && (
-                  <p className="text-xs text-blue-700 dark:text-blue-200 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl px-4 py-3">
-                    Ajoutez des factures envoyées et payées pour permettre la génération automatique du certificat.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/60 px-5 py-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-              <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">Rappel administratif</p>
-              <p>
-                Cette attestation récapitule vos échanges commerciaux {effectiveAttestationYear ?? 'en cours'}. Pour une attestation de régularité fiscale officielle, déposez le formulaire n° 3666-SD via votre espace professionnel impots.gouv.fr ou contactez votre SIE.
-              </p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className="mt-12 sm:mt-16">
+          <div className="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl">
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute -top-24 right-8 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl"></div>
+              <div className="absolute bottom-0 -left-10 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl"></div>
+            </div>
+            <div className="relative z-10">
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 sm:px-10 py-6 sm:py-8 text-white">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h2 className="text-xl sm:text-2xl font-semibold">Attestation fiscale</h2>
+                        <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
+                          {attestationAvailableYears.length > 0
+                            ? `Années ${attestationAvailableYears[attestationAvailableYears.length - 1]}–${attestationAvailableYears[0]}`
+                            : 'En attente de données'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-white/80 max-w-2xl">
+                        Préparez en un clic l'attestation annuelle de {client?.name ?? 'votre client'} à partir des factures confirmées et encaissées.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="inline-flex items-center gap-3 rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-white/90">
+                    <span>Synchronisation automatique</span>
+                    <span className="text-white/50">•</span>
+                    <span>TVA art. 293 B</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 sm:px-10 py-8 space-y-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-5 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total facturé</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(attestationSummary.totalBilled)}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Somme des factures clôturées pour l"exercice.</p>
+                      </div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-200">
+                        <TrendingUp className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-5 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total encaissé</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(attestationSummary.totalPaid)}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Paiements enregistrés pour l"année sélectionnée.</p>
+                      </div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-200">
+                        <CreditCard className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className={`rounded-2xl border p-5 shadow-sm ${
+                      attestationSummary.totalOutstanding > 0
+                        ? 'border-rose-200 dark:border-rose-500/40 bg-rose-50/80 dark:bg-rose-500/10'
+                        : 'border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-300">Reste à encaisser</p>
+                        <p
+                          className={`text-2xl font-bold ${
+                            attestationSummary.totalOutstanding > 0
+                              ? 'text-rose-700 dark:text-rose-200'
+                              : 'text-gray-900 dark:text-white'
+                          }`}
+                        >
+                          {formatCurrency(attestationSummary.totalOutstanding)}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {attestationSummary.totalOutstanding > 0
+                            ? "Identifiez les relances à prévoir pour finaliser l'attestation."
+                            : "Tous les montants prévus sont déjà encaissés."}
+                        </p>
+                      </div>
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                          attestationSummary.totalOutstanding > 0
+                            ? 'bg-rose-100 dark:bg-rose-500/30 text-rose-700 dark:text-rose-100'
+                            : 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-200'
+                        }`}
+                      >
+                        <AlertCircle className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-5 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Factures retenues</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{attestationSummary.invoiceCount}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Documents pris en compte dans l"attestation.</p>
+                      </div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-200">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr),minmax(0,0.8fr)] gap-6">
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        Sélectionner l"exercice
+                      </label>
+                      <select
+                        value={effectiveAttestationYear ?? ''}
+                        onChange={(event) => {
+                          const next = Number(event.target.value);
+                          setAttestationYear(Number.isNaN(next) ? null : next);
+                        }}
+                        disabled={attestationAvailableYears.length === 0}
+                        className="mt-2 w-full appearance-none rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm font-medium text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {attestationAvailableYears.length === 0 ? (
+                          <option value="">Aucune donnée disponible</option>
+                        ) : (
+                          attestationAvailableYears.map((year) => (
+                            <option key={year} value={year}>
+                              Exercice {year}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                      <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                        Seules les factures marquées comme payées pour l"exercice sélectionné seront exportées.
+                      </p>
+                    </div>
+
+                    {attestationSummary.recentNumbers.length > 0 && (
+                      <div className="space-y-2">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                          Références récentes
+                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {attestationSummary.recentNumbers.map((ref) => (
+                            <span
+                              key={ref}
+                              className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800/80 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-200"
+                            >
+                              {ref}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/50 px-5 py-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
+                        Comment ça marche ?
+                      </p>
+                      <div className="space-y-4">
+                        <div className="flex gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40 text-sm font-semibold text-blue-700 dark:text-blue-200">
+                            1
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">Clôturez vos factures</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Validez les montants et assurez-vous que chaque facture contient une date de paiement.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-sm font-semibold text-indigo-700 dark:text-indigo-200">
+                            2
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">Sélectionnez l"exercice</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Choisissez l"année fiscale souhaitée pour filtrer automatiquement les documents.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/40 text-sm font-semibold text-purple-700 dark:text-purple-200">
+                            3
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">Générez le PDF</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Téléchargez l"attestation prête à l"emploi et archivez-la dans l"espace client.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-6 shadow-sm space-y-5">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Prêt à générer l"attestation {effectiveAttestationYear ?? ''}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Vérifiez les montants ci-dessus puis déclenchez l"export pour obtenir le document PDF signé ProFlow.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleExportFiscalAttestation}
+                        disabled={attestationAvailableYears.length === 0 || attestationLoading}
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                      >
+                        {attestationLoading ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        <span>
+                          {attestationLoading
+                            ? 'Génération…'
+                            : effectiveAttestationYear
+                            ? `Télécharger l"attestation ${effectiveAttestationYear}`
+                            : "Télécharger l'attestation"}
+                        </span>
+                      </button>
+                      {attestationSummary.invoiceCount === 0 && (
+                        <div className="rounded-xl border border-yellow-200 dark:border-yellow-500/40 bg-yellow-50/80 dark:bg-yellow-500/10 px-4 py-3 text-xs text-yellow-700 dark:text-yellow-100">
+                          Ajoutez ou marquez comme payées des factures pour activer l"export automatique.
+                        </div>
+                      )}
+                      {attestationAvailableYears.length === 0 && (
+                        <div className="rounded-xl border border-blue-200 dark:border-blue-500/40 bg-blue-50/80 dark:bg-blue-500/10 px-4 py-3 text-xs text-blue-700 dark:text-blue-100">
+                          Aucune année disponible pour le moment. Créez et clôturez vos premières factures pour alimenter l"attestation.
+                        </div>
+                      )}
+                      {isProfessionalClient && (
+                        <div className="rounded-xl border border-red-200 dark:border-red-500/40 bg-red-50/80 dark:bg-red-500/10 px-4 py-3 text-xs text-red-700 dark:text-red-100">
+                          Attestation fiscale disponible uniquement pour un client particulier (sans SIREN).
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/60 px-5 py-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                      <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">Rappel administratif</p>
+                      <p>
+                        Ce document atteste des revenus commerciaux {effectiveAttestationYear ?? 'en cours'}. Pour une attestation de régularité
+                        fiscale officielle, déposez le formulaire n° 3666-SD depuis votre espace impots.gouv.fr ou contactez votre SIE.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Email Modal */}
       {emailModal && (
