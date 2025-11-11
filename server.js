@@ -674,6 +674,9 @@ app.get('/api/test-connection', (req, res) => {
 app.get('/api/download-invoice/:invoiceId', async (req, res) => {
   try {
     const { invoiceId } = req.params;
+    const summaryDescriptionOverride = typeof req.query.summaryDescription === 'string' && req.query.summaryDescription.trim() !== ''
+      ? req.query.summaryDescription.trim()
+      : null;
     
     console.log(`📥 Demande de téléchargement PDF pour facture ${invoiceId}`);
     
@@ -687,6 +690,10 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
     if (invoiceError || !invoice) {
       console.error('❌ Facture non trouvée:', invoiceError);
       return res.status(404).json({ error: 'Facture non trouvée' });
+    }
+
+    if (summaryDescriptionOverride) {
+      invoice.summary_description = summaryDescriptionOverride;
     }
 
     // Récupérer les paramètres de l'entreprise
@@ -711,20 +718,92 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
     // Préparer les données de l'entreprise
     const companyData = {
       name: invoice.company_name || companySettings?.companyName || 'ProFlow',
+      owner: invoice.company_owner || companySettings?.ownerName || '',
       address: invoice.company_address || companySettings?.address || '',
       email: invoice.company_email || companySettings?.email || '',
       phone: invoice.company_phone || companySettings?.phone || '',
       siret: invoice.company_siret || companySettings?.siret || '',
       logoUrl: invoice.company_logo_url || companySettings?.logoUrl || null,
+      invoiceTerms: invoice.invoice_terms || companySettings?.invoiceTerms || '',
+      paymentTerms: invoice.payment_terms || companySettings?.paymentTerms || 30,
+      showLegalRate: invoice.show_legal_rate ?? companySettings?.showLegalRate ?? true,
+      showFixedFee: invoice.show_fixed_fee ?? companySettings?.showFixedFee ?? true,
     };
 
-    // Récupérer les services
     const { data: services } = await supabase
       .from('services')
       .select('*')
       .eq('client_id', invoice.client_id);
 
-    invoice.services = services || [];
+    let invoiceServices = Array.isArray(invoice.services) ? invoice.services : [];
+
+    if (!invoiceServices || invoiceServices.length === 0) {
+      let filteredServices = services || [];
+
+      if (filteredServices.length > 0) {
+        const servicesForInvoiceId = filteredServices.filter((service) => service.invoice_id === invoice.id);
+        if (servicesForInvoiceId.length > 0) {
+          filteredServices = servicesForInvoiceId;
+        } else {
+          filteredServices = filteredServices.filter((service) => service.status === 'invoiced');
+        }
+      }
+
+      invoiceServices = filteredServices;
+    }
+
+    if (invoice.invoice_type === 'summary') {
+      const availableServices = invoiceServices && invoiceServices.length > 0 ? invoiceServices : (services || []);
+      const hasSummaryGroup = availableServices.some((service) => service && service.summary_group);
+      if (hasSummaryGroup) {
+        invoiceServices = availableServices.map((service) => {
+          if (service && service.summary_group) {
+            const hours = Number(service.hours) || 0;
+            const rate = Number(service.hourly_rate) || 0;
+            const amount = service.total ?? hours * rate;
+            return {
+              ...service,
+              description: summaryDescriptionOverride || invoice.summary_description || service.description,
+              summary_source_count: service.summary_source_count ?? availableServices.length,
+              total: amount,
+            };
+          }
+          return service;
+        });
+      } else if (availableServices.length > 0) {
+        const sourceCount = availableServices.length;
+        const aggregated = availableServices.reduce(
+          (acc, service) => {
+            const hours = Number(service.hours) || 0;
+            const rate = Number(service.hourly_rate) || 0;
+            return {
+              hours: acc.hours + hours,
+              amount: acc.amount + hours * rate,
+            };
+          },
+          { hours: 0, amount: 0 }
+        );
+        const hours = aggregated.hours;
+        const amount = aggregated.amount;
+        invoiceServices = [
+          {
+            id: `summary-${invoice.id}`,
+            client_id: invoice.client_id,
+            date: invoice.date,
+            hours,
+            hourly_rate: hours > 0 ? amount / hours : 0,
+            description: summaryDescriptionOverride || invoice.summary_description || `Prestations regroupées (${sourceCount})`,
+            status: 'invoiced',
+            summary_group: true,
+            summary_source_count: sourceCount,
+            total: amount,
+          },
+        ];
+      }
+    }
+
+    invoice.summary_description = summaryDescriptionOverride || invoice.summary_description || null;
+    invoice.services = invoiceServices || [];
 
     // Générer le PDF
     const pdfData = await generateInvoicePDFWithPuppeteer(invoice, companyData);

@@ -50,6 +50,10 @@ export interface Invoice {
     phone?: string;
     address?: string;
   };
+  summary_description?: string;
+  paid_date?: string;
+  paid_amount?: number;
+  invoice_type?: 'detailed' | 'summary';
 }
 
 // Types pour le chatbot

@@ -27,7 +27,7 @@ import {
   ChevronRight,
   ShieldCheck
 } from 'lucide-react';
-import { ClientDetail } from '../types/clientDetail.ts';
+import { ClientDetail, PaymentHistoryEntry } from '../types/clientDetail.ts';
 import { supabase } from '../lib/supabase.ts';
 import { openInvoicePrintWindow } from '../lib/print.ts';
 import { sendInvoiceEmail, EmailData } from '../lib/emailService.ts';
@@ -911,6 +911,84 @@ export default function ClientDetailView({
 
 
 
+      const mappedInvoices = (invoices || []).map((invoice: any) => {
+        let paidDate = invoice.paid_date || invoice.paidDate || invoice.payment_date || invoice.date_paid || invoice.paid_at || undefined;
+        if (!paidDate && (invoice.status === 'paid' || invoice.status === 'partial')) {
+          paidDate = invoice.updated_at || invoice.created_at;
+        }
+
+        const issueDate = invoice.date || invoice.created_at || new Date().toISOString().split('T')[0];
+        const dueDate = invoice.due_date || invoice.dueDate || new Date().toISOString().split('T')[0];
+        const amount = calculateInvoiceAmount(invoice);
+        const paidAmount = Number(invoice.paid_amount || invoice.paidAmount || 0) || 0;
+        const paymentMethod = invoice.payment_method || '';
+        const paymentDelayDays = paidDate
+          ? Math.max(0, Math.round((new Date(paidDate).getTime() - new Date(issueDate).getTime()) / (1000 * 60 * 60 * 24)))
+          : null;
+
+        return {
+          id: invoice.id,
+          invoice_number: invoice.invoice_number || invoice.number || 'N/A',
+          number: invoice.invoice_number || invoice.number || 'N/A',
+          date: issueDate,
+          due_date: dueDate,
+          dueDate,
+          subtotal: invoice.subtotal || amount,
+          net_amount: invoice.net_amount || amount,
+          amount,
+          status: invoice.status || 'draft',
+          paidDate,
+          paidAmount,
+          description: invoice.description || invoice.notes || '',
+          services: invoice.services || [],
+          client_id: invoice.client_id,
+          payment_method: paymentMethod,
+          paymentMethod,
+          paymentDelayDays: paymentDelayDays ?? undefined,
+        };
+      });
+
+      const paymentRecords: PaymentHistoryEntry[] = mappedInvoices
+        .filter((invoice: (typeof mappedInvoices)[number]) => invoice.paidDate && (invoice.paidAmount > 0 || invoice.status === 'paid' || invoice.status === 'partial'))
+        .map((invoice: (typeof mappedInvoices)[number]) => ({
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.number,
+          issueDate: invoice.date,
+          dueDate: invoice.dueDate,
+          paidDate: invoice.paidDate,
+          amount: invoice.paidAmount > 0 ? invoice.paidAmount : invoice.amount,
+          method: invoice.payment_method || undefined,
+          status: invoice.status,
+          delayInDays: typeof invoice.paymentDelayDays === 'number' ? invoice.paymentDelayDays : undefined,
+        }))
+        .sort((a: PaymentHistoryEntry, b: PaymentHistoryEntry) => {
+          if (!a.paidDate) return 1;
+          if (!b.paidDate) return -1;
+          return new Date(b.paidDate).getTime() - new Date(a.paidDate).getTime();
+        });
+
+      const paymentDelays = paymentRecords
+        .map((record) => record.delayInDays)
+        .filter((delay): delay is number => typeof delay === 'number' && !Number.isNaN(delay));
+
+      const averagePaymentTime = paymentDelays.length
+        ? Math.round(paymentDelays.reduce((sum, delay) => sum + delay, 0) / paymentDelays.length)
+        : null;
+
+      const methodCounts = paymentRecords.reduce((acc, record) => {
+        if (!record.method) return acc;
+        acc[record.method] = (acc[record.method] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const preferredMethodRaw = Object.entries(methodCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      const supportedMethods = ['bank_transfer', 'paypal', 'check', 'cash', 'card'] as const;
+      const preferredMethod = supportedMethods.includes(preferredMethodRaw as any)
+        ? (preferredMethodRaw as (typeof supportedMethods)[number])
+        : undefined;
+
+      const lastPayment = paymentRecords[0];
+
       // Construire l'objet ClientDetail
       const clientDetail: ClientDetail = {
         id: client.id,
@@ -932,47 +1010,19 @@ export default function ClientDetailView({
         
         kpis: {
           totalRevenue,
-          totalInvoices: invoices?.length || 0,
+          totalInvoices: mappedInvoices.length,
           paidAmount,
           pendingAmount,
           overdueAmount,
-          firstInvoiceDate: invoices && invoices.length > 0 ? invoices[invoices.length - 1].date : undefined,
-          lastPaymentDate: paidInvoices.length > 0 ? paidInvoices[0].paid_date : undefined,
-          lastPaymentAmount: paidInvoices.length > 0 ? paidInvoices[0].amount : undefined,
-          averageInvoiceAmount: invoices && invoices.length > 0 ? totalRevenue / invoices.length : 0,
+          firstInvoiceDate: mappedInvoices.length > 0 ? mappedInvoices[mappedInvoices.length - 1].date : undefined,
+          lastPaymentDate: lastPayment?.paidDate,
+          lastPaymentAmount: lastPayment?.amount,
+          averageInvoiceAmount: mappedInvoices.length > 0 ? totalRevenue / mappedInvoices.length : 0,
           totalHours,
           averageHourlyRate
         },
         
-        invoices: invoices?.map((invoice: any) => {
-          // Essayer différents noms de colonnes pour la date de paiement
-          let paidDate = invoice.paid_date || invoice.paidDate || invoice.payment_date || invoice.date_paid || invoice.paid_at || undefined;
-          
-          // Si pas de date de paiement mais statut "paid", utiliser la date de mise à jour
-          if (!paidDate && invoice.status === 'paid') {
-            paidDate = invoice.updated_at || invoice.created_at;
-          }
-          
-          return {
-            id: invoice.id,
-            invoice_number: invoice.invoice_number || invoice.number || 'N/A',
-            number: invoice.invoice_number || invoice.number || 'N/A', // Pour compatibilité
-            date: invoice.date || invoice.created_at || new Date().toISOString().split('T')[0],
-            due_date: invoice.due_date || invoice.dueDate || new Date().toISOString().split('T')[0],
-            dueDate: invoice.due_date || invoice.dueDate || new Date().toISOString().split('T')[0], // Pour compatibilité
-            subtotal: invoice.subtotal || calculateInvoiceAmount(invoice),
-            net_amount: invoice.net_amount || calculateInvoiceAmount(invoice),
-            amount: calculateInvoiceAmount(invoice), // EXACTEMENT comme dans InvoicesPage.tsx
-            status: invoice.status || 'draft',
-            paidDate: paidDate,
-            paidAmount: Number(invoice.paid_amount || invoice.paidAmount || 0) || 0,
-            description: invoice.description || invoice.notes || '',
-            services: invoice.services || [],
-            client_id: invoice.client_id,
-            payment_method: invoice.payment_method || '',
-            paymentMethod: invoice.payment_method || '' // Pour compatibilité
-          };
-        }) || [],
+        invoices: mappedInvoices,
         
         services: services?.map((service: any) => ({
           id: service.id,
@@ -986,20 +1036,21 @@ export default function ClientDetailView({
         })) || [],
         
         paymentInfo: {
-          preferredMethod: client.preferred_payment_method,
-          lastPaymentDate: paidInvoices.length > 0 ? paidInvoices[0].paid_date : undefined,
-          lastPaymentAmount: paidInvoices.length > 0 ? paidInvoices[0].amount : undefined,
-          totalPayments: paidInvoices.length,
-          averagePaymentTime: 5 // TODO: Calculer le délai moyen de paiement
+          preferredMethod,
+          lastPaymentDate: lastPayment?.paidDate,
+          lastPaymentAmount: lastPayment?.amount,
+          totalPayments: paymentRecords.length,
+          averagePaymentTime
         },
         
         pipeline: {
-          draftInvoices: invoices?.filter((inv: any) => inv.status === 'draft').length || 0,
+          draftInvoices: mappedInvoices.filter((inv: (typeof mappedInvoices)[number]) => inv.status === 'draft').length,
           pendingQuotes: 0, // TODO: Implémenter les devis
           plannedServices: services?.filter((s: any) => s.status === 'planned').length || 0,
           estimatedRevenue: services?.filter((s: any) => s.status === 'planned').reduce((sum: number, s: any) => sum + (s.amount || 0), 0) || 0
         },
         
+        payments: paymentRecords,
         contactHistory: [] // Fonctionnalité non implémentée
       };
       
@@ -1093,14 +1144,14 @@ export default function ClientDetailView({
       return;
     }
 
-    if (attestationInvoicesForYear.length === 0) {
-      showNotification(
-        'warning',
-        'Aucune facture confirmée',
+      if (attestationInvoicesForYear.length === 0) {
+        showNotification(
+          'warning',
+          'Aucune facture confirmée',
         `Aucune facture finalisée pour ${effectiveAttestationYear} n'a été trouvée pour ${client.name}.`
-      );
-      return;
-    }
+        );
+        return;
+      }
 
     const targetYear = effectiveAttestationYear;
 
@@ -1352,6 +1403,30 @@ export default function ClientDetailView({
       setAttestationYear(null);
     }
   }, [attestationAvailableYears]);
+
+  const formatPaymentMethod = (method?: string | null) => {
+    if (!method) return 'Non défini';
+    const labels: Record<string, string> = {
+      bank_transfer: 'Virement',
+      paypal: 'PayPal',
+      check: 'Chèque',
+      cash: 'Espèces',
+      card: 'Carte',
+    };
+    return labels[method] || method;
+  };
+
+  const formatPaymentStatus = (status: string) => {
+    const labels: Record<string, string> = {
+      paid: 'Payée',
+      partial: 'Partielle',
+      sent: 'Envoyée',
+      overdue: 'En retard',
+      draft: 'Brouillon',
+      cancelled: 'Annulée',
+    };
+    return labels[status] || status;
+  };
 
   if (loading) {
     return (
@@ -2592,11 +2667,7 @@ export default function ClientDetailView({
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Mode de paiement préféré</span>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    {client.paymentInfo.preferredMethod === 'bank_transfer' ? 'Virement' :
-                     client.paymentInfo.preferredMethod === 'paypal' ? 'PayPal' :
-                     client.paymentInfo.preferredMethod === 'check' ? 'Chèque' :
-                     client.paymentInfo.preferredMethod === 'cash' ? 'Espèces' :
-                     client.paymentInfo.preferredMethod === 'card' ? 'Carte' : 'Non défini'}
+                    {formatPaymentMethod(client.paymentInfo.preferredMethod)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -2608,7 +2679,9 @@ export default function ClientDetailView({
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Montant du dernier paiement</span>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    {client.paymentInfo.lastPaymentAmount ? formatCurrency(client.paymentInfo.lastPaymentAmount) : 'N/A'}
+                    {typeof client.paymentInfo.lastPaymentAmount === 'number'
+                      ? formatCurrency(client.paymentInfo.lastPaymentAmount)
+                      : '—'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -2620,7 +2693,9 @@ export default function ClientDetailView({
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Délai moyen de paiement</span>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    {client.paymentInfo.averagePaymentTime} jours
+                    {client.paymentInfo.averagePaymentTime !== null
+                      ? `${client.paymentInfo.averagePaymentTime} jours`
+                      : '—'}
                   </span>
                 </div>
               </div>
@@ -3176,7 +3251,7 @@ export default function ClientDetailView({
 
       {/* Attestation fiscale */}
       {isProfessionalClient ? (
-        <section className="mt-12 sm:mt-16">
+      <section className="mt-12 sm:mt-16">
           <div className="rounded-3xl border border-blue-200 dark:border-blue-500/40 bg-blue-50/80 dark:bg-blue-500/10 px-6 sm:px-10 py-8 text-sm text-blue-700 dark:text-blue-100 shadow-sm">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 mt-0.5" />
@@ -3192,38 +3267,38 @@ export default function ClientDetailView({
       ) : (
         <section className="mt-12 sm:mt-16">
           <div className="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl">
-            <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 pointer-events-none">
               <div className="absolute -top-24 right-8 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl"></div>
               <div className="absolute bottom-0 -left-10 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl"></div>
-            </div>
+          </div>
             <div className="relative z-10">
               <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 sm:px-10 py-6 sm:py-8 text-white">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                  <div className="flex items-start gap-4">
+              <div className="flex items-start gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
                       <ShieldCheck className="w-5 h-5" />
-                    </div>
+                </div>
                     <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                         <h2 className="text-xl sm:text-2xl font-semibold">Attestation fiscale</h2>
                         <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
-                          {attestationAvailableYears.length > 0
-                            ? `Années ${attestationAvailableYears[attestationAvailableYears.length - 1]}–${attestationAvailableYears[0]}`
-                            : 'En attente de données'}
-                        </span>
-                      </div>
+                      {attestationAvailableYears.length > 0
+                        ? `Années ${attestationAvailableYears[attestationAvailableYears.length - 1]}–${attestationAvailableYears[0]}`
+                        : 'En attente de données'}
+                    </span>
+                  </div>
                       <p className="text-sm text-white/80 max-w-2xl">
                         Préparez en un clic l'attestation annuelle de {client?.name ?? 'votre client'} à partir des factures confirmées et encaissées.
-                      </p>
-                    </div>
-                  </div>
+                  </p>
+                </div>
+              </div>
                   <div className="inline-flex items-center gap-3 rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-white/90">
-                    <span>Synchronisation automatique</span>
+                <span>Synchronisation automatique</span>
                     <span className="text-white/50">•</span>
                     <span>TVA art. 293 B</span>
                   </div>
-                </div>
               </div>
+            </div>
 
               <div className="px-6 sm:px-10 py-8 space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -3232,25 +3307,25 @@ export default function ClientDetailView({
                       <div className="space-y-3">
                         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total facturé</p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(attestationSummary.totalBilled)}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Somme des factures clôturées pour l"exercice.</p>
-                      </div>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-200">
-                        <TrendingUp className="w-5 h-5" />
-                      </div>
-                    </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Somme des factures clôturées pour l'exercice.</p>
                   </div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-200">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
                   <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-5 shadow-sm">
                     <div className="flex items-start justify-between">
                       <div className="space-y-3">
                         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total encaissé</p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(attestationSummary.totalPaid)}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Paiements enregistrés pour l"année sélectionnée.</p>
-                      </div>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-200">
-                        <CreditCard className="w-5 h-5" />
-                      </div>
-                    </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Paiements enregistrés pour l'année sélectionnée.</p>
                   </div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-200">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
                   <div
                     className={`rounded-2xl border p-5 shadow-sm ${
                       attestationSummary.totalOutstanding > 0
@@ -3275,7 +3350,7 @@ export default function ClientDetailView({
                             ? "Identifiez les relances à prévoir pour finaliser l'attestation."
                             : "Tous les montants prévus sont déjà encaissés."}
                         </p>
-                      </div>
+                  </div>
                       <div
                         className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                           attestationSummary.totalOutstanding > 0
@@ -3292,62 +3367,62 @@ export default function ClientDetailView({
                       <div className="space-y-3">
                         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Factures retenues</p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-white">{attestationSummary.invoiceCount}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Documents pris en compte dans l"attestation.</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Documents pris en compte dans l'attestation.</p>
                       </div>
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-200">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                    </div>
+                    <FileText className="w-5 h-5" />
                   </div>
                 </div>
+              </div>
+            </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr),minmax(0,0.8fr)] gap-6">
                   <div className="space-y-6">
-                    <div>
-                      <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Sélectionner l"exercice
-                      </label>
-                      <select
-                        value={effectiveAttestationYear ?? ''}
-                        onChange={(event) => {
-                          const next = Number(event.target.value);
-                          setAttestationYear(Number.isNaN(next) ? null : next);
-                        }}
-                        disabled={attestationAvailableYears.length === 0}
+                  </label>
+                  <select
+                    value={effectiveAttestationYear ?? ''}
+                    onChange={(event) => {
+                      const next = Number(event.target.value);
+                      setAttestationYear(Number.isNaN(next) ? null : next);
+                    }}
+                    disabled={attestationAvailableYears.length === 0}
                         className="mt-2 w-full appearance-none rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm font-medium text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {attestationAvailableYears.length === 0 ? (
-                          <option value="">Aucune donnée disponible</option>
-                        ) : (
-                          attestationAvailableYears.map((year) => (
-                            <option key={year} value={year}>
-                              Exercice {year}
-                            </option>
-                          ))
-                        )}
-                      </select>
+                  >
+                    {attestationAvailableYears.length === 0 ? (
+                      <option value="">Aucune donnée disponible</option>
+                    ) : (
+                      attestationAvailableYears.map((year) => (
+                        <option key={year} value={year}>
+                          Exercice {year}
+                        </option>
+                      ))
+                    )}
+                  </select>
                       <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                         Seules les factures marquées comme payées pour l"exercice sélectionné seront exportées.
-                      </p>
+                </p>
                     </div>
 
-                    {attestationSummary.recentNumbers.length > 0 && (
-                      <div className="space-y-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                          Références récentes
-                        </span>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {attestationSummary.recentNumbers.map((ref) => (
-                            <span
-                              key={ref}
+                {attestationSummary.recentNumbers.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Références récentes
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {attestationSummary.recentNumbers.map((ref) => (
+                        <span
+                          key={ref}
                               className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800/80 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-200"
-                            >
-                              {ref}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                        >
+                          {ref}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                     <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/50 px-5 py-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
@@ -3357,7 +3432,7 @@ export default function ClientDetailView({
                         <div className="flex gap-3">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40 text-sm font-semibold text-blue-700 dark:text-blue-200">
                             1
-                          </div>
+              </div>
                           <div>
                             <p className="text-sm font-medium text-gray-900 dark:text-white">Clôturez vos factures</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -3401,31 +3476,31 @@ export default function ClientDetailView({
                           Vérifiez les montants ci-dessus puis déclenchez l"export pour obtenir le document PDF signé ProFlow.
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleExportFiscalAttestation}
-                        disabled={attestationAvailableYears.length === 0 || attestationLoading}
+                <button
+                  type="button"
+                  onClick={handleExportFiscalAttestation}
+                  disabled={attestationAvailableYears.length === 0 || attestationLoading}
                         className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-                      >
-                        {attestationLoading ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
-                        ) : (
-                          <Download className="h-4 w-4" />
-                        )}
-                        <span>
-                          {attestationLoading
-                            ? 'Génération…'
-                            : effectiveAttestationYear
+                >
+                  {attestationLoading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  <span>
+                    {attestationLoading
+                      ? 'Génération…'
+                      : effectiveAttestationYear
                             ? `Télécharger l"attestation ${effectiveAttestationYear}`
                             : "Télécharger l'attestation"}
-                        </span>
-                      </button>
-                      {attestationSummary.invoiceCount === 0 && (
+                  </span>
+                </button>
+                {attestationSummary.invoiceCount === 0 && (
                         <div className="rounded-xl border border-yellow-200 dark:border-yellow-500/40 bg-yellow-50/80 dark:bg-yellow-500/10 px-4 py-3 text-xs text-yellow-700 dark:text-yellow-100">
                           Ajoutez ou marquez comme payées des factures pour activer l"export automatique.
                         </div>
-                      )}
-                      {attestationAvailableYears.length === 0 && (
+                )}
+                {attestationAvailableYears.length === 0 && (
                         <div className="rounded-xl border border-blue-200 dark:border-blue-500/40 bg-blue-50/80 dark:bg-blue-500/10 px-4 py-3 text-xs text-blue-700 dark:text-blue-100">
                           Aucune année disponible pour le moment. Créez et clôturez vos premières factures pour alimenter l"attestation.
                         </div>
@@ -3433,23 +3508,23 @@ export default function ClientDetailView({
                       {isProfessionalClient && (
                         <div className="rounded-xl border border-red-200 dark:border-red-500/40 bg-red-50/80 dark:bg-red-500/10 px-4 py-3 text-xs text-red-700 dark:text-red-100">
                           Attestation fiscale disponible uniquement pour un client particulier (sans SIREN).
-                        </div>
+              </div>
                       )}
-                    </div>
+            </div>
 
                     <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/60 px-5 py-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                      <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">Rappel administratif</p>
-                      <p>
+              <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">Rappel administratif</p>
+              <p>
                         Ce document atteste des revenus commerciaux {effectiveAttestationYear ?? 'en cours'}. Pour une attestation de régularité
                         fiscale officielle, déposez le formulaire n° 3666-SD depuis votre espace impots.gouv.fr ou contactez votre SIE.
-                      </p>
+              </p>
                     </div>
                   </div>
                 </div>
-              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
       )}
 
       {/* Email Modal */}
@@ -4003,6 +4078,117 @@ export default function ClientDetailView({
         cancelText="Annuler"
       />
 
+      <div className="space-y-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Historique des paiements</h3>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200">
+              {client.payments.length} paiement{client.payments.length > 1 ? 's' : ''}
+            </span>
+          </div>
+          {client.payments.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CreditCard className="w-8 h-8 text-gray-400" />
+              </div>
+              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Aucun paiement enregistré
+              </h4>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                Validez vos factures comme payées pour suivre automatiquement les encaissements.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {client.payments.slice(0, 8).map((payment) => (
+                <div
+                  key={payment.invoiceId}
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-xl p-4 bg-gray-50 dark:bg-gray-700/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
+                >
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        Facture {payment.invoiceNumber}
+                      </p>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${payment.status === 'paid'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                          : payment.status === 'partial'
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                          : payment.status === 'overdue'
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                          : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}
+                      >
+                        {formatPaymentStatus(payment.status)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Émise le {formatDate(payment.issueDate)}
+                      {payment.dueDate ? ` · Échéance ${formatDate(payment.dueDate)}` : ''}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {formatCurrency(payment.amount)}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                      <Clock className="w-3 h-3" />
+                      {payment.paidDate ? `Payée le ${formatDate(payment.paidDate)}` : 'Paiement en attente'}
+                    </span>
+                    {typeof payment.delayInDays === 'number' && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                        <TrendingUp className="w-3 h-3" />
+                        {`${payment.delayInDays} j`}
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                      <CreditCard className="w-3 h-3" />
+                      {formatPaymentMethod(payment.method)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {client.payments.length > 8 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {`+${client.payments.length - 8} paiement${client.payments.length - 8 > 1 ? 's' : ''} supplémentaire${client.payments.length - 8 > 1 ? 's' : ''} dans l'historique`}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Pipeline
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Factures brouillons</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {client.pipeline.draftInvoices}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Devis en attente</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {client.pipeline.pendingQuotes}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Prestations planifiées</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {client.pipeline.plannedServices}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Revenus estimés</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {formatCurrency(client.pipeline.estimatedRevenue)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -45,7 +45,7 @@ export interface ClientDetail {
     lastPaymentDate?: string;
     lastPaymentAmount?: number;
     totalPayments: number;
-    averagePaymentTime: number; // en jours
+    averagePaymentTime: number | null; // en jours
   };
   
   // Pipeline / Prévisions
@@ -55,6 +55,7 @@ export interface ClientDetail {
     plannedServices: number;
     estimatedRevenue: number;
   };
+  payments: PaymentHistoryEntry[];
   
   // Contact & Suivi
   contactHistory: ContactEntry[];
@@ -92,6 +93,18 @@ export interface ContactEntry {
   subject: string;
   description: string;
   outcome?: string;
+}
+
+export interface PaymentHistoryEntry {
+  invoiceId: string;
+  invoiceNumber: string;
+  issueDate: string;
+  dueDate: string;
+  paidDate?: string;
+  amount: number;
+  method?: string;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'partial';
+  delayInDays?: number;
 }
 
 // Types pour les KPIs

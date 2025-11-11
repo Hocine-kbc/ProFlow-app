@@ -115,6 +115,7 @@ interface DatabaseInvoice {
   company_address?: string;
   company_siret?: string;
   company_logo_url?: string;
+  summary_description?: string;
   created_at: string;
   updated_at: string;
 }
@@ -441,6 +442,26 @@ export async function fetchInvoices(): Promise<Invoice[]> {
           // Gestion silencieuse des erreurs
         }
       }
+
+      let invoiceType: 'detailed' | 'summary' | null = (invoice as any).invoice_type ?? null;
+      if (!invoiceType) {
+        try {
+          const invoiceTypes = JSON.parse(localStorage.getItem('invoice-types') || '{}');
+          invoiceType = invoiceTypes[invoice.id] || null;
+        } catch (_e) {
+          // Gestion silencieuse des erreurs
+        }
+      }
+      
+      let summaryDescription: string | null = (invoice as any).summary_description ?? null;
+      if (!summaryDescription) {
+        try {
+          const summaryDescriptions = JSON.parse(localStorage.getItem('invoice-summary-descriptions') || '{}');
+          summaryDescription = summaryDescriptions[invoice.id] || null;
+        } catch (_e) {
+          summaryDescription = null;
+        }
+      }
       
       // Get services from localStorage if not in database
       let invoiceServices = invoice.services || [];
@@ -456,30 +477,87 @@ export async function fetchInvoices(): Promise<Invoice[]> {
         }
       }
       
+      let companySnapshot: any = null;
+      try {
+        const storedCompany = JSON.parse(localStorage.getItem('invoice-company-snapshots') || '{}');
+        companySnapshot = storedCompany[invoice.id] || null;
+      } catch (_e) {
+        // Ignorer
+      }
+      
+      let servicesResult = invoiceServices as any[];
+      if (invoiceType === 'summary') {
+        const hasSummaryGroup = servicesResult.some(service => service && (service as any).summary_group);
+        if (hasSummaryGroup) {
+          servicesResult = servicesResult.map(service => {
+            if (service && (service as any).summary_group) {
+              return {
+                ...service,
+                description: summaryDescription || service.description,
+                summary_source_count: (service as any).summary_source_count ?? servicesResult.length,
+                total: service.total ?? ((Number(service.hours) || 0) * (Number(service.hourly_rate) || 0)),
+              };
+            }
+            return service;
+          });
+        } else {
+          const sourceCount = servicesResult.length || invoiceServices.length || 0;
+          const aggregated = servicesResult.reduce(
+            (acc, service) => {
+              const hours = Number(service.hours) || 0;
+              const rate = Number(service.hourly_rate) || 0;
+              return {
+                hours: acc.hours + hours,
+                amount: acc.amount + hours * rate,
+              };
+            },
+            { hours: 0, amount: 0 }
+          );
+          const hours = aggregated.hours;
+          const amount = aggregated.amount;
+          servicesResult = [
+            {
+              id: `summary-${invoice.id}`,
+              client_id: invoice.client_id,
+              date: invoice.date,
+              hours,
+              hourly_rate: hours > 0 ? amount / hours : 0,
+              description: summaryDescription || `Prestations regroupées (${sourceCount || 1})`,
+              status: 'invoiced',
+              summary_group: true,
+              summary_source_count: sourceCount || 1,
+              total: amount,
+            },
+          ];
+        }
+      }
+
       return {
         ...invoice,
         // Use services from localStorage if available
-        services: invoiceServices,
+        services: servicesResult,
         // Client will be fetched separately if needed
         client: null,
         // Add payment_method from localStorage if not in database
         payment_method: paymentMethod,
+        invoice_type: invoiceType,
+        summary_description: summaryDescription,
         // Map database fields to camelCase for the new invoice-specific fields
-        invoice_terms: invoice.invoice_terms,
-        payment_terms: invoice.payment_terms,
+        invoice_terms: invoice.invoice_terms ?? companySnapshot?.invoice_terms ?? null,
+        payment_terms: invoice.payment_terms ?? companySnapshot?.payment_terms ?? null,
         include_late_payment_penalties: invoice.include_late_payment_penalties,
         additional_terms: invoice.additional_terms,
         // Paramètres de Règlement spécifiques à la facture
-        show_legal_rate: invoice.show_legal_rate,
-        show_fixed_fee: invoice.show_fixed_fee,
+        show_legal_rate: invoice.show_legal_rate ?? companySnapshot?.show_legal_rate ?? null,
+        show_fixed_fee: invoice.show_fixed_fee ?? companySnapshot?.show_fixed_fee ?? null,
         // Données d'entreprise au moment de la création (pour immutabilité)
-        company_name: invoice.company_name,
-        company_owner: invoice.company_owner,
-        company_email: invoice.company_email,
-        company_phone: invoice.company_phone,
-        company_address: invoice.company_address,
-        company_siret: invoice.company_siret,
-        company_logo_url: invoice.company_logo_url,
+        company_name: invoice.company_name ?? companySnapshot?.company_name ?? null,
+        company_owner: invoice.company_owner ?? companySnapshot?.company_owner ?? null,
+        company_email: invoice.company_email ?? companySnapshot?.company_email ?? null,
+        company_phone: invoice.company_phone ?? companySnapshot?.company_phone ?? null,
+        company_address: invoice.company_address ?? companySnapshot?.company_address ?? null,
+        company_siret: invoice.company_siret ?? companySnapshot?.company_siret ?? null,
+        company_logo_url: invoice.company_logo_url ?? companySnapshot?.company_logo_url ?? null,
       };
     });
     
@@ -506,6 +584,8 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
     console.warn('Could not fetch current settings for invoice:', error);
   }
   
+  const summaryDescription = (invoiceData as Invoice).summary_description ?? null;
+  
   // Map camelCase to snake_case for database
   const toInsert: Partial<DatabaseInvoice> = {
     user_id: user.id,
@@ -524,112 +604,171 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
   if (invoiceData.net_amount !== undefined) toInsert.net_amount = invoiceData.net_amount;
   if (invoiceData.status !== undefined) toInsert.status = invoiceData.status;
   
-  // Sauvegarder les paramètres actuels dans la facture pour préserver les conditions d'origine
+  const invoiceType = (invoiceData as Invoice).invoice_type;
+  const baseInsert: Partial<DatabaseInvoice> = {
+    ...toInsert,
+  };
+
   if (currentSettings) {
-    toInsert.invoice_terms = currentSettings.invoiceTerms;
-    toInsert.payment_terms = currentSettings.paymentTerms;
-    toInsert.additional_terms = currentSettings.additionalTerms;
-    // Sauvegarder les paramètres de Règlement spécifiques à cette facture
-    toInsert.show_legal_rate = currentSettings.showLegalRate ?? true;
-    toInsert.show_fixed_fee = currentSettings.showFixedFee ?? true;
-    // Sauvegarder les données d'entreprise au moment de la création (pour immutabilité)
-    toInsert.company_name = currentSettings.companyName;
-    toInsert.company_owner = currentSettings.ownerName;
-    toInsert.company_email = currentSettings.email;
-    toInsert.company_phone = currentSettings.phone;
-    toInsert.company_address = currentSettings.address;
-    toInsert.company_siret = currentSettings.siret;
-    toInsert.company_logo_url = currentSettings.logoUrl;
+    baseInsert.invoice_terms = currentSettings.invoiceTerms;
+    baseInsert.payment_terms = currentSettings.paymentTerms;
+    baseInsert.additional_terms = currentSettings.additionalTerms;
+    baseInsert.show_legal_rate = currentSettings.showLegalRate ?? true;
+    baseInsert.show_fixed_fee = currentSettings.showFixedFee ?? true;
+    baseInsert.company_name = currentSettings.companyName;
+    baseInsert.company_owner = currentSettings.ownerName;
+    baseInsert.company_email = currentSettings.email;
+    baseInsert.company_phone = currentSettings.phone;
+    baseInsert.company_address = currentSettings.address;
+    baseInsert.company_siret = currentSettings.siret;
+    baseInsert.company_logo_url = currentSettings.logoUrl;
   }
-  
-  // Ajouter urssaf_deduction avec 0 pour satisfaire la contrainte NOT NULL de la DB
-  toInsert.urssaf_deduction = 0;
-  
-  console.log('Creating invoice with data:', toInsert);
-  
-  const { data, error } = await supabase
-    .from('invoices')
-    .insert(toInsert)
-    .select('*')
-    .single();
-    
-  if (error) {
-    console.error('Error creating invoice:', error);
-    // If payment_method column doesn't exist, try without it
-    if (error.code === 'PGRST204' && error.message.includes('payment_method')) {
-      console.log('Payment method column not found, retrying without it...');
-      // Remove payment_method from the data and try again
-      const { payment_method: _payment_method } = invoiceData;
-      const retryData = {
-        ...toInsert,
-        // Don't include payment_method
-      };
-      
-      const { data: retryDataResult, error: retryError } = await supabase
-        .from('invoices')
-        .insert(retryData)
-        .select('*')
-        .single();
-        
-      if (retryError) {
-        console.error('Error creating invoice (retry):', retryError);
-        throw retryError;
-      }
-      
-      return { ...retryDataResult, services: services || [] } as Invoice;
+
+  const hasInvoiceType = Boolean(invoiceType);
+  const hasServices = Array.isArray(services) && services.length > 0;
+  const hasSummaryDescription = typeof summaryDescription === 'string' && summaryDescription.length > 0;
+
+  const combine = (includeInvoiceType: boolean, includeServices: boolean, includeUrssaf: boolean, includeSummary: boolean) => ({
+    ...baseInsert,
+    ...(includeUrssaf ? { urssaf_deduction: 0 } : {}),
+    ...(includeInvoiceType && hasInvoiceType ? { invoice_type: invoiceType } : {}),
+    ...(includeServices && hasServices ? { services } : {}),
+    ...(includeSummary && hasSummaryDescription ? { summary_description: summaryDescription } : {}),
+  } as Partial<DatabaseInvoice>);
+
+  const variantSet = new Map<string, Partial<DatabaseInvoice>>();
+  const addVariant = (variant: Partial<DatabaseInvoice>) => {
+    const key = JSON.stringify(variant);
+    if (!variantSet.has(key)) {
+      variantSet.set(key, variant);
     }
-    
-    // If show_legal_rate or show_fixed_fee columns don't exist, try without them
-    if (error.code === 'PGRST204' && (error.message.includes('show_legal_rate') || error.message.includes('show_fixed_fee'))) {
-      console.log('Règlement columns not found, retrying without them...');
-      // Remove règlement columns from the data and try again
-      const retryData = {
-        ...toInsert,
-        show_legal_rate: undefined,
-        show_fixed_fee: undefined,
-      };
-      
-      const { data: retryDataResult, error: retryError } = await supabase
-        .from('invoices')
-        .insert(retryData)
-        .select('*')
-        .single();
-        
-      if (retryError) {
-        console.error('Error creating invoice (retry):', retryError);
-        throw retryError;
-      }
-      
-      return { ...retryDataResult, services: services || [] } as Invoice;
+  };
+
+  addVariant(combine(true, true, true, true));
+  addVariant(combine(true, false, true, true));
+  addVariant(combine(false, true, true, true));
+  addVariant(combine(true, true, true, false));
+  addVariant(combine(true, false, true, false));
+  addVariant(combine(false, true, true, false));
+  addVariant(combine(true, true, false, true));
+  addVariant(combine(true, false, false, true));
+  addVariant(combine(false, true, false, true));
+  addVariant(combine(true, true, false, false));
+  addVariant(combine(true, false, false, false));
+  addVariant(combine(false, true, false, false));
+  addVariant({ ...baseInsert, urssaf_deduction: 0 });
+  addVariant(baseInsert);
+
+  let insertedInvoice: DatabaseInvoice | null = null;
+  let lastError: any = null;
+
+  for (const variant of variantSet.values()) {
+    const { data: insertData, error: insertError } = await supabase
+      .from('invoices')
+      .insert(variant)
+      .select('*')
+      .single();
+
+    if (!insertError && insertData) {
+      insertedInvoice = insertData;
+      break;
     }
-    throw error;
+
+    lastError = insertError;
+
+    if (!insertError || insertError.code !== 'PGRST204') {
+      break;
+    }
   }
-  
-  // Store payment_method in localStorage if column doesn't exist in database
+
+  if (!insertedInvoice) {
+    if (lastError) {
+      console.error('Error creating invoice:', lastError);
+      throw lastError;
+    }
+    throw new Error('Unknown error creating invoice');
+  }
+
   if (invoiceData.payment_method) {
     try {
       const existingData = JSON.parse(localStorage.getItem('invoice-payment-methods') || '{}');
-      existingData[data.id] = invoiceData.payment_method;
+      existingData[insertedInvoice.id] = invoiceData.payment_method;
       localStorage.setItem('invoice-payment-methods', JSON.stringify(existingData));
     } catch (e) {
       console.warn('Could not store payment method in localStorage:', e);
     }
   }
-  
-  // Store services in localStorage for persistence across page reloads
+
+  if (invoiceType) {
+    try {
+      const existingTypes = JSON.parse(localStorage.getItem('invoice-types') || '{}');
+      existingTypes[insertedInvoice.id] = invoiceType;
+      localStorage.setItem('invoice-types', JSON.stringify(existingTypes));
+    } catch (e) {
+      console.warn('Could not store invoice type in localStorage:', e);
+    }
+  }
+
+  if (summaryDescription) {
+    try {
+      const existingSummaries = JSON.parse(localStorage.getItem('invoice-summary-descriptions') || '{}');
+      if (summaryDescription) {
+        existingSummaries[insertedInvoice.id] = summaryDescription;
+      } else if (existingSummaries[insertedInvoice.id]) {
+        delete existingSummaries[insertedInvoice.id];
+      }
+      localStorage.setItem('invoice-summary-descriptions', JSON.stringify(existingSummaries));
+    } catch (e) {
+      console.warn('Could not store invoice summary description in localStorage:', e);
+    }
+  }
+
+  if (summaryDescription === null) {
+    try {
+      const existingSummaries = JSON.parse(localStorage.getItem('invoice-summary-descriptions') || '{}');
+      if (existingSummaries[insertedInvoice.id]) {
+        delete existingSummaries[insertedInvoice.id];
+        localStorage.setItem('invoice-summary-descriptions', JSON.stringify(existingSummaries));
+      }
+    } catch (e) {
+      console.warn('Could not clear invoice summary description in localStorage:', e);
+    }
+  }
+
+  if (currentSettings) {
+    try {
+      const existingCompanySnapshots = JSON.parse(localStorage.getItem('invoice-company-snapshots') || '{}');
+      existingCompanySnapshots[insertedInvoice.id] = {
+        company_name: baseInsert.company_name ?? null,
+        company_owner: baseInsert.company_owner ?? null,
+        company_email: baseInsert.company_email ?? null,
+        company_phone: baseInsert.company_phone ?? null,
+        company_address: baseInsert.company_address ?? null,
+        company_siret: baseInsert.company_siret ?? null,
+        company_logo_url: baseInsert.company_logo_url ?? null,
+        invoice_terms: baseInsert.invoice_terms ?? null,
+        payment_terms: baseInsert.payment_terms ?? null,
+        show_legal_rate: baseInsert.show_legal_rate ?? null,
+        show_fixed_fee: baseInsert.show_fixed_fee ?? null,
+      };
+      localStorage.setItem('invoice-company-snapshots', JSON.stringify(existingCompanySnapshots));
+    } catch (e) {
+      console.warn('Could not store invoice company snapshot in localStorage:', e);
+    }
+  }
+
   if (services && services.length > 0) {
     try {
       const existingData = JSON.parse(localStorage.getItem('invoice-services') || '{}');
-      existingData[data.id] = services;
+      existingData[insertedInvoice.id] = services;
       localStorage.setItem('invoice-services', JSON.stringify(existingData));
-      console.log(`💾 Services stockés pour la facture ${data.id}:`, services.length, 'services');
+      console.log(`💾 Services stockés pour la facture ${insertedInvoice.id}:`, services.length, 'services');
     } catch (e) {
       console.warn('Could not store services in localStorage:', e);
     }
   }
   
-  // Return the invoice with services array
-  return { ...data, services: services || [] } as Invoice;
+  return { ...insertedInvoice, services: services || [], invoice_type: invoiceType } as Invoice;
 }
 
 export async function updateInvoice(id: string, payload: Partial<Invoice>): Promise<Invoice> {
@@ -654,60 +793,107 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
     dbUpdateData.status = updateData.status;
     // Si la facture est marquée comme payée et qu'il n'y a pas de paid_date, définir la date actuelle
     if (updateData.status === 'paid' && !updateData.paid_date) {
-      dbUpdateData.paid_date = new Date().toISOString();
+      (dbUpdateData as any).paid_date = new Date().toISOString();
     }
+  }
+  // Gérer summary_description
+  if (updateData.summary_description !== undefined) {
+    (dbUpdateData as any).summary_description = updateData.summary_description ?? null;
   }
   // Gérer paid_date explicitement si fourni
   if (updateData.paid_date !== undefined) {
-    dbUpdateData.paid_date = updateData.paid_date;
+    (dbUpdateData as any).paid_date = updateData.paid_date;
   }
   // Gérer paid_amount si fourni
   if (updateData.paid_amount !== undefined) {
-    dbUpdateData.paid_amount = updateData.paid_amount;
+    (dbUpdateData as any).paid_amount = updateData.paid_amount;
   }
   // Toujours définir urssaf_deduction à 0 pour éviter les erreurs de contrainte
   if (updateData.subtotal !== undefined || updateData.net_amount !== undefined) {
     dbUpdateData.urssaf_deduction = 0;
   }
   
-  console.log('Updating invoice with data:', dbUpdateData);
-  
-  const { data, error } = await supabase
-    .from('invoices')
-    .update(dbUpdateData)
-    .eq('id', id)
-    .select('*')
-    .single();
-    
-  if (error) {
-    console.error('Error updating invoice:', error);
-    // If payment_method column doesn't exist, try without it
-    if (error.code === 'PGRST204' && error.message.includes('payment_method')) {
-      console.log('Payment method column not found, retrying without it...');
-      // Remove payment_method from the data and try again
-      const { payment_method: _payment_method } = updateData;
-      const retryData = {
-        ...dbUpdateData,
-        // Don't include payment_method
-      };
-      
-      const { data: retryDataResult, error: retryError } = await supabase
-        .from('invoices')
-        .update(retryData)
-        .eq('id', id)
-        .select('*')
-        .single();
-        
-      if (retryError) {
-        console.error('Error updating invoice (retry):', retryError);
-        throw retryError;
-      }
-      
-      return { ...retryDataResult, services: services || [] } as Invoice;
-    }
-    throw error;
+  (dbUpdateData as any).urssaf_deduction = dbUpdateData.urssaf_deduction ?? 0;
+
+  const updatedInvoiceType = (payload as Invoice).invoice_type;
+  if (updatedInvoiceType) {
+    (dbUpdateData as any).invoice_type = updatedInvoiceType;
   }
   
+  const hasInvoiceType = Boolean(updatedInvoiceType);
+  const hasServices = Array.isArray(services) && services.length > 0;
+  const hasSummaryDescription = updateData.summary_description !== undefined;
+
+  const combineUpdateVariant = (includeInvoiceType: boolean, includeServices: boolean, includeSummary: boolean) => {
+    const variant: Partial<DatabaseInvoice> = { ...dbUpdateData, urssaf_deduction: dbUpdateData.urssaf_deduction ?? 0 };
+
+    if (!includeInvoiceType || !hasInvoiceType) {
+      delete (variant as any).invoice_type;
+    } else {
+      (variant as any).invoice_type = updatedInvoiceType;
+    }
+    if (!includeServices || !hasServices) {
+      delete (variant as any).services;
+    } else if (hasServices) {
+      (variant as any).services = services;
+    }
+    if (!includeSummary || !hasSummaryDescription) {
+      delete (variant as any).summary_description;
+    } else if (hasSummaryDescription) {
+      (variant as any).summary_description = updateData.summary_description ?? null;
+    }
+
+    return variant;
+  };
+  
+  const variantSet = new Map<string, Partial<DatabaseInvoice>>();
+  const pushVariant = (variant: Partial<DatabaseInvoice>) => {
+    const key = JSON.stringify(variant);
+    if (!variantSet.has(key)) {
+      variantSet.set(key, variant);
+    }
+  };
+  
+  pushVariant(combineUpdateVariant(true, true, true));
+  pushVariant(combineUpdateVariant(true, false, true));
+  pushVariant(combineUpdateVariant(false, true, true));
+  pushVariant(combineUpdateVariant(true, true, false));
+  pushVariant(combineUpdateVariant(true, false, false));
+  pushVariant(combineUpdateVariant(false, true, false));
+  pushVariant(combineUpdateVariant(false, false, true));
+  pushVariant(combineUpdateVariant(false, false, false));
+
+  let updatedInvoice: DatabaseInvoice | null = null;
+  let lastError: any = null;
+
+  for (const variant of variantSet.values()) {
+    const { data: updateResult, error: updateError } = await supabase
+      .from('invoices')
+      .update(variant)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (!updateError && updateResult) {
+      updatedInvoice = updateResult;
+      break;
+    }
+
+    lastError = updateError;
+
+    if (!updateError || updateError.code !== 'PGRST204') {
+      break;
+    }
+  }
+
+  if (!updatedInvoice) {
+    if (lastError) {
+      console.error('Error updating invoice:', lastError);
+      throw lastError;
+    }
+    throw new Error('Unknown error updating invoice');
+  }
+
   // Store payment_method in localStorage if column doesn't exist in database
   if (updateData.payment_method) {
     try {
@@ -716,6 +902,16 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
       localStorage.setItem('invoice-payment-methods', JSON.stringify(existingData));
     } catch (e) {
       console.warn('Could not store payment method in localStorage:', e);
+    }
+  }
+
+  if (updatedInvoiceType) {
+    try {
+      const existingTypes = JSON.parse(localStorage.getItem('invoice-types') || '{}');
+      existingTypes[id] = updatedInvoiceType;
+      localStorage.setItem('invoice-types', JSON.stringify(existingTypes));
+    } catch (e) {
+      console.warn('Could not store invoice type in localStorage:', e);
     }
   }
   
@@ -730,9 +926,23 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
       console.warn('Could not store services in localStorage:', e);
     }
   }
+
+  if (updateData.summary_description !== undefined) {
+    try {
+      const existingSummaries = JSON.parse(localStorage.getItem('invoice-summary-descriptions') || '{}');
+      if (updateData.summary_description) {
+        existingSummaries[id] = updateData.summary_description;
+      } else if (existingSummaries[id]) {
+        delete existingSummaries[id];
+      }
+      localStorage.setItem('invoice-summary-descriptions', JSON.stringify(existingSummaries));
+    } catch (e) {
+      console.warn('Could not store invoice summary description in localStorage (update):', e);
+    }
+  }
   
   // Return the invoice with services array if provided
-  return { ...data, services: services || [] } as Invoice;
+  return { ...updatedInvoice, services: services || [], invoice_type: updatedInvoiceType } as Invoice;
 }
 
 export async function deleteInvoice(id: string): Promise<void> {
@@ -930,11 +1140,6 @@ export async function upsertSettings(payload: Omit<Settings, 'id' | 'created_at'
       paymentterms: payload.paymentTerms || 30,
       logourl: payload.logoUrl || '',
       invoiceterms: payload.invoiceTerms || '',
-      paymentmethod: payload.paymentMethod,
-      additionalterms: payload.additionalTerms,
-      show_legal_rate: payload.showLegalRate ?? true,
-      show_fixed_fee: payload.showFixedFee ?? true,
-      urssafactivity: (payload as any).urssafActivity,
       updated_at: now,
       created_at: now,
     };

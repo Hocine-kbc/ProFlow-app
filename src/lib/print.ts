@@ -4,7 +4,20 @@ import { generateSharedInvoiceHTML } from './sharedInvoiceTemplate.ts';
 export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], services?: any[]) {
   // For PDF download, redirect to server endpoint
   const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
-  const downloadUrl = `${baseUrl}/api/download-invoice/${invoice.id}`;
+  const params = new URLSearchParams();
+  let summaryDescriptionOverride = (invoice as Invoice).summary_description;
+  if (!summaryDescriptionOverride) {
+    try {
+      const storedSummaries = JSON.parse(localStorage.getItem('invoice-summary-descriptions') || '{}');
+      summaryDescriptionOverride = storedSummaries[invoice.id];
+    } catch {
+      summaryDescriptionOverride = undefined;
+    }
+  }
+  if (summaryDescriptionOverride) {
+    params.append('summaryDescription', summaryDescriptionOverride);
+  }
+  const downloadUrl = `${baseUrl}/api/download-invoice/${invoice.id}${params.toString() ? `?${params.toString()}` : ''}`;
   
   // Open the download URL which will trigger PDF download
   window.open(downloadUrl, '_blank');
@@ -34,6 +47,18 @@ export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], servic
 
   // Get client data with fallback
   const client = invoice.client || clientsData.find((c: any) => c.id === invoice.client_id);
+
+  // Load invoice type metadata if not present
+  if (!invoice.invoice_type) {
+    try {
+      const storedTypes = JSON.parse(localStorage.getItem('invoice-types') || '{}');
+      if (storedTypes[invoice.id]) {
+        (invoice as any).invoice_type = storedTypes[invoice.id];
+      }
+    } catch (e) {
+      console.warn('Could not load invoice type metadata:', e);
+    }
+  }
 
   // Get services for this invoice - try from invoice.services first, then from passed services
   let invoiceServices = invoice.services || [];

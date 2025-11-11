@@ -32,21 +32,75 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
     return dateA - dateB;
   });
 
-  // Générer toutes les lignes de services
-  const servicesRows = allServices
-    .map(
-      (s) => `
+  const summaryFromServices = (invoiceServices || []).some((service) => service && service.summary_group);
+
+  const isSummary = invoice.invoice_type === 'summary' || summaryFromServices;
+
+  const aggregates = allServices.reduce(
+    (acc, service) => {
+      const hours = Number(service.hours) || 0;
+      const rate = Number(service.hourly_rate) || 0;
+      return {
+        hours: acc.hours + hours,
+        amount: acc.amount + hours * rate,
+      };
+    },
+    { hours: 0, amount: 0 }
+  );
+
+  const summarySourceCount = (invoiceServices || []).find((service) => service && service.summary_group && service.summary_source_count)?.summary_source_count || allServices.length;
+
+  const displaySummaryDescription = (invoice.summary_description && invoice.summary_description.trim()) || '';
+
+  const displayServices = isSummary
+    ? [
+        {
+          description: displaySummaryDescription || `Prestations regroupées (${summarySourceCount})`,
+          hours: aggregates.hours,
+          hourly_rate: aggregates.hours > 0 ? aggregates.amount / aggregates.hours : undefined,
+          total: aggregates.amount,
+        },
+      ]
+    : allServices.map((service) => ({
+        date: service.date,
+        description: service.description || '',
+        hours: Number(service.hours) || 0,
+        hourly_rate: Number(service.hourly_rate) || 0,
+        total: (Number(service.hours) || 0) * (Number(service.hourly_rate) || 0),
+      }));
+
+  const tableHeaders = isSummary
+    ? `
+        <th>Description</th>
+        <th class="text-right">Heures</th>
+        <th class="text-right">Tarif/h</th>
+        <th class="text-right">Total</th>
+      `
+    : `
+        <th>Date</th>
+        <th>Description</th>
+        <th class="text-right">Heures</th>
+        <th class="text-right">Tarif/h</th>
+        <th class="text-right">Total</th>
+      `;
+
+  const servicesRows = displayServices
+    .map((s) => `
         <tr>
-          <td>${formatDate(s.date || invoice.date)}</td>
+          ${
+            isSummary
+              ? ''
+              : `<td>${formatDate(s.date || invoice.date)}</td>`
+          }
           <td>${s.description || ''}</td>
-          <td class="text-right">${s.hours}</td>
-          <td class="text-right">${s.hourly_rate.toFixed(2)}€</td>
-          <td class="text-right">${(s.hours * s.hourly_rate).toFixed(2)}€</td>
+          <td class="text-right">${typeof s.hours === 'number' ? s.hours.toFixed(2) : '—'}</td>
+          <td class="text-right">${typeof s.hourly_rate === 'number' ? s.hourly_rate.toFixed(2) + '€' : '—'}</td>
+          <td class="text-right">${(typeof s.total === 'number' ? s.total : (typeof s.hours === 'number' && typeof s.hourly_rate === 'number' ? s.hours * s.hourly_rate : 0)).toFixed(2)}€</td>
         </tr>`
     )
     .join('');
 
-  const total = invoice.subtotal || 0;
+  const total = invoice.subtotal || aggregates.amount || 0;
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -496,9 +550,9 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         
         <div class="header">
             <div class="entreprise">
-                ${(invoice.company_logo_url !== null ? invoice.company_logo_url : settings?.logoUrl) ? `
+                ${(invoice.company_logo_url || settings?.logoUrl) ? `
                 <div class="logo" style="background: transparent;">
-                    <img src="${invoice.company_logo_url !== null ? invoice.company_logo_url : settings.logoUrl}" alt="Logo" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;" />
+                    <img src="${invoice.company_logo_url || settings?.logoUrl}" alt="Logo" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;" />
                 </div>
                 ` : `
                 <div class="logo">
@@ -506,11 +560,11 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
                 </div>
                 `}
                 <div class="entreprise-info">
-                    <h1>${invoice.company_name !== null ? invoice.company_name : (settings?.companyName || 'ProFlow')}</h1>
-                    <div class="subtitle">${invoice.company_owner !== null ? invoice.company_owner : (settings?.ownerName || '')}</div>
-                    <p>${invoice.company_address !== null ? invoice.company_address : (settings?.address || '')}<br>
-                    ${invoice.company_email !== null ? invoice.company_email : (settings?.email || '')} • ${invoice.company_phone !== null ? invoice.company_phone : (settings?.phone || '')}<br>
-                    SIRET: ${invoice.company_siret !== null ? invoice.company_siret : (settings?.siret || '')}</p>
+                    <h1>${invoice.company_name || settings?.companyName || 'ProFlow'}</h1>
+                    <div class="subtitle">${invoice.company_owner || settings?.ownerName || ''}</div>
+                    <p>${invoice.company_address || settings?.address || ''}<br>
+                    ${(invoice.company_email || settings?.email || '')}${(invoice.company_phone || settings?.phone) ? ' • ' + (invoice.company_phone || settings?.phone) : ''}<br>
+                    ${invoice.company_siret || settings?.siret || ''}</p>
                 </div>
             </div>
             <div class="facture-info">
@@ -541,11 +595,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
         <table>
             <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th class="text-right">Heures</th>
-                    <th class="text-right">Tarif</th>
-                    <th class="text-right">Montant</th>
+                    ${tableHeaders}
                 </tr>
             </thead>
             <tbody>

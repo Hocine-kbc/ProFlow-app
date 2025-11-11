@@ -39,6 +39,103 @@ import { Invoice, Service } from '../types/index.ts';
 import AlertModal from './AlertModal.tsx';
 import CustomSelect from './CustomSelect.tsx';
 
+type InvoiceTypeMode = 'detailed' | 'summary';
+
+type ServiceWithSummaryFlag = Service & { summary_group?: boolean; summary_source_count?: number; total?: number };
+
+interface DisplayServiceRow {
+  key: string;
+  description: string;
+  date?: string;
+  hours?: number;
+  hourlyRate?: number;
+  total: number;
+}
+
+const calculateServiceAggregates = (servicesList: Service[]) => {
+  return servicesList.reduce(
+    (acc, service) => {
+      const hours = Number(service.hours) || 0;
+      const rate = Number(service.hourly_rate) || 0;
+      return {
+        hours: acc.hours + hours,
+        amount: acc.amount + hours * rate,
+      };
+    },
+    { hours: 0, amount: 0 }
+  );
+};
+
+const buildDisplayRows = (
+  servicesList: ServiceWithSummaryFlag[],
+  mode: InvoiceTypeMode,
+  invoiceSummaryDescription?: string
+): DisplayServiceRow[] => {
+  const shouldSummarize = mode === 'summary' || isSummaryServiceList(servicesList);
+
+  if (shouldSummarize) {
+    if (servicesList.length === 0) {
+      return [];
+    }
+    const { hours, amount } = calculateServiceAggregates(servicesList);
+    const averageRate = hours > 0 ? amount / hours : 0;
+    const summaryServiceEntry = servicesList.find((service) => service.summary_group);
+    const sourceCount = summaryServiceEntry?.summary_source_count ?? servicesList.length;
+    const description =
+      invoiceSummaryDescription?.trim() ||
+      summaryServiceEntry?.description?.trim() ||
+      `Prestations regroupées (${sourceCount})`;
+    return [
+      {
+        key: 'summary-row',
+        description,
+        hours,
+        hourlyRate: hours > 0 ? averageRate : undefined,
+        total: amount,
+      },
+    ];
+  }
+
+  return servicesList.map((service, index) => {
+    const total = (Number(service.hours) || 0) * (Number(service.hourly_rate) || 0);
+    return {
+      key: service.id || `service-${index}`,
+      description: service.description || 'N/A',
+      date: service.date,
+      hours: Number(service.hours) || 0,
+      hourlyRate: Number(service.hourly_rate) || 0,
+      total,
+    };
+  });
+};
+
+const isSummaryServiceList = (servicesList: ServiceWithSummaryFlag[]): boolean =>
+  servicesList.some((service) => Boolean((service as ServiceWithSummaryFlag).summary_group));
+
+const createSummaryServiceEntry = (
+  servicesList: Service[],
+  clientId: string,
+  customDescription?: string
+): ServiceWithSummaryFlag | null => {
+  if (servicesList.length === 0) {
+    return null;
+  }
+  const { hours, amount } = calculateServiceAggregates(servicesList);
+  const description = customDescription?.trim() || `Prestations regroupées (${servicesList.length})`;
+  return {
+    id: `summary-${Date.now()}`,
+    client_id: clientId,
+    date: '',
+    hours,
+    hourly_rate: hours > 0 ? amount / hours : 0,
+    description,
+    status: 'invoiced',
+    summary_group: true,
+    summary_source_count: servicesList.length,
+    total: amount,
+  } as ServiceWithSummaryFlag;
+};
+
 export default function InvoicesPage() {
   const { state, dispatch, showNotification } = useApp();
   const { invoices, clients, services } = state;
@@ -75,6 +172,7 @@ export default function InvoicesPage() {
     showLegalRate: true,
     showFixedFee: true,
   });
+  const [summaryDescription, setSummaryDescription] = useState('');
 
   // Fonction utilitaire pour calculer le montant d'une facture à partir de ses prestations
   const calculateInvoiceAmount = (invoice: Invoice): number => {
@@ -141,6 +239,16 @@ export default function InvoicesPage() {
   });
   const [sendingEmail, setSendingEmail] = useState(false);
   const [preselectedClient, setPreselectedClient] = useState<{ id: string; name: string } | null>(null);
+  const [invoiceType, setInvoiceType] = useState<InvoiceTypeMode>('detailed');
+  
+  useEffect(() => {
+    if (!showModal) {
+      return;
+    }
+    if (invoiceType === 'summary' && summaryDescription.trim() === '') {
+      setSummaryDescription('Prestations regroupées');
+    }
+  }, [showModal]);
   
   // Charger les paramètres existants
   useEffect(() => {
@@ -344,15 +452,34 @@ export default function InvoicesPage() {
     e.preventDefault();
     
     const client = clients.find(c => c.id === formData.client_id);
-    const invoiceServices = selectableServices.filter((s: Service) => selectedServices.includes(s.id));
-    
-    const totalAmount = invoiceServices.reduce((acc: number, service: Service) => 
-      acc + (service.hours * service.hourly_rate), 0
+    const selectedServiceEntries = selectableServices.filter((s: Service) => selectedServices.includes(s.id));
+
+    const normalizedServices: ServiceWithSummaryFlag[] = selectedServiceEntries.map((service) => ({
+      ...service,
+      status: 'invoiced',
+    }));
+
+    const summaryDescriptionValue = invoiceType === 'summary' ? (summaryDescription.trim() || 'Prestations regroupées') : undefined;
+
+    const summaryService = invoiceType === 'summary'
+      ? createSummaryServiceEntry(normalizedServices, formData.client_id, summaryDescriptionValue)
+      : null;
+    const servicesForInvoice: ServiceWithSummaryFlag[] =
+      invoiceType === 'summary'
+        ? summaryService
+          ? [summaryService]
+          : []
+        : normalizedServices;
+
+    const totalAmount = servicesForInvoice.reduce(
+      (acc: number, service: Service) => acc + ((Number(service.hours) || 0) * (Number(service.hourly_rate) || 0)),
+      0
     );
-    
+
     try {
+      let persistedInvoice: Invoice | null = null;
+
       if (editingInvoice) {
-        // Update only columns that exist on invoices table (exclude services array)
         const saved = await updateInvoiceApi(editingInvoice.id, {
           client_id: formData.client_id,
           invoice_number: formData.invoice_number,
@@ -362,13 +489,28 @@ export default function InvoicesPage() {
           subtotal: totalAmount,
           net_amount: totalAmount,
           status: 'draft',
+          invoice_type: invoiceType,
+          services: servicesForInvoice,
+          ...(summaryDescriptionValue ? { summary_description: summaryDescriptionValue } : {}),
         });
-        dispatch({ type: 'UPDATE_INVOICE', payload: { ...editingInvoice, ...saved, client, services: invoiceServices } as Invoice });
+        const updatedInvoice = {
+          ...editingInvoice,
+          ...saved,
+          client,
+          services: servicesForInvoice,
+          invoice_type: saved.invoice_type || invoiceType,
+          ...(summaryDescriptionValue ? { summary_description: summaryDescriptionValue } : {}),
+        } as Invoice;
+        dispatch({
+          type: 'UPDATE_INVOICE',
+          payload: updatedInvoice,
+        });
+        persistedInvoice = updatedInvoice;
         showNotification('success', 'Facture modifiée', 'La facture a été mise à jour avec succès');
       } else {
         const saved = await createInvoice({
           client_id: formData.client_id,
-          services: invoiceServices,
+          services: servicesForInvoice,
           invoice_number: formData.invoice_number || generateInvoiceNumber(),
           date: formData.date,
           due_date: formData.due_date,
@@ -376,11 +518,36 @@ export default function InvoicesPage() {
           subtotal: totalAmount,
           net_amount: totalAmount,
           status: 'draft',
+          invoice_type: invoiceType,
+          ...(summaryDescriptionValue ? { summary_description: summaryDescriptionValue } : {}),
         });
-        dispatch({ type: 'ADD_INVOICE', payload: { ...saved, client, services: invoiceServices } as Invoice });
-        // Ne pas marquer les services comme 'invoiced' pour permettre leur réutilisation
-        // Les services restent 'completed' et peuvent être utilisés dans d'autres factures
+        const newInvoice = {
+          ...saved,
+          client,
+          services: servicesForInvoice,
+          invoice_type: saved.invoice_type || invoiceType,
+          ...(summaryDescriptionValue ? { summary_description: summaryDescriptionValue } : {}),
+        } as Invoice;
+        dispatch({
+          type: 'ADD_INVOICE',
+          payload: newInvoice,
+        });
+        persistedInvoice = newInvoice;
         showNotification('success', 'Facture créée', 'La facture a été créée avec succès');
+      }
+
+      if (persistedInvoice) {
+        try {
+          const existingDescriptions = JSON.parse(localStorage.getItem('invoice-summary-descriptions') || '{}');
+          if (summaryDescriptionValue) {
+            existingDescriptions[persistedInvoice.id] = summaryDescriptionValue;
+          } else if (existingDescriptions[persistedInvoice.id]) {
+            delete existingDescriptions[persistedInvoice.id];
+          }
+          localStorage.setItem('invoice-summary-descriptions', JSON.stringify(existingDescriptions));
+        } catch (e) {
+          console.warn('Could not store invoice summary description in localStorage:', e);
+        }
       }
     } catch (err) {
       console.error('Error in handleSubmit:', err);
@@ -405,6 +572,8 @@ export default function InvoicesPage() {
     setOriginalPaymentTerms(null);
     setDueDateManuallyModified(false);
     setPreselectedClient(null); // Réinitialiser le client pré-sélectionné
+    setInvoiceType('detailed');
+    setSummaryDescription('');
   };
   const openEdit = (inv: Invoice) => {
     setEditingInvoice(inv);
@@ -416,6 +585,7 @@ export default function InvoicesPage() {
       due_date: inv.due_date,
       payment_method: inv.payment_method || '',
     });
+    setInvoiceType(inv.invoice_type === 'summary' ? 'summary' : 'detailed');
     
     // Calculer les termes de paiement originaux de cette facture
     if (inv.date && inv.due_date) {
@@ -455,6 +625,26 @@ export default function InvoicesPage() {
           invoiceServices = completedServices;
         }
       }
+    }
+
+    if (inv.invoice_type === 'summary') {
+      let descriptionFallback = '';
+      const summaryEntry = (invoiceServices as ServiceWithSummaryFlag[]).find((service) => (service as ServiceWithSummaryFlag).summary_group);
+      if (summaryEntry?.description) {
+        descriptionFallback = summaryEntry.description;
+      } else if (inv.summary_description) {
+        descriptionFallback = inv.summary_description;
+      } else {
+        try {
+          const storedDescriptions = JSON.parse(localStorage.getItem('invoice-summary-descriptions') || '{}');
+          descriptionFallback = storedDescriptions[inv.id] || '';
+        } catch {
+          descriptionFallback = '';
+        }
+      }
+      setSummaryDescription(descriptionFallback || 'Prestations regroupées');
+    } else {
+      setSummaryDescription('');
     }
     
     setSelectedServices(invoiceServices.map(s => s.id));
@@ -1417,7 +1607,7 @@ export default function InvoicesPage() {
                     <div className="flex flex-col items-center space-y-2">
                       <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600" />
                       <p className="text-lg font-medium">Aucune facture trouvée</p>
-                      <p className="text-sm">Créez votre première facture en cliquant sur le bouton "Nouvelle facture"</p>
+                      <p className="text-sm">Créez votre première facture en cliquant sur le bouton "Nouvelle"</p>
                     </div>
                   </td>
                 </tr>
@@ -1744,6 +1934,61 @@ export default function InvoicesPage() {
                         placeholder={generateInvoiceNumber()}
                         className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                       />
+                    </div>
+
+                    <div className="lg:col-span-2">
+                      <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">
+                        Type de facture *
+                      </label>
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInvoiceType('detailed');
+                            setSummaryDescription('');
+                          }}
+                          className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
+                            invoiceType === 'detailed'
+                              ? 'bg-purple-600 text-white border-purple-600 shadow-lg'
+                              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          <span>Détaillée</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setInvoiceType('summary')}
+                          className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
+                            invoiceType === 'summary'
+                              ? 'bg-purple-600 text-white border-purple-600 shadow-lg'
+                              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          <span>Synthèse</span>
+                        </button>
+                      </div>
+                      {invoiceType === 'summary' && (
+                        <div className="mt-3 sm:mt-4">
+                          <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                            Description de la synthèse
+                          </label>
+                          <textarea
+                            value={summaryDescription}
+                            onChange={(e) => setSummaryDescription(e.target.value)}
+                            rows={2}
+                            className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                            placeholder="Prestations regroupées"
+                          />
+                          <p className="mt-1 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
+                            Ce texte remplacera la description par défaut dans la facture synthèse.
+                          </p>
+                        </div>
+                      )}
+                      <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                        <strong>Détaillée :</strong> chaque prestation apparaît sur la facture.
+                        <br className="hidden sm:block" />
+                        <strong>Synthèse :</strong> toutes les prestations sélectionnées sont regroupées sur une seule ligne (colonne date masquée).
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -2094,6 +2339,11 @@ export default function InvoicesPage() {
                         {previewInvoice.status === 'paid' ? 'Payée' : 
                          previewInvoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
                       </span>
+                      {((previewInvoice as Invoice).invoice_type === 'summary') && (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700">
+                          Mode synthèse
+                        </span>
+                      )}
                       <span className="text-white/60 text-xs">
                         {calculateInvoiceAmount(previewInvoice).toFixed(2)}€
                       </span>
@@ -2248,45 +2498,43 @@ export default function InvoicesPage() {
                       Prestations
                     </h3>
                   {(() => {
-                    // Get services for this invoice - try from invoice.services first, then from global services
-                    // Utiliser les services stockés dans la facture si disponibles
-                    const invoiceServices = previewInvoice.services || [];
-                    
-                    // Si pas de services stockés dans la facture, ne pas afficher tous les services du client
-                    // car cela fausse l'aperçu. L'aperçu doit montrer seulement les services de cette facture.
-                    if (invoiceServices.length === 0) {
-                      console.log('⚠️ Aucun service stocké dans la facture pour l\'aperçu');
-                      // Ne pas utiliser tous les services du client pour l'aperçu
-                      // car cela afficherait toutes les prestations au lieu de celles de la facture
-                    }
-                    
+                    const invoiceServices = (previewInvoice.services || []) as ServiceWithSummaryFlag[];
+                    const previewMode: InvoiceTypeMode =
+                      (previewInvoice as Invoice).invoice_type === 'summary' || isSummaryServiceList(invoiceServices)
+                        ? 'summary'
+                        : 'detailed';
+                    const displayRows = buildDisplayRows(invoiceServices, previewMode, (previewInvoice as Invoice).summary_description);
+                    const showDateColumn = previewMode !== 'summary';
+
                     return (
                       <>
                         {/* Vue mobile/tablette - Cards */}
                         <div className="block lg:hidden space-y-3">
-                          {invoiceServices.length > 0 ? (
-                            invoiceServices.map((service: Service, index: number) => (
-                              <div key={service.id || index} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                          {displayRows.length > 0 ? (
+                            displayRows.map((row) => (
+                              <div key={row.key} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
                                 <div className="flex justify-between items-start mb-2">
                                   <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
-                                    {service.description || 'N/A'}
+                                    {row.description || 'N/A'}
                                   </h4>
                                   <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                                    {(service.hours * service.hourly_rate).toFixed(2)}€
+                                    {row.total.toFixed(2)}€
                                   </span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                  {showDateColumn && (
+                                    <div>
+                                      <span className="font-medium">Date:</span> {row.date ? new Date(row.date).toLocaleDateString('fr-FR') : '—'}
+                                    </div>
+                                  )}
                                   <div>
-                                    <span className="font-medium">Date:</span> {new Date(service.date).toLocaleDateString('fr-FR')}
+                                    <span className="font-medium">Heures:</span> {typeof row.hours === 'number' ? `${row.hours.toFixed(2)}h` : '—'}
                                   </div>
                                   <div>
-                                    <span className="font-medium">Heures:</span> {service.hours}h
+                                    <span className="font-medium">Tarif:</span> {typeof row.hourlyRate === 'number' ? `${row.hourlyRate.toFixed(2)}€` : '—'}
                                   </div>
                                   <div>
-                                    <span className="font-medium">Tarif:</span> {service.hourly_rate}€/h
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">Total:</span> {(service.hours * service.hourly_rate).toFixed(2)}€
+                                    <span className="font-medium">Total:</span> {row.total.toFixed(2)}€
                                   </div>
                                 </div>
                               </div>
@@ -2298,8 +2546,8 @@ export default function InvoicesPage() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                               </div>
-                              <p className="text-gray-500 dark:text-gray-400 font-medium">Aucune prestation trouvée pour cette facture</p>
-                              <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Les prestations seront affichées ici une fois ajoutées</p>
+                              <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 font-medium">Aucune prestation trouvée pour cette facture</p>
+                              <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 mt-1">Les prestations seront affichées ici une fois ajoutées</p>
                             </div>
                           )}
                         </div>
@@ -2309,27 +2557,41 @@ export default function InvoicesPage() {
                           <table className="w-full border-0 rounded-xl sm:rounded-2xl overflow-hidden">
                             <thead className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
                               <tr>
-                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 first:rounded-tl-xl sm:first:rounded-tl-2xl last:rounded-tr-xl sm:last:rounded-tr-2xl">Description</th>
-                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 first:rounded-tl-xl sm:first:rounded-tl-2xl">Description</th>
+                                {showDateColumn && (
+                                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
+                                )}
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Heures</th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Tarif/h</th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 last:rounded-tr-xl sm:last:rounded-tr-2xl">Total</th>
                               </tr>
                             </thead>
                             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-600">
-                              {invoiceServices.length > 0 ? (
-                                invoiceServices.map((service: Service, index: number) => (
-                                  <tr key={service.id || index} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${index === invoiceServices.length - 1 ? 'last:rounded-b-xl sm:last:rounded-b-2xl' : ''}`}>
-                                    <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-medium ${index === invoiceServices.length - 1 ? 'first:rounded-bl-xl sm:first:rounded-bl-2xl' : ''}`}>{service.description || 'N/A'}</td>
-                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{new Date(service.date).toLocaleDateString('fr-FR')}</td>
-                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hours}h</td>
-                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hourly_rate}€</td>
-                                    <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-bold ${index === invoiceServices.length - 1 ? 'last:rounded-br-xl sm:last:rounded-br-2xl' : ''}`}>{(service.hours * service.hourly_rate).toFixed(2)}€</td>
+                              {displayRows.length > 0 ? (
+                                displayRows.map((row, index) => (
+                                  <tr key={row.key} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${index === displayRows.length - 1 ? 'last:rounded-b-xl sm:last:rounded-b-2xl' : ''}`}>
+                                    <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-medium ${index === displayRows.length - 1 ? 'first:rounded-bl-xl sm:first:rounded-bl-2xl' : ''}`}>
+                                      {row.description || 'N/A'}
+                                    </td>
+                                    {showDateColumn && (
+                                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                        {row.date ? new Date(row.date).toLocaleDateString('fr-FR') : '—'}
+                                      </td>
+                                    )}
+                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                      {typeof row.hours === 'number' ? `${row.hours.toFixed(2)}h` : '—'}
+                                    </td>
+                                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                      {typeof row.hourlyRate === 'number' ? `${row.hourlyRate.toFixed(2)}€` : '—'}
+                                    </td>
+                                    <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-bold ${index === displayRows.length - 1 ? 'last:rounded-br-xl sm:last:rounded-br-2xl' : ''}`}>
+                                      {row.total.toFixed(2)}€
+                                    </td>
                                   </tr>
                                 ))
                               ) : (
                                 <tr>
-                                  <td colSpan={5} className="px-3 sm:px-6 py-8 sm:py-12 text-center rounded-b-xl sm:rounded-b-2xl">
+                                  <td colSpan={showDateColumn ? 5 : 4} className="px-3 sm:px-6 py-8 sm:py-12 text-center rounded-b-xl sm:rounded-b-2xl">
                                     <div className="flex flex-col items-center">
                                       <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
                                         <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2631,12 +2893,10 @@ export default function InvoicesPage() {
                       const newPaymentTerms = parseInt(e.target.value) || 30;
                       handleSettingsChange('paymentTerms', newPaymentTerms);
                       
-                      // Remplir automatiquement les conditions de paiement si elles sont vides ou par défaut
                       const currentTerms = billingSettings.invoiceTerms;
                       const defaultTerms = `Paiement en ${billingSettings.paymentTerms || 30} jours.`;
                       const newDefaultTerms = `Paiement en ${newPaymentTerms} jours.`;
                       
-                      // Si les conditions actuelles sont vides ou correspondent au format par défaut, les mettre à jour
                       if (!currentTerms || currentTerms === defaultTerms || currentTerms === 'Paiement à 30 jours. Pas de TVA (franchise en base).' || currentTerms === 'Paiement en 30 jours. Pas de TVA (franchise en base).' || currentTerms === 'Paiement en 30 jours.') {
                         handleSettingsChange('invoiceTerms', newDefaultTerms);
                       }
@@ -2779,7 +3039,6 @@ export default function InvoicesPage() {
         confirmText="Confirmer"
         cancelText="Annuler"
       />
-
     </div>
   );
 }
