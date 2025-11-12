@@ -3,9 +3,100 @@ import { CheckCircle, ChevronLeft, ChevronRight, Circle, Clock, Edit2, Filter, P
 import { useApp } from '../contexts/AppContext.tsx';
 import { useSettings } from '../hooks/useSettings.ts';
 import { createService, updateService as updateServiceApi, deleteService as deleteServiceApi } from '../lib/api.ts';
-import { Service, Article } from '../types/index.ts';
+import { Service, Article, ServicePricingType } from '../types/index.ts';
 import AlertModal from './AlertModal.tsx';
 import CustomSelect from './CustomSelect.tsx';
+
+const DEFAULT_SERVICE_PRICING_TYPE: ServicePricingType = 'hourly';
+
+const SERVICE_PRICING_CONFIG: Record<ServicePricingType, {
+  optionLabel: string;
+  quantityLabel: string;
+  rateLabel: string;
+  unitSuffix: string;
+  rateSuffix: string;
+}> = {
+  hourly: {
+    optionLabel: 'Horaire (€/h)',
+    quantityLabel: "Nombre d'heures",
+    rateLabel: 'Tarif horaire (€ / heure)',
+    unitSuffix: 'h',
+    rateSuffix: '€/h',
+  },
+  daily: {
+    optionLabel: 'Journalière (€/jour)',
+    quantityLabel: 'Nombre de jours',
+    rateLabel: 'Tarif journalier (€ / jour)',
+    unitSuffix: 'j',
+    rateSuffix: '€/jour',
+  },
+  project: {
+    optionLabel: 'Projet (forfait)',
+    quantityLabel: 'Quantité',
+    rateLabel: 'Montant du projet (€ / projet)',
+    unitSuffix: '',
+    rateSuffix: '€',
+  },
+};
+
+const SERVICE_PRICING_OPTIONS = (Object.keys(SERVICE_PRICING_CONFIG) as ServicePricingType[]).map((value) => ({
+  value,
+  label: SERVICE_PRICING_CONFIG[value].optionLabel,
+}));
+
+const getPricingConfig = (pricingType?: ServicePricingType) => {
+  const key = pricingType && SERVICE_PRICING_CONFIG[pricingType] ? pricingType : DEFAULT_SERVICE_PRICING_TYPE;
+  return SERVICE_PRICING_CONFIG[key];
+};
+
+const formatQuantityWithUnit = (quantity: number, pricingType?: ServicePricingType) => {
+  const config = getPricingConfig(pricingType);
+  if (quantity === undefined || quantity === null) {
+    return `0${config.unitSuffix}`.trim();
+  }
+  const numericQuantity = Number(quantity) || 0;
+  const formattedQuantity = Number.isInteger(numericQuantity)
+    ? numericQuantity.toString()
+    : numericQuantity.toFixed(2).replace(/\.?(0)+$/, '');
+  return `${formattedQuantity}${config.unitSuffix}`.trim();
+};
+
+const formatRateWithSuffix = (rate: number, pricingType?: ServicePricingType) => {
+  const config = getPricingConfig(pricingType);
+  if (!rate && rate !== 0) {
+    return `0${config.rateSuffix}`;
+  }
+  const formattedRate = Number.isInteger(rate) ? rate : rate.toFixed(2);
+  return `${formattedRate}${config.rateSuffix}`;
+};
+
+const parseISODate = (dateString: string): Date | null => {
+  if (!dateString) return null;
+  const parsed = new Date(`${dateString}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatDateToISO = (date: Date): string => {
+  return date.toISOString().split('T')[0];
+};
+
+const addDaysToISODate = (dateString: string, days: number): string => {
+  const date = parseISODate(dateString);
+  if (!date) return dateString;
+  const cloned = new Date(date.getTime());
+  cloned.setDate(cloned.getDate() + days);
+  return formatDateToISO(cloned);
+};
+
+const calculateInclusiveDaysBetween = (startDate: string, endDate: string): number => {
+  const start = parseISODate(startDate);
+  const end = parseISODate(endDate);
+  if (!start || !end) return 1;
+  const diffMs = end.getTime() - start.getTime();
+  if (diffMs < 0) return 1;
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  return diffDays + 1;
+};
 
 export default function ServicesPage() {
   const { state, dispatch, showNotification } = useApp();
@@ -20,6 +111,9 @@ export default function ServicesPage() {
   const listButtonRef = useRef<HTMLButtonElement>(null);
   const calendarButtonRef = useRef<HTMLButtonElement>(null);
   const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, left: 0 });
+  const tabServicesButtonRef = useRef<HTMLButtonElement>(null);
+  const tabArticlesButtonRef = useRef<HTMLButtonElement>(null);
+  const [tabIndicatorStyle, setTabIndicatorStyle] = useState({ width: 0, left: 0 });
   
   // États pour la navigation tactile
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -201,6 +295,7 @@ export default function ServicesPage() {
     description: '',
     hourly_rate: 25,
     category: '',
+    pricing_type: DEFAULT_SERVICE_PRICING_TYPE,
     is_active: true,
   });
   const [alertModal, setAlertModal] = useState<{
@@ -238,7 +333,9 @@ export default function ServicesPage() {
     description: '',
     status: 'pending' as 'pending' | 'completed' | 'invoiced',
     article_id: '',
+    pricing_type: DEFAULT_SERVICE_PRICING_TYPE as ServicePricingType,
   });
+  const [dailyEndDate, setDailyEndDate] = useState<string>('');
 
   // Détecter le client pré-sélectionné depuis la vue détaillée client
   useEffect(() => {
@@ -278,27 +375,48 @@ export default function ServicesPage() {
         if (container) {
           const containerRect = container.getBoundingClientRect();
           const buttonRect = activeButton.getBoundingClientRect();
-          
           setIndicatorStyle({
             width: buttonRect.width,
-            left: buttonRect.left - containerRect.left
+            left: buttonRect.left - containerRect.left,
           });
         }
       }
     };
 
-    // Utiliser requestAnimationFrame pour un rendu fluide et immédiat
     const rafId = requestAnimationFrame(() => {
-      // Double raf pour s'assurer que le DOM est mis à jour
       requestAnimationFrame(updateIndicator);
     });
-    
+
     window.addEventListener('resize', updateIndicator);
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', updateIndicator);
     };
   }, [currentView]);
+
+  useEffect(() => {
+    const updateTabIndicator = () => {
+      const activeButton = currentTab === 'services' ? tabServicesButtonRef.current : tabArticlesButtonRef.current;
+      if (activeButton && activeButton.parentElement) {
+        const containerRect = activeButton.parentElement.getBoundingClientRect();
+        const buttonRect = activeButton.getBoundingClientRect();
+        setTabIndicatorStyle({
+          width: buttonRect.width,
+          left: buttonRect.left - containerRect.left,
+        });
+      }
+    };
+
+    const rafId = requestAnimationFrame(() => {
+      requestAnimationFrame(updateTabIndicator);
+    });
+
+    window.addEventListener('resize', updateTabIndicator);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updateTabIndicator);
+    };
+  }, [currentTab]);
 
   const loadArticles = () => {
     try {
@@ -322,6 +440,22 @@ export default function ServicesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (formData.pricing_type === 'daily') {
+      if (!formData.date) {
+        showNotification('error', 'Date manquante', 'Veuillez sélectionner une date de début.');
+        return;
+      }
+      if (!dailyEndDate) {
+        showNotification('error', 'Date manquante', 'Veuillez sélectionner une date de fin.');
+        return;
+      }
+      if (dailyEndDate < formData.date) {
+        showNotification('error', 'Période invalide', 'La date de fin doit être supérieure ou égale à la date de début.');
+        setDailyEndDate(formData.date);
+        return;
+      }
+    }
     
     const client = clients.find(c => c.id === formData.client_id);
     
@@ -351,7 +485,9 @@ export default function ServicesPage() {
       description: '',
       status: 'pending',
       article_id: '',
+      pricing_type: DEFAULT_SERVICE_PRICING_TYPE,
     });
+    setDailyEndDate('');
     setEditingService(null);
     setShowModal(false);
   };
@@ -365,7 +501,13 @@ export default function ServicesPage() {
           article_id: articleId,
           description: article.description,
           hourly_rate: article.hourly_rate,
+          pricing_type: article.pricing_type || DEFAULT_SERVICE_PRICING_TYPE,
         }));
+        if ((article.pricing_type || DEFAULT_SERVICE_PRICING_TYPE) === 'daily') {
+          setDailyEndDate((current) => current || formData.date || '');
+        } else {
+          setDailyEndDate('');
+        }
       }
     } else {
       setFormData(prev => ({
@@ -373,7 +515,9 @@ export default function ServicesPage() {
         article_id: '',
         description: '',
         hourly_rate: settings?.defaultHourlyRate || 25,
+        pricing_type: DEFAULT_SERVICE_PRICING_TYPE,
       }));
+      setDailyEndDate('');
     }
   };
 
@@ -383,6 +527,7 @@ export default function ServicesPage() {
       description: '',
       hourly_rate: 25,
       category: '',
+      pricing_type: DEFAULT_SERVICE_PRICING_TYPE,
       is_active: true
     });
     setEditingArticle(null);
@@ -398,6 +543,7 @@ export default function ServicesPage() {
       description: articleFormData.description,
       hourly_rate: articleFormData.hourly_rate,
       category: articleFormData.category || undefined,
+      pricing_type: articleFormData.pricing_type,
       is_active: articleFormData.is_active,
       created_at: editingArticle?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -453,7 +599,16 @@ export default function ServicesPage() {
       description: service.description,
       status: service.status,
       article_id: service.article_id || '',
+      pricing_type: service.pricing_type || DEFAULT_SERVICE_PRICING_TYPE,
     });
+    if ((service.pricing_type || DEFAULT_SERVICE_PRICING_TYPE) === 'daily') {
+      const computedEnd = service.date && service.hours
+        ? addDaysToISODate(service.date, Math.max(0, Math.round(service.hours) - 1))
+        : service.date;
+      setDailyEndDate(computedEnd || service.date || '');
+    } else {
+      setDailyEndDate('');
+    }
     setEditingService(service);
     setShowModal(true);
   };
@@ -512,6 +667,18 @@ export default function ServicesPage() {
   };
 
   const monthlyTotal = calculateMonthlyTotal();
+
+  const currentServicePricingConfig = getPricingConfig(formData.pricing_type);
+  const serviceQuantityStep = formData.pricing_type === 'project' ? 1 : 0.5;
+  const serviceQuantityMin = formData.pricing_type === 'project' ? 1 : 0;
+  const serviceRateStep = formData.pricing_type === 'project' ? 1 : 0.5;
+  const showServicePreview = formData.hours > 0 && formData.hourly_rate > 0;
+  const formattedServiceQuantity = formatQuantityWithUnit(formData.hours, formData.pricing_type);
+  const formattedServiceRate = formatRateWithSuffix(formData.hourly_rate, formData.pricing_type);
+  const estimatedServiceAmount = calculateAmount(formData.hours, formData.hourly_rate);
+
+  const currentArticlePricingConfig = getPricingConfig(articleFormData.pricing_type);
+  const articleRateStep = articleFormData.pricing_type === 'project' ? 1 : 0.5;
 
   const sortedServices = filteredServices.sort((a, b) => {
     const clientA = clients.find(c => c.id === a.client_id);
@@ -591,6 +758,43 @@ export default function ServicesPage() {
     });
   };
 
+  useEffect(() => {
+    if (formData.pricing_type !== 'daily') {
+      return;
+    }
+
+    const startDate = formData.date;
+    if (!startDate) {
+      if (dailyEndDate) {
+        setDailyEndDate('');
+      }
+      if (formData.hours !== 0) {
+        setFormData(prev => ({ ...prev, hours: 0 }));
+      }
+      return;
+    }
+
+    if (!dailyEndDate || dailyEndDate < startDate) {
+      if (dailyEndDate !== startDate) {
+        setDailyEndDate(startDate);
+      }
+      if (formData.hours !== 1) {
+        setFormData(prev => ({ ...prev, hours: 1 }));
+      }
+      return;
+    }
+
+    const inclusiveDays = calculateInclusiveDaysBetween(startDate, dailyEndDate);
+    if (formData.hours !== inclusiveDays) {
+      setFormData(prev => ({ ...prev, hours: inclusiveDays }));
+    }
+  }, [formData.pricing_type, formData.date, dailyEndDate]);
+
+  useEffect(() => {
+    if (formData.pricing_type !== 'daily' && dailyEndDate) {
+      setDailyEndDate('');
+    }
+  }, [formData.pricing_type]);
 
   return (
     <div className="space-y-6">
@@ -636,32 +840,42 @@ export default function ServicesPage() {
 
       {/* Onglets */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
-        <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1" role="tablist">
+        <div className="relative flex p-1 bg-gray-100 dark:bg-gray-700/60 rounded-full" role="tablist">
+          <div
+            className="absolute h-9 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 shadow-md transition-all duration-200"
+            style={{
+              width: tabIndicatorStyle.width ? `${tabIndicatorStyle.width}px` : '50%',
+              left: tabIndicatorStyle.width ? `${tabIndicatorStyle.left}px` : currentTab === 'services' ? '0%' : '50%',
+              transition: 'left 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+          />
           <button
+            ref={tabServicesButtonRef}
             type="button"
             onClick={() => setCurrentTab('services')}
             role="tab"
-            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+            className={`relative z-10 flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-full transition-colors ${
               currentTab === 'services'
-                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'text-white'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
           >
-            <Clock className="w-4 h-4 mr-2 inline" />
-            Prestations
+            <Clock className="w-4 h-4" />
+            <span>Prestations</span>
           </button>
           <button
+            ref={tabArticlesButtonRef}
             type="button"
             onClick={() => setCurrentTab('articles')}
             role="tab"
-            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+            className={`relative z-10 flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-full transition-colors ${
               currentTab === 'articles'
-                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'text-white'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
           >
-            <Package className="w-4 h-4 mr-2 inline" />
-            Articles
+            <Package className="w-4 h-4" />
+            <span>Articles</span>
           </button>
         </div>
       </div>
@@ -842,8 +1056,8 @@ export default function ServicesPage() {
                         { value: "amount-asc", label: "💰 Montant (plus faible)" },
                         { value: "name-asc", label: "👤 Client (A-Z)" },
                         { value: "name-desc", label: "👤 Client (Z-A)" },
-                        { value: "hours-desc", label: "⏰ Heures (plus)" },
-                        { value: "hours-asc", label: "⏰ Heures (moins)" }
+                        { value: "hours-desc", label: "⏰ Quantité (plus)" },
+                        { value: "hours-asc", label: "⏰ Quantité (moins)" }
                       ]}
                       className="w-full"
                     />
@@ -897,7 +1111,7 @@ export default function ServicesPage() {
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">{service.description || 'Sans description'}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Client ID: {service.client_id} | {service.hours}h × {service.hourly_rate}€ = {(service.hours * service.hourly_rate).toFixed(2)}€
+                        Client ID: {service.client_id} | {formatQuantityWithUnit(service.hours, service.pricing_type)} × {formatRateWithSuffix(service.hourly_rate, service.pricing_type)} = {(service.hours * service.hourly_rate).toFixed(2)}€
                       </p>
                     </div>
                     <div className="flex space-x-2">
@@ -1095,8 +1309,8 @@ export default function ServicesPage() {
                     </p>
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex space-x-3">
-                        <span className="text-gray-600 dark:text-gray-400">{service.hours}h</span>
-                        <span className="text-gray-600 dark:text-gray-400">{service.hourly_rate}€/h</span>
+                        <span className="text-gray-600 dark:text-gray-400">{formatQuantityWithUnit(service.hours, service.pricing_type)}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{formatRateWithSuffix(service.hourly_rate, service.pricing_type)}</span>
                         <span className="font-semibold text-gray-900 dark:text-white">{amount.toFixed(2)}€</span>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -1183,11 +1397,11 @@ export default function ServicesPage() {
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Description
                 </th>
-                <th className="w-20 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Heures
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Quantité
                 </th>
                 <th className="w-24 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Tarif/h
+                  Tarif
                 </th>
                 <th className="w-28 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Montant
@@ -1286,10 +1500,10 @@ export default function ServicesPage() {
                       </div>
                     </td>
                     <td className="w-20 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {service.hours}h
+                      {formatQuantityWithUnit(service.hours, service.pricing_type)}
                     </td>
                     <td className="w-24 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {service.hourly_rate}€
+                      {formatRateWithSuffix(service.hourly_rate, service.pricing_type)}
                     </td>
                     <td className="w-28 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
                       {amount.toFixed(2)}€
@@ -1580,7 +1794,7 @@ export default function ServicesPage() {
                                     : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30'
                                 }`}
                                 onClick={() => handleEdit(dayServices[0])}
-                                title={`${clients.find(c => c.id === dayServices[0].client_id)?.name || 'Client inconnu'} - ${dayServices[0].hours}h - ${(dayServices[0].hours * dayServices[0].hourly_rate).toFixed(2)}€`}
+                                title={`${clients.find(c => c.id === dayServices[0].client_id)?.name || 'Client inconnu'} - ${formatQuantityWithUnit(dayServices[0].hours, dayServices[0].pricing_type)} - ${calculateAmount(dayServices[0].hours, dayServices[0].hourly_rate).toFixed(2)}€`}
                               >
                                 {/* Bouton de suppression - Design compact */}
                                 <button
@@ -1606,7 +1820,7 @@ export default function ServicesPage() {
                                         dayServices[0].status === 'completed' ? 'text-emerald-700 dark:text-emerald-300' :
                                         dayServices[0].status === 'invoiced' ? 'text-rose-700 dark:text-rose-300' : 'text-blue-700 dark:text-blue-300'
                                       }`}>
-                                        {dayServices[0].hours}h
+                                        {formatQuantityWithUnit(dayServices[0].hours, dayServices[0].pricing_type)}
                                       </div>
                                     </div>
                                   </div>
@@ -1614,7 +1828,7 @@ export default function ServicesPage() {
                                     {clients.find(c => c.id === dayServices[0].client_id)?.name || 'Client inconnu'}
                                   </div>
                                   <div className="text-xs text-gray-600 dark:text-gray-400 font-semibold">
-                                    {(dayServices[0].hours * dayServices[0].hourly_rate).toFixed(0)}€
+                                    {calculateAmount(dayServices[0].hours, dayServices[0].hourly_rate).toFixed(0)}€
                                   </div>
                                 </div>
                               </div>
@@ -1638,7 +1852,7 @@ export default function ServicesPage() {
                                             : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30'
                                         }`}
                                         onClick={() => handleEdit(service)}
-                                        title={`${client?.name || 'Client inconnu'} - ${service.hours}h - ${(service.hours * service.hourly_rate).toFixed(2)}€`}
+                                        title={`${client?.name || 'Client inconnu'} - ${formatQuantityWithUnit(service.hours, service.pricing_type)} - ${calculateAmount(service.hours, service.hourly_rate).toFixed(2)}€`}
                                       >
                                         {/* Bouton de suppression */}
                                         <button
@@ -1664,7 +1878,7 @@ export default function ServicesPage() {
                                                 service.status === 'completed' ? 'text-emerald-700 dark:text-emerald-300' :
                                                 service.status === 'invoiced' ? 'text-rose-700 dark:text-rose-300' : 'text-blue-700 dark:text-blue-300'
                                               }`}>
-                                                {service.hours}h
+                                                {formatQuantityWithUnit(service.hours, service.pricing_type)}
                                               </div>
                                             </div>
                                           </div>
@@ -1672,7 +1886,7 @@ export default function ServicesPage() {
                                             {client?.name || 'Client inconnu'}
                                           </div>
                                           <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                                            {(service.hours * service.hourly_rate).toFixed(0)}€
+                                            {calculateAmount(service.hours, service.hourly_rate).toFixed(0)}€
                                           </div>
                                         </div>
                                       </div>
@@ -1954,48 +2168,91 @@ export default function ServicesPage() {
             {/* Scrollable content area */}
             <div className="overflow-y-auto max-h-[calc(95vh-120px)] scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-blue-600">
               <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+              <CustomSelect
+                label="Client *"
+                value={formData.client_id}
+                onChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    client_id: value as string,
+                  }))
+                }
+                placeholder="Sélectionner un client"
+                options={clients.map((client) => ({
+                  value: client.id,
+                  label: client.name,
+                }))}
+                required
+              />
+
+              <CustomSelect
+                label="Type de prestation"
+                value={formData.pricing_type}
+                onChange={(value) => {
+                  const nextType = value as ServicePricingType;
+                  const linkedArticle = formData.article_id ? articles.find((article) => article.id === formData.article_id) : null;
+                  const articlePricingType = linkedArticle ? (linkedArticle.pricing_type || DEFAULT_SERVICE_PRICING_TYPE) : null;
+                  const shouldResetArticle = Boolean(linkedArticle) && articlePricingType !== nextType;
+                  setFormData((prev) => {
+                    const shouldResetHours = nextType === 'project' && (prev.hours === 0 || prev.hours === undefined);
+                    return {
+                      ...prev,
+                      pricing_type: nextType,
+                      hours: shouldResetHours ? 1 : prev.hours,
+                      article_id: shouldResetArticle ? '' : prev.article_id,
+                    };
+                  });
+                  if (nextType === 'daily') {
+                    setDailyEndDate((current) => {
+                      const startDate = formData.date;
+                      if (!startDate) {
+                        return current || '';
+                      }
+                      if (!current || current < startDate) {
+                        return startDate;
+                      }
+                      return current;
+                    });
+                  } else {
+                    setDailyEndDate('');
+                  }
+                }}
+                placeholder="Choisir un type"
+                options={SERVICE_PRICING_OPTIONS}
+              />
+
+              <CustomSelect
+                label="Article"
+                value={formData.article_id || ''}
+                onChange={(value) => {
+                  handleArticleSelect((value || '') as string);
+                }}
+                placeholder="Sélectionner un article (facultatif)"
+                options={articles
+                  .filter((article) => article.is_active)
+                  .map((article) => ({
+                    value: article.id,
+                    label: `${article.name} — ${formatRateWithSuffix(article.hourly_rate, article.pricing_type)}`,
+                  }))}
+              />
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Détails de la prestation..."
+                />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="lg:col-span-2">
-                  <CustomSelect
-                    label="Client"
-                    required
-                    value={formData.client_id}
-                    onChange={(value) => setFormData({ ...formData, client_id: value })}
-                    placeholder="Sélectionner un client"
-                    options={[
-                      { value: "", label: "Sélectionner un client" },
-                      ...clients.map(client => ({
-                        value: client.id,
-                        label: client.name
-                      }))
-                    ]}
-                  />
-                </div>
-                
-                <div className="lg:col-span-2">
-                  <CustomSelect
-                    label="Article prédéfini (optionnel)"
-                    value={formData.article_id}
-                    onChange={(value) => handleArticleSelect(value)}
-                    placeholder="Sélectionner un article"
-                    options={[
-                      { value: "", label: "Personnaliser manuellement" },
-                      ...articles.filter(article => article.is_active).map(article => ({
-                        value: article.id,
-                        label: `${article.name} - ${article.hourly_rate}€/h`
-                      }))
-                    ]}
-                  />
-                  {formData.article_id && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      L'article sélectionné remplira automatiquement la description et le tarif horaire
-                    </p>
-                  )}
-                </div>
-                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Date *
+                    Date de début *
                   </label>
                   <input
                     type="date"
@@ -2005,38 +2262,26 @@ export default function ServicesPage() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Heures *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    required
-                    value={formData.hours || ''}
-                    onChange={(e) => setFormData({ ...formData, hours: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
+                  {formData.pricing_type === 'daily' ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de fin *</label>
+                      <input
+                        type="date"
+                        required
+                        min={formData.date || undefined}
+                        value={dailyEndDate}
+                        onChange={(e) => setDailyEndDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus-border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  ) : (
+                    <div className="hidden md:block" />
+                  )}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Tarif/h (€) *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={formData.hourly_rate || ''}
-                    onChange={(e) => setFormData({ ...formData, hourly_rate: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
-                
                 <div>
                   <CustomSelect
                     label="Statut"
@@ -2050,48 +2295,94 @@ export default function ServicesPage() {
                     ]}
                   />
                 </div>
+                <div className="md:hidden" />
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Détails de la prestation..."
-                />
-              </div>
-                
-              {/* Preview calculation */}
-              {formData.hours > 0 && formData.hourly_rate > 0 && (
-                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                  <div className="flex justify-between text-sm font-semibold text-green-600 dark:text-green-400">
-                    <span>Montant total:</span>
-                    <span>
-                      {calculateAmount(formData.hours, formData.hourly_rate).toFixed(2)}€
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {currentServicePricingConfig.quantityLabel} *
+                  </label>
+                  <input
+                    type="number"
+                    step={serviceQuantityStep}
+                    min={serviceQuantityMin}
+                    required
+                    value={formData.hours ?? ''}
+                    onChange={(e) => {
+                      const rawValue = e.target.value;
+                      const parsedValue = parseFloat(rawValue);
+                      setFormData({
+                        ...formData,
+                        hours:
+                          rawValue === ''
+                            ? 0
+                            : Math.max(
+                                serviceQuantityMin,
+                                Number.isNaN(parsedValue) ? 0 : parsedValue,
+                              ),
+                      });
+                    }}
+                    readOnly={formData.pricing_type === 'daily'}
+                    className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formData.pricing_type === 'daily' ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed' : ''}`}
+                  />
+                  {formData.pricing_type === 'daily' && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Calculé automatiquement à partir des dates.</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {currentServicePricingConfig.rateLabel} *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step={serviceRateStep}
+                    required
+                    value={formData.hourly_rate ?? ''}
+                    onChange={(e) => {
+                      const rawValue = e.target.value;
+                      const parsedValue = parseFloat(rawValue);
+                      setFormData({
+                        ...formData,
+                        hourly_rate: rawValue === '' ? 0 : Number.isNaN(parsedValue) ? 0 : parsedValue,
+                      });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus-border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-4 flex flex-col justify-center">
+                  {showServicePreview ? (
+                    <>
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">Montant estimé</span>
+                      <span className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">{estimatedServiceAmount.toFixed(2)}€</span>
+                      <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {formattedServiceQuantity} × {formattedServiceRate}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Complétez quantité et tarif pour estimer le montant.
                     </span>
-                  </div>
+                  )}
                 </div>
-              )}
-              
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-full border border-orange-500 dark:border-orange-600 shadow-md hover:shadow-lg transition-all text-sm font-medium"
-                  >
-                    {editingService ? 'Modifier' : 'Ajouter'}
-                  </button>
-                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-full border border-orange-500 dark:border-orange-600 shadow-md hover:shadow-lg transition-all text-sm font-medium"
+                >
+                  {editingService ? 'Modifier' : 'Ajouter'}
+                </button>
+              </div>
               </form>
             </div>
           </div>
@@ -2180,7 +2471,7 @@ export default function ServicesPage() {
                       Catégorie
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Tarif/h
+                      Tarif
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Statut
@@ -2338,13 +2629,23 @@ export default function ServicesPage() {
                   </div>
                   
                   <div>
+                    <CustomSelect
+                      label="Type de tarification"
+                      value={articleFormData.pricing_type}
+                      onChange={(value) => setArticleFormData({ ...articleFormData, pricing_type: value as ServicePricingType })}
+                      placeholder="Choisir un type"
+                      options={SERVICE_PRICING_OPTIONS}
+                    />
+                  </div>
+                  
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Tarif horaire (€) *
+                      {currentArticlePricingConfig.rateLabel} *
                     </label>
                     <input
                       type="number"
                       min="0"
-                      step="0.5"
+                      step={articleRateStep}
                       required
                       value={articleFormData.hourly_rate || ''}
                       onChange={(e) => setArticleFormData({ ...articleFormData, hourly_rate: parseFloat(e.target.value) || 0 })}
@@ -2484,12 +2785,12 @@ export default function ServicesPage() {
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
-                            <span className="text-gray-500 dark:text-gray-400">Heures:</span>
-                            <span className="font-semibold text-gray-900 dark:text-white ml-2">{service.hours}h</span>
+                            <span className="text-gray-500 dark:text-gray-400">Quantité:</span>
+                            <span className="font-semibold text-gray-900 dark:text-white ml-2">{formatQuantityWithUnit(service.hours, service.pricing_type)}</span>
                           </div>
                           <div>
                             <span className="text-gray-500 dark:text-gray-400">Tarif:</span>
-                            <span className="font-semibold text-gray-900 dark:text-white ml-2">{service.hourly_rate}€/h</span>
+                            <span className="font-semibold text-gray-900 dark:text-white ml-2">{formatRateWithSuffix(service.hourly_rate, service.pricing_type)}</span>
                           </div>
                           <div className="col-span-2">
                             <span className="text-gray-500 dark:text-gray-400">Total:</span>

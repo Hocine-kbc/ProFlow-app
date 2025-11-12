@@ -754,8 +754,48 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
 
     if (invoice.invoice_type === 'summary') {
       const availableServices = invoiceServices && invoiceServices.length > 0 ? invoiceServices : (services || []);
-      const hasSummaryGroup = availableServices.some((service) => service && service.summary_group);
+      const summaryEntries = availableServices.filter((service) => service && service.summary_group);
+      const hasSummaryGroup = summaryEntries.length > 0;
+      const trimmedSummaryOverride = (summaryDescriptionOverride || invoice.summary_description || '').trim();
+
+      const groupServicesForSummary = (sourceServices) => {
+        const normalizeDescription = (description) => {
+          const trimmed = (description || '').trim();
+          return trimmed.length > 0 ? trimmed : 'Prestations regroupées';
+        };
+
+        const map = new Map();
+
+        sourceServices.forEach((service) => {
+          const description = normalizeDescription(service?.description);
+          const hours = Number(service?.hours) || 0;
+          const hourlyRate = Number(service?.hourly_rate) || 0;
+          const amount = hours * hourlyRate;
+          const pricingType = service?.pricing_type || 'hourly';
+          const key = `${description.toLowerCase()}|${hourlyRate.toFixed(4)}|${pricingType}`;
+
+          if (!map.has(key)) {
+            map.set(key, {
+              description,
+              hours: 0,
+              hourlyRate,
+              amount: 0,
+              count: 0,
+              pricingType,
+            });
+          }
+
+          const group = map.get(key);
+          group.hours += hours;
+          group.amount += amount;
+          group.count += 1;
+        });
+
+        return Array.from(map.values()).sort((a, b) => a.description.localeCompare(b.description, 'fr', { sensitivity: 'base' }));
+      };
+
       if (hasSummaryGroup) {
+        const useSummaryOverride = Boolean(trimmedSummaryOverride) && summaryEntries.length === 1;
         invoiceServices = availableServices.map((service) => {
           if (service && service.summary_group) {
             const hours = Number(service.hours) || 0;
@@ -763,46 +803,37 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
             const amount = service.total ?? hours * rate;
             return {
               ...service,
-              description: summaryDescriptionOverride || invoice.summary_description || service.description,
-              summary_source_count: service.summary_source_count ?? availableServices.length,
+              description: useSummaryOverride
+                ? trimmedSummaryOverride
+                : (service.description && service.description.trim().length > 0)
+                    ? service.description.trim()
+                    : `Prestations regroupées (${service.summary_source_count ?? summaryEntries.length})`,
+              summary_source_count: service.summary_source_count ?? summaryEntries.length,
               total: amount,
             };
           }
           return service;
         });
       } else if (availableServices.length > 0) {
-        const sourceCount = availableServices.length;
-        const aggregated = availableServices.reduce(
-          (acc, service) => {
-            const hours = Number(service.hours) || 0;
-            const rate = Number(service.hourly_rate) || 0;
-            return {
-              hours: acc.hours + hours,
-              amount: acc.amount + hours * rate,
-            };
-          },
-          { hours: 0, amount: 0 }
-        );
-        const hours = aggregated.hours;
-        const amount = aggregated.amount;
-        invoiceServices = [
-          {
-            id: `summary-${invoice.id}`,
-            client_id: invoice.client_id,
-            date: invoice.date,
-            hours,
-            hourly_rate: hours > 0 ? amount / hours : 0,
-            description: summaryDescriptionOverride || invoice.summary_description || `Prestations regroupées (${sourceCount})`,
-            status: 'invoiced',
-            summary_group: true,
-            summary_source_count: sourceCount,
-            total: amount,
-          },
-        ];
+        const grouped = groupServicesForSummary(availableServices);
+        const useSummaryOverride = Boolean(trimmedSummaryOverride) && grouped.length === 1;
+        invoiceServices = grouped.map((group, index) => ({
+          id: `summary-${invoice.id}-${index}`,
+          client_id: invoice.client_id,
+          date: invoice.date,
+          hours: group.hours,
+          hourly_rate: group.hourlyRate,
+          description: useSummaryOverride ? trimmedSummaryOverride : group.description,
+          status: 'invoiced',
+          summary_group: true,
+          summary_source_count: group.count,
+          total: group.amount,
+          pricing_type: group.pricingType,
+        }));
       }
     }
 
-    invoice.summary_description = summaryDescriptionOverride || invoice.summary_description || null;
+    invoice.summary_description = (summaryDescriptionOverride || invoice.summary_description || '').trim() || null;
     invoice.services = invoiceServices || [];
 
     // Générer le PDF

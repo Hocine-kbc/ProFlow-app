@@ -34,22 +34,75 @@ import {
 import { EmailData, sendInvoiceEmail } from '../lib/emailService.ts';
 import { openInvoicePrintWindow } from '../lib/print.ts';
 import { supabase } from '../lib/supabase.ts';
-import { Invoice, Service } from '../types/index.ts';
+import { Invoice, Service, ServicePricingType } from '../types/index.ts';
 
 import AlertModal from './AlertModal.tsx';
 import CustomSelect from './CustomSelect.tsx';
 
 type InvoiceTypeMode = 'detailed' | 'summary';
 
-type ServiceWithSummaryFlag = Service & { summary_group?: boolean; summary_source_count?: number; total?: number };
+type ServiceWithSummaryFlag = Service & { summary_group?: boolean; summary_source_count?: number; total?: number; pricing_type?: ServicePricingType };
+
+const DEFAULT_SERVICE_PRICING_TYPE: ServicePricingType = 'hourly';
+
+const SERVICE_PRICING_CONFIG: Record<ServicePricingType, {
+  quantityLabel: string;
+  rateLabel: string;
+  unitSuffix: string;
+  rateSuffix: string;
+}> = {
+  hourly: {
+    quantityLabel: 'Heures',
+    rateLabel: 'Tarif horaire',
+    unitSuffix: 'h',
+    rateSuffix: '€/h',
+  },
+  daily: {
+    quantityLabel: 'Jours',
+    rateLabel: 'Tarif journalier',
+    unitSuffix: 'j',
+    rateSuffix: '€/jour',
+  },
+  project: {
+    quantityLabel: 'Quantité',
+    rateLabel: 'Montant',
+    unitSuffix: '',
+    rateSuffix: '€',
+  },
+};
+
+const getPricingConfig = (pricingType?: ServicePricingType) => {
+  const key = pricingType && SERVICE_PRICING_CONFIG[pricingType] ? pricingType : DEFAULT_SERVICE_PRICING_TYPE;
+  return SERVICE_PRICING_CONFIG[key];
+};
+
+const formatServiceQuantity = (quantity: number, pricingType?: ServicePricingType) => {
+  const config = getPricingConfig(pricingType);
+  const value = Number(quantity) || 0;
+  const formatted = Number.isInteger(value) ? value.toString() : value.toFixed(2).replace(/\.?(0)+$/, '');
+  return `${formatted}${config.unitSuffix}`.trim();
+};
+
+const formatServiceRate = (rate: number, pricingType?: ServicePricingType) => {
+  const config = getPricingConfig(pricingType);
+  if (rate === undefined || rate === null) {
+    return `0${config.rateSuffix}`;
+  }
+  const value = Number(rate) || 0;
+  const formatted = Number.isInteger(value) ? value.toString() : value.toFixed(2);
+  return `${formatted}${config.rateSuffix}`;
+};
 
 interface DisplayServiceRow {
   key: string;
   description: string;
   date?: string;
-  hours?: number;
-  hourlyRate?: number;
+  quantity?: number;
+  quantityDisplay?: string;
+  rate?: number;
+  rateDisplay?: string;
   total: number;
+  pricingType?: ServicePricingType;
 }
 
 const calculateServiceAggregates = (servicesList: Service[]) => {
@@ -66,6 +119,52 @@ const calculateServiceAggregates = (servicesList: Service[]) => {
   );
 };
 
+const groupServicesForSummary = (servicesList: Service[]) => {
+  const normalizeDescription = (description?: string) => {
+    const trimmed = (description || '').trim();
+    return trimmed.length > 0 ? trimmed : 'Prestations regroupées';
+  };
+
+  const groups = new Map<
+    string,
+    {
+      description: string;
+      hourlyRate: number;
+      hours: number;
+      amount: number;
+      count: number;
+      pricingType: ServicePricingType;
+    }
+  >();
+
+  servicesList.forEach((service) => {
+    const description = normalizeDescription(service.description);
+    const hourlyRate = Number(service.hourly_rate) || 0;
+    const hours = Number(service.hours) || 0;
+    const amount = hours * hourlyRate;
+    const pricingType = (service.pricing_type as ServicePricingType) || DEFAULT_SERVICE_PRICING_TYPE;
+    const key = `${description.toLowerCase()}|${hourlyRate.toFixed(4)}|${pricingType}`;
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        description,
+        hourlyRate,
+        hours: 0,
+        amount: 0,
+        count: 0,
+        pricingType,
+      });
+    }
+
+    const group = groups.get(key)!;
+    group.hours += hours;
+    group.amount += amount;
+    group.count += 1;
+  });
+
+  return Array.from(groups.values()).sort((a, b) => a.description.localeCompare(b.description, 'fr', { sensitivity: 'base' }));
+};
+
 const buildDisplayRows = (
   servicesList: ServiceWithSummaryFlag[],
   mode: InvoiceTypeMode,
@@ -77,34 +176,62 @@ const buildDisplayRows = (
     if (servicesList.length === 0) {
       return [];
     }
-    const { hours, amount } = calculateServiceAggregates(servicesList);
-    const averageRate = hours > 0 ? amount / hours : 0;
-    const summaryServiceEntry = servicesList.find((service) => service.summary_group);
-    const sourceCount = summaryServiceEntry?.summary_source_count ?? servicesList.length;
-    const description =
-      invoiceSummaryDescription?.trim() ||
-      summaryServiceEntry?.description?.trim() ||
-      `Prestations regroupées (${sourceCount})`;
-    return [
-      {
-        key: 'summary-row',
-        description,
-        hours,
-        hourlyRate: hours > 0 ? averageRate : undefined,
-        total: amount,
-      },
-    ];
+
+    const summaryEntries = servicesList.filter((service) => service.summary_group);
+    const customDescription = invoiceSummaryDescription?.trim();
+
+    if (summaryEntries.length > 0) {
+      const useCustomDescription = Boolean(customDescription) && summaryEntries.length === 1;
+      return summaryEntries.map((service, index) => {
+        const quantity = Number(service.hours) || 0;
+        const rate = service.hourly_rate !== undefined ? Number(service.hourly_rate) : undefined;
+        const pricingType = (service.pricing_type as ServicePricingType) || DEFAULT_SERVICE_PRICING_TYPE;
+        const total = service.total ?? (quantity * (rate ?? 0));
+        return {
+          key: service.id || `summary-${index}`,
+          description:
+            useCustomDescription
+              ? customDescription!
+              : service.description?.trim() || `Prestations regroupées (${service.summary_source_count ?? 1})`,
+          quantity,
+          quantityDisplay: formatServiceQuantity(quantity, pricingType),
+          rate,
+          rateDisplay: typeof rate === 'number' ? formatServiceRate(rate, pricingType) : '—',
+          total,
+          pricingType,
+        };
+      });
+    }
+
+    const grouped = groupServicesForSummary(servicesList);
+    const useCustomDescription = Boolean(customDescription) && grouped.length === 1;
+    return grouped.map((group, index) => ({
+      key: `summary-${index}`,
+      description: useCustomDescription ? customDescription! : group.description,
+      quantity: group.hours,
+      quantityDisplay: formatServiceQuantity(group.hours, group.pricingType),
+      rate: group.hourlyRate,
+      rateDisplay: formatServiceRate(group.hourlyRate, group.pricingType),
+      total: group.amount,
+      pricingType: group.pricingType,
+    }));
   }
 
   return servicesList.map((service, index) => {
-    const total = (Number(service.hours) || 0) * (Number(service.hourly_rate) || 0);
+    const quantity = Number(service.hours) || 0;
+    const rate = Number(service.hourly_rate) || 0;
+    const pricingType = (service.pricing_type as ServicePricingType) || DEFAULT_SERVICE_PRICING_TYPE;
+    const total = quantity * rate;
     return {
       key: service.id || `service-${index}`,
       description: service.description || 'N/A',
       date: service.date,
-      hours: Number(service.hours) || 0,
-      hourlyRate: Number(service.hourly_rate) || 0,
+      quantity,
+      quantityDisplay: formatServiceQuantity(quantity, pricingType),
+      rate,
+      rateDisplay: formatServiceRate(rate, pricingType),
       total,
+      pricingType,
     };
   });
 };
@@ -112,28 +239,33 @@ const buildDisplayRows = (
 const isSummaryServiceList = (servicesList: ServiceWithSummaryFlag[]): boolean =>
   servicesList.some((service) => Boolean((service as ServiceWithSummaryFlag).summary_group));
 
-const createSummaryServiceEntry = (
+const createSummaryServiceEntries = (
   servicesList: Service[],
   clientId: string,
   customDescription?: string
-): ServiceWithSummaryFlag | null => {
+): ServiceWithSummaryFlag[] => {
   if (servicesList.length === 0) {
-    return null;
+    return [];
   }
-  const { hours, amount } = calculateServiceAggregates(servicesList);
-  const description = customDescription?.trim() || `Prestations regroupées (${servicesList.length})`;
-  return {
-    id: `summary-${Date.now()}`,
+
+  const grouped = groupServicesForSummary(servicesList);
+  const trimmedCustomDescription = customDescription?.trim();
+  const useCustomDescription = Boolean(trimmedCustomDescription) && grouped.length === 1;
+  const timestamp = Date.now();
+
+  return grouped.map((group, index) => ({
+    id: `summary-${timestamp}-${index}`,
     client_id: clientId,
     date: '',
-    hours,
-    hourly_rate: hours > 0 ? amount / hours : 0,
-    description,
+    hours: group.hours,
+    hourly_rate: group.hourlyRate,
+    description: useCustomDescription ? trimmedCustomDescription! : group.description,
     status: 'invoiced',
     summary_group: true,
-    summary_source_count: servicesList.length,
-    total: amount,
-  } as ServiceWithSummaryFlag;
+    summary_source_count: group.count,
+    total: group.amount,
+    pricing_type: group.pricingType,
+  })) as ServiceWithSummaryFlag[];
 };
 
 export default function InvoicesPage() {
@@ -461,14 +593,13 @@ export default function InvoicesPage() {
 
     const summaryDescriptionValue = invoiceType === 'summary' ? (summaryDescription.trim() || 'Prestations regroupées') : undefined;
 
-    const summaryService = invoiceType === 'summary'
-      ? createSummaryServiceEntry(normalizedServices, formData.client_id, summaryDescriptionValue)
-      : null;
+    const summaryServices = invoiceType === 'summary'
+      ? createSummaryServiceEntries(normalizedServices, formData.client_id, summaryDescriptionValue)
+      : [];
+
     const servicesForInvoice: ServiceWithSummaryFlag[] =
       invoiceType === 'summary'
-        ? summaryService
-          ? [summaryService]
-          : []
+        ? summaryServices
         : normalizedServices;
 
     const totalAmount = servicesForInvoice.reduce(
@@ -2227,9 +2358,9 @@ export default function InvoicesPage() {
                                         </p>
                                       )}
                                       <div className="flex items-center space-x-3 sm:space-x-4 text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-2">
-                                        <span>{service.hours}h</span>
+                                        <span>{formatServiceQuantity(service.hours, service.pricing_type as ServicePricingType)}</span>
                                         <span>×</span>
-                                        <span>{service.hourly_rate}€/h</span>
+                                        <span>{formatServiceRate(service.hourly_rate, service.pricing_type as ServicePricingType)}</span>
                                       </div>
                                     </div>
                                     <div className="text-left sm:text-right mt-2 sm:mt-0">
@@ -2528,10 +2659,10 @@ export default function InvoicesPage() {
                                     </div>
                                   )}
                                   <div>
-                                    <span className="font-medium">Heures:</span> {typeof row.hours === 'number' ? `${row.hours.toFixed(2)}h` : '—'}
+                                    <span className="font-medium">Quantité:</span> {row.quantityDisplay || '—'}
                                   </div>
                                   <div>
-                                    <span className="font-medium">Tarif:</span> {typeof row.hourlyRate === 'number' ? `${row.hourlyRate.toFixed(2)}€` : '—'}
+                                    <span className="font-medium">Tarif:</span> {row.rateDisplay || '—'}
                                   </div>
                                   <div>
                                     <span className="font-medium">Total:</span> {row.total.toFixed(2)}€
@@ -2561,8 +2692,8 @@ export default function InvoicesPage() {
                                 {showDateColumn && (
                                   <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
                                 )}
-                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Heures</th>
-                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Tarif/h</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Quantité</th>
+                                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Tarif</th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 last:rounded-tr-xl sm:last:rounded-tr-2xl">Total</th>
                               </tr>
                             </thead>
@@ -2579,10 +2710,10 @@ export default function InvoicesPage() {
                                       </td>
                                     )}
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                      {typeof row.hours === 'number' ? `${row.hours.toFixed(2)}h` : '—'}
+                                      {row.quantityDisplay || '—'}
                                     </td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                      {typeof row.hourlyRate === 'number' ? `${row.hourlyRate.toFixed(2)}€` : '—'}
+                                      {row.rateDisplay || '—'}
                                     </td>
                                     <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-bold ${index === displayRows.length - 1 ? 'last:rounded-br-xl sm:last:rounded-br-2xl' : ''}`}>
                                       {row.total.toFixed(2)}€

@@ -2,6 +2,45 @@
 // Utilisé à la fois par print.ts et par le serveur backend
 
 export function generateSharedInvoiceHTML(invoice, client, invoiceServices, settings) {
+  const DEFAULT_SERVICE_PRICING_TYPE = 'hourly';
+
+  const SERVICE_PRICING_CONFIG = {
+    hourly: {
+      unitSuffix: 'h',
+      rateSuffix: '€/h',
+    },
+    daily: {
+      unitSuffix: 'j',
+      rateSuffix: '€/jour',
+    },
+    project: {
+      unitSuffix: '',
+      rateSuffix: '€',
+    },
+  };
+
+  const getPricingConfig = (pricingType) => {
+    const key = pricingType && SERVICE_PRICING_CONFIG[pricingType] ? pricingType : DEFAULT_SERVICE_PRICING_TYPE;
+    return SERVICE_PRICING_CONFIG[key];
+  };
+
+  const formatServiceQuantity = (quantity, pricingType) => {
+    const config = getPricingConfig(pricingType);
+    const value = Number(quantity) || 0;
+    const formatted = Number.isInteger(value) ? value.toString() : value.toFixed(2).replace(/\.?(0)+$/, '');
+    return `${formatted}${config.unitSuffix}`.trim();
+  };
+
+  const formatServiceRate = (rate, pricingType) => {
+    const config = getPricingConfig(pricingType);
+    if (rate === undefined || rate === null) {
+      return `0${config.rateSuffix}`;
+    }
+    const value = Number(rate) || 0;
+    const formatted = Number.isInteger(value) ? value.toString() : value.toFixed(2);
+    return `${formatted}${config.rateSuffix}`;
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -36,51 +75,110 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
 
   const isSummary = invoice.invoice_type === 'summary' || summaryFromServices;
 
-  const aggregates = allServices.reduce(
-    (acc, service) => {
+  const normalizeSummaryDescription = (description) => {
+    const trimmed = (description || '').trim();
+    return trimmed.length > 0 ? trimmed : null;
+  };
+
+  const groupServicesForSummary = (services) => {
+    const normalizeDescription = (description) => {
+      const trimmed = (description || '').trim();
+      return trimmed.length > 0 ? trimmed : 'Prestations regroupées';
+    };
+
+    const map = new Map();
+
+    services.forEach((service) => {
+      const description = normalizeDescription(service?.description);
+      const hours = Number(service?.hours) || 0;
+      const hourlyRate = Number(service?.hourly_rate) || 0;
+      const amount = hours * hourlyRate;
+      const pricingType = service?.pricing_type || DEFAULT_SERVICE_PRICING_TYPE;
+      const key = `${description.toLowerCase()}|${hourlyRate.toFixed(4)}|${pricingType}`;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          description,
+          hours: 0,
+          hourlyRate,
+          amount: 0,
+          count: 0,
+          pricingType,
+        });
+      }
+
+      const group = map.get(key);
+      group.hours += hours;
+      group.amount += amount;
+      group.count += 1;
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.description.localeCompare(b.description, 'fr', { sensitivity: 'base' }));
+  };
+
+  const displaySummaryDescription = normalizeSummaryDescription(invoice.summary_description);
+
+  const summaryEntries = (invoiceServices || []).filter((service) => service && service.summary_group);
+
+  let displayServices;
+
+  if (isSummary) {
+    if (summaryEntries.length > 0) {
+      const useCustomDescription = Boolean(displaySummaryDescription) && summaryEntries.length === 1;
+      displayServices = summaryEntries.map((service) => {
+        const hours = Number(service.hours) || 0;
+        const hourlyRate = Number(service.hourly_rate) || 0;
+        const pricingType = service?.pricing_type || DEFAULT_SERVICE_PRICING_TYPE;
+        const total = typeof service.total === 'number' ? service.total : hours * hourlyRate;
+        const description = useCustomDescription
+          ? displaySummaryDescription
+          : (service.description && service.description.trim().length > 0)
+              ? service.description.trim()
+              : `Prestations regroupées (${service.summary_source_count || 1})`;
+        return {
+          description,
+          quantityDisplay: formatServiceQuantity(hours, pricingType),
+          rateDisplay: formatServiceRate(hourlyRate, pricingType),
+          total,
+        };
+      });
+    } else {
+      const grouped = groupServicesForSummary(allServices);
+      const useCustomDescription = Boolean(displaySummaryDescription) && grouped.length === 1;
+      displayServices = grouped.map((group) => ({
+        description: useCustomDescription ? displaySummaryDescription : group.description,
+        quantityDisplay: formatServiceQuantity(group.hours, group.pricingType),
+        rateDisplay: formatServiceRate(group.hourlyRate, group.pricingType),
+        total: group.amount,
+      }));
+    }
+  } else {
+    displayServices = allServices.map((service) => {
       const hours = Number(service.hours) || 0;
-      const rate = Number(service.hourly_rate) || 0;
+      const hourlyRate = Number(service.hourly_rate) || 0;
+      const pricingType = service?.pricing_type || DEFAULT_SERVICE_PRICING_TYPE;
       return {
-        hours: acc.hours + hours,
-        amount: acc.amount + hours * rate,
-      };
-    },
-    { hours: 0, amount: 0 }
-  );
-
-  const summarySourceCount = (invoiceServices || []).find((service) => service && service.summary_group && service.summary_source_count)?.summary_source_count || allServices.length;
-
-  const displaySummaryDescription = (invoice.summary_description && invoice.summary_description.trim()) || '';
-
-  const displayServices = isSummary
-    ? [
-        {
-          description: displaySummaryDescription || `Prestations regroupées (${summarySourceCount})`,
-          hours: aggregates.hours,
-          hourly_rate: aggregates.hours > 0 ? aggregates.amount / aggregates.hours : undefined,
-          total: aggregates.amount,
-        },
-      ]
-    : allServices.map((service) => ({
         date: service.date,
         description: service.description || '',
-        hours: Number(service.hours) || 0,
-        hourly_rate: Number(service.hourly_rate) || 0,
-        total: (Number(service.hours) || 0) * (Number(service.hourly_rate) || 0),
-      }));
+        quantityDisplay: formatServiceQuantity(hours, pricingType),
+        rateDisplay: formatServiceRate(hourlyRate, pricingType),
+        total: hours * hourlyRate,
+      };
+    });
+  }
 
   const tableHeaders = isSummary
     ? `
         <th>Description</th>
-        <th class="text-right">Heures</th>
-        <th class="text-right">Tarif/h</th>
+        <th class="text-right">Quantité</th>
+        <th class="text-right">Tarif</th>
         <th class="text-right">Total</th>
       `
     : `
         <th>Date</th>
         <th>Description</th>
-        <th class="text-right">Heures</th>
-        <th class="text-right">Tarif/h</th>
+        <th class="text-right">Quantité</th>
+        <th class="text-right">Tarif</th>
         <th class="text-right">Total</th>
       `;
 
@@ -93,14 +191,19 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
               : `<td>${formatDate(s.date || invoice.date)}</td>`
           }
           <td>${s.description || ''}</td>
-          <td class="text-right">${typeof s.hours === 'number' ? s.hours.toFixed(2) : '—'}</td>
-          <td class="text-right">${typeof s.hourly_rate === 'number' ? s.hourly_rate.toFixed(2) + '€' : '—'}</td>
-          <td class="text-right">${(typeof s.total === 'number' ? s.total : (typeof s.hours === 'number' && typeof s.hourly_rate === 'number' ? s.hours * s.hourly_rate : 0)).toFixed(2)}€</td>
+          <td class="text-right">${s.quantityDisplay || '—'}</td>
+          <td class="text-right">${s.rateDisplay || '—'}</td>
+          <td class="text-right">${(typeof s.total === 'number' ? s.total : 0).toFixed(2)}€</td>
         </tr>`
     )
     .join('');
 
-  const total = invoice.subtotal || aggregates.amount || 0;
+  const total = invoice.subtotal ?? displayServices.reduce((acc, s) => {
+    if (typeof s.total === 'number') {
+      return acc + s.total;
+    }
+    return acc;
+  }, 0);
 
   return `<!DOCTYPE html>
 <html lang="fr">

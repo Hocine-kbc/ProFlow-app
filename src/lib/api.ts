@@ -1,5 +1,5 @@
 import { supabase } from './supabase.ts';
-import { Service, Invoice, BusinessNotification, NotificationType, Message, Conversation } from '../types/index.ts';
+import { Service, Invoice, BusinessNotification, NotificationType, Message, Conversation, ServicePricingType } from '../types/index.ts';
 
 // Define interfaces locally since they're not exported from types
 interface Client {
@@ -83,6 +83,7 @@ interface DatabaseService {
   date: string;
   created_at: string;
   updated_at: string;
+  pricing_type?: ServicePricingType | null;
 }
 
 interface DatabaseInvoice {
@@ -374,12 +375,67 @@ export async function deleteClient(id: string): Promise<void> {
 
 // Services
 export async function fetchServices(): Promise<Service[]> {
-  const { data, error } = await supabase
-    .from('services')
-    .select('*')
-    .order('date', { ascending: false });
-  if (error) throw error;
-  return (data || []) as Service[];
+  const selectionVariants = [
+    'id, client_id, description, hourly_rate, hours, date, status, article_id, created_at, updated_at, pricing_type, user_id',
+    'id, client_id, description, hourly_rate, hours, date, status, article_id, created_at, updated_at, pricing_type',
+    'id, client_id, description, hourly_rate, hours, date, status, article_id, created_at, updated_at'
+  ];
+
+  let servicesData: DatabaseService[] = [];
+  let lastError: any = null;
+
+  for (const selection of selectionVariants) {
+    const { data, error } = await supabase
+      .from('services')
+      .select(selection)
+      .order('date', { ascending: false });
+
+    if (error) {
+      lastError = error;
+      const message = typeof error.message === 'string' ? error.message : '';
+      if (error.code === 'PGRST204' && (message.includes('pricing_type') || message.includes('user_id'))) {
+        continue;
+      }
+      console.warn('Failed to fetch services with selection', selection, error);
+      continue;
+    }
+
+    servicesData = (data || []) as DatabaseService[];
+    lastError = null;
+    break;
+  }
+
+  if (!servicesData.length && lastError) {
+    console.error('Failed to fetch services from Supabase, falling back to local storage:', lastError);
+    try {
+      const storedServices = JSON.parse(localStorage.getItem('services-cache') || '[]');
+      if (Array.isArray(storedServices) && storedServices.length > 0) {
+        return storedServices as Service[];
+      }
+    } catch (storageError) {
+      console.warn('Unable to read services from local storage fallback:', storageError);
+    }
+    throw lastError;
+  }
+
+  const mappedServices = servicesData.map((service) => {
+    const pricingType = resolveServicePricingType(service) ?? 'hourly';
+    if (pricingType) {
+      persistServicePricingType(service.id, pricingType);
+    }
+    return {
+      ...(service as Service),
+      pricing_type: pricingType,
+    } as Service;
+  });
+ 
+  try {
+    localStorage.setItem('services-cache', JSON.stringify(mappedServices));
+  } catch (storageError) {
+    console.warn('Unable to persist services cache:', storageError);
+  }
+
+  return mappedServices;
 }
 
 export async function createService(payload: Omit<Service, 'id' | 'client' | 'created_at' | 'updated_at'>): Promise<Service> {
@@ -387,30 +443,186 @@ export async function createService(payload: Omit<Service, 'id' | 'client' | 'cr
   if (!user) throw new Error('User not authenticated');
   
   const now = new Date().toISOString();
-  const toInsert = { ...payload, user_id: user.id, created_at: now, updated_at: now } as Partial<DatabaseService>;
-  const { data, error } = await supabase
-    .from('services')
-    .insert(toInsert)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return data as Service;
+  const requestedPricingType = normalizeServicePricingType((payload as Service).pricing_type) ?? 'hourly';
+  const baseInsert: Partial<DatabaseService> = {
+    ...payload,
+    pricing_type: requestedPricingType,
+    user_id: user.id,
+    created_at: now,
+    updated_at: now,
+  };
+
+  const attemptInsert = async (
+    includePricingType: boolean,
+    includeUserId: boolean
+  ): Promise<DatabaseService> => {
+    const insertPayload = { ...baseInsert };
+    if (!includePricingType) {
+      delete (insertPayload as Partial<DatabaseService>).pricing_type;
+    }
+    if (!includeUserId) {
+      delete (insertPayload as Partial<DatabaseService>).user_id;
+    }
+    const response = await supabase
+      .from('services')
+      .insert(insertPayload)
+      .select('*')
+      .single();
+    if (response.error) {
+      throw response.error;
+    }
+    return response.data as DatabaseService;
+  };
+
+  const variants: Array<{ includePricingType: boolean; includeUserId: boolean }> = [
+    { includePricingType: true, includeUserId: true },
+    { includePricingType: false, includeUserId: true },
+    { includePricingType: true, includeUserId: false },
+    { includePricingType: false, includeUserId: false },
+  ];
+
+  let insertedService: DatabaseService | null = null;
+  let pricingColumnMissing = false;
+  let userColumnMissing = false;
+  let lastError: any = null;
+
+  for (const variant of variants) {
+    try {
+      insertedService = await attemptInsert(variant.includePricingType, variant.includeUserId);
+      pricingColumnMissing = pricingColumnMissing || !variant.includePricingType;
+      userColumnMissing = userColumnMissing || !variant.includeUserId;
+      break;
+    } catch (error: any) {
+      lastError = error;
+      const message = typeof error?.message === 'string' ? error.message : '';
+      const isMissingPricingColumn = message.includes('pricing_type');
+      const isMissingUserColumn = message.includes('user_id');
+
+      if (!isMissingPricingColumn && !isMissingUserColumn) {
+        throw error;
+      }
+
+      if (isMissingPricingColumn) {
+        pricingColumnMissing = true;
+      }
+      if (isMissingUserColumn) {
+        userColumnMissing = true;
+      }
+
+      // Try next variant without the problematic column
+      continue;
+    }
+  }
+
+  if (!insertedService) {
+    console.warn('Supabase services insert failed, falling back to local storage:', lastError);
+    const fallbackId = `local-service-${Date.now()}`;
+    const fallbackService: Service = {
+      ...(payload as Service),
+      id: fallbackId,
+      created_at: now,
+      updated_at: now,
+      pricing_type: requestedPricingType,
+    } as Service;
+
+    try {
+      const stored = JSON.parse(localStorage.getItem('services-local-fallback') || '[]');
+      if (Array.isArray(stored)) {
+        stored.push(fallbackService);
+        localStorage.setItem('services-local-fallback', JSON.stringify(stored));
+      } else {
+        localStorage.setItem('services-local-fallback', JSON.stringify([fallbackService]));
+      }
+    } catch (storageError) {
+      console.warn('Unable to persist local fallback service:', storageError);
+    }
+
+    persistServicePricingType(fallbackId, requestedPricingType);
+    return fallbackService;
+  }
+
+  const resolvedPricingType = pricingColumnMissing
+    ? requestedPricingType
+    : normalizeServicePricingType((insertedService as any).pricing_type) ?? requestedPricingType;
+
+  if (userColumnMissing) {
+    console.warn('services.user_id column missing in database, continuing without user association');
+  }
+
+  persistServicePricingType(insertedService.id, resolvedPricingType);
+
+  return {
+    ...(insertedService as Service),
+    pricing_type: resolvedPricingType,
+  } as Service;
 }
 
 export async function updateService(id: string, payload: Partial<Service>): Promise<Service> {
-  const { data, error } = await supabase
-    .from('services')
-    .update({ ...payload, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return data as Service;
+  const now = new Date().toISOString();
+  const includesPricingType = Object.prototype.hasOwnProperty.call(payload, 'pricing_type');
+  const requestedPricingType = includesPricingType
+    ? normalizeServicePricingType((payload as Service).pricing_type) ?? 'hourly'
+    : undefined;
+
+  const baseUpdate: Partial<DatabaseService> = {
+    ...payload,
+    updated_at: now,
+  };
+
+  if (includesPricingType) {
+    (baseUpdate as Partial<DatabaseService>).pricing_type = requestedPricingType;
+  }
+
+  const attemptUpdate = async (includePricingType: boolean): Promise<DatabaseService> => {
+    const updatePayload = { ...baseUpdate };
+    if (!includePricingType) {
+      delete (updatePayload as Partial<DatabaseService>).pricing_type;
+    }
+    const response = await supabase
+      .from('services')
+      .update(updatePayload)
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (response.error) {
+      throw response.error;
+    }
+    return response.data as DatabaseService;
+  };
+
+  let updatedService: DatabaseService;
+  let pricingColumnMissing = false;
+
+  try {
+    updatedService = await attemptUpdate(true);
+  } catch (error: any) {
+    const missingPricingColumn = typeof error?.message === 'string' && error.message.includes('pricing_type');
+    if (includesPricingType && missingPricingColumn) {
+      pricingColumnMissing = true;
+      updatedService = await attemptUpdate(false);
+    } else {
+      throw error;
+    }
+  }
+
+  const resolvedPricingType = includesPricingType
+    ? pricingColumnMissing
+      ? requestedPricingType
+      : normalizeServicePricingType((updatedService as any).pricing_type) ?? requestedPricingType
+    : resolveServicePricingType(updatedService);
+
+  persistServicePricingType(updatedService.id, resolvedPricingType);
+
+  return {
+    ...(updatedService as Service),
+    pricing_type: resolvedPricingType,
+  } as Service;
 }
 
 export async function deleteService(id: string): Promise<void> {
   const { error } = await supabase.from('services').delete().eq('id', id);
   if (error) throw error;
+  persistServicePricingType(id, undefined);
 }
 
 // Invoices
@@ -531,7 +743,7 @@ export async function fetchInvoices(): Promise<Invoice[]> {
           ];
         }
       }
-
+      
       return {
         ...invoice,
         // Use services from localStorage if available
@@ -664,11 +876,11 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
 
   for (const variant of variantSet.values()) {
     const { data: insertData, error: insertError } = await supabase
-      .from('invoices')
+        .from('invoices')
       .insert(variant)
-      .select('*')
-      .single();
-
+        .select('*')
+        .single();
+        
     if (!insertError && insertData) {
       insertedInvoice = insertData;
       break;
@@ -698,7 +910,7 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
       console.warn('Could not store payment method in localStorage:', e);
     }
   }
-
+  
   if (invoiceType) {
     try {
       const existingTypes = JSON.parse(localStorage.getItem('invoice-types') || '{}');
@@ -868,12 +1080,12 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
 
   for (const variant of variantSet.values()) {
     const { data: updateResult, error: updateError } = await supabase
-      .from('invoices')
+        .from('invoices')
       .update(variant)
-      .eq('id', id)
-      .select('*')
-      .single();
-
+        .eq('id', id)
+        .select('*')
+        .single();
+        
     if (!updateError && updateResult) {
       updatedInvoice = updateResult;
       break;
@@ -893,7 +1105,7 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
     }
     throw new Error('Unknown error updating invoice');
   }
-
+  
   // Store payment_method in localStorage if column doesn't exist in database
   if (updateData.payment_method) {
     try {
@@ -1963,3 +2175,73 @@ export async function deleteMessage(messageId: string): Promise<void> {
     throw error;
   }
 }
+
+const conversationCache = new Map<string, Conversation>();
+
+const SERVICE_PRICING_STORAGE_KEY = 'service-pricing-types';
+const SERVICE_PRICING_VALUES: ServicePricingType[] = ['hourly', 'daily', 'project'];
+
+const readServicePricingTypes = (): Record<string, ServicePricingType> => {
+  if (typeof window === 'undefined' || !('localStorage' in window)) {
+    return {};
+  }
+  try {
+    const raw = window.localStorage.getItem(SERVICE_PRICING_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      return parsed as Record<string, ServicePricingType>;
+    }
+  } catch (error) {
+    console.warn('Could not read service pricing types from localStorage:', error);
+  }
+  return {};
+};
+
+const writeServicePricingTypes = (map: Record<string, ServicePricingType>) => {
+  if (typeof window === 'undefined' || !('localStorage' in window)) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(SERVICE_PRICING_STORAGE_KEY, JSON.stringify(map));
+  } catch (error) {
+    console.warn('Could not write service pricing types to localStorage:', error);
+  }
+};
+
+const persistServicePricingType = (serviceId: string, pricingType?: ServicePricingType | null) => {
+  try {
+    const map = readServicePricingTypes();
+    if (pricingType && SERVICE_PRICING_VALUES.includes(pricingType)) {
+      map[serviceId] = pricingType;
+    } else if (serviceId in map) {
+      delete map[serviceId];
+    }
+    writeServicePricingTypes(map);
+  } catch (error) {
+    console.warn('Could not persist service pricing type to localStorage:', error);
+  }
+};
+
+const loadPricingTypeForService = (serviceId: string): ServicePricingType | undefined => {
+  const map = readServicePricingTypes();
+  const stored = map[serviceId];
+  return SERVICE_PRICING_VALUES.includes(stored as ServicePricingType) ? (stored as ServicePricingType) : undefined;
+};
+
+const normalizeServicePricingType = (value: unknown): ServicePricingType | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  return SERVICE_PRICING_VALUES.includes(value as ServicePricingType) ? (value as ServicePricingType) : undefined;
+};
+
+const resolveServicePricingType = (service: DatabaseService): ServicePricingType | undefined => {
+  const direct = normalizeServicePricingType((service as any).pricing_type);
+  if (direct) {
+    return direct;
+  }
+  return loadPricingTypeForService(service.id);
+};

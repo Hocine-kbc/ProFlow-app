@@ -1,12 +1,15 @@
 // ... existing code ...
 
 // Article type
+export type ServicePricingType = 'hourly' | 'daily' | 'project';
+
 export interface Article {
   id: string;
   name: string;
   description: string;
   hourly_rate: number;
   category?: string;
+  pricing_type?: ServicePricingType;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
@@ -22,6 +25,7 @@ export interface Service {
   description: string;
   status: 'pending' | 'completed' | 'invoiced';
   article_id?: string; // Référence vers l'article utilisé
+  pricing_type?: ServicePricingType;
   client?: {
     id: string;
     name: string;
