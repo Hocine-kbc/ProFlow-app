@@ -1322,7 +1322,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                    monthlyRevenue.slice(-3);
 
   return (
-    <div className="space-y-4 bg-gray-50 dark:bg-gray-900 min-h-screen -mt-4 pt-4 pb-8">
+    <div className="space-y-4 bg-gray-50 dark:bg-gray-900 min-h-screen -mt-4 pt-4 pb-8 px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto">
       <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-700 dark:from-indigo-700 dark:via-indigo-700 dark:to-indigo-800 text-white shadow-lg overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
@@ -1388,7 +1388,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Période d'analyse</h3>
             {/* Sélecteurs selon le type de période */}
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
               {/* Sélecteur d'année (toujours visible) */}
               <button
                 type="button"
@@ -1915,7 +1915,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                   } hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-600/70 dark:hover:to-gray-600/50 transition-all duration-200 ease-out group cursor-pointer hover:shadow-md hover:-translate-y-0.5`}
                 >
                   <td className="py-2.5 px-3">
-                    <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                       <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 opacity-0 group-hover:opacity-100 transition-transform duration-300 transition-shadow duration-300 group-hover:scale-150"></div>
                       <span className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 capitalize">
                         {periodFilter === 'quarter' ? (item as QuarterlyRevenue).quarter : (item as MonthlyRevenue).month}
@@ -1998,7 +1998,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Évolution Mensuelle du Chiffre d'Affaires</h3>
-          <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setSelectedYear(selectedYear - 1)}
@@ -2500,13 +2500,13 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Répartition par méthode de paiement</h4>
             <div className="space-y-3">
               {paymentMethods.map((pm, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 flex-1">
+                <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                    <span className="text-sm text-gray-900 dark:text-white">{pm.method}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">({pm.count} paiement{pm.count > 1 ? 's' : ''})</span>
+                    <span className="text-sm text-gray-900 dark:text-white truncate">{pm.method}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">({pm.count} paiement{pm.count > 1 ? 's' : ''})</span>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-wrap items-center gap-3 sm:justify-end">
                     <span className="text-sm font-semibold text-gray-900 dark:text-white w-24 text-right">
                       {formatCurrency(pm.amount)}
                     </span>
@@ -2716,13 +2716,13 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Top prestations par revenus</h4>
             <div className="space-y-3">
               {serviceStats.slice(0, 5).map((service, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 flex-1">
+                <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                    <span className="text-sm text-gray-900 dark:text-white">{service.name}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">({service.count}x)</span>
+                    <span className="text-sm text-gray-900 dark:text-white truncate">{service.name}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">({service.count}x)</span>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-wrap items-center gap-3 sm:justify-end">
                     <span className="text-sm text-gray-600 dark:text-gray-400">{service.hours.toFixed(1)}h</span>
                     <span className="text-sm font-semibold text-gray-900 dark:text-white w-24 text-right">
                       {formatCurrency(service.revenue)}
@@ -2755,9 +2755,9 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             </div>
           </div>
           <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Évolution</span>
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className={`text-lg font-bold ${comparisonData.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {comparisonData.change >= 0 ? '+' : ''}{formatCurrency(comparisonData.change)}
                 </span>
@@ -2783,16 +2783,16 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
               
               return (
                 <div key={index} className="group">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
                       <div 
                         className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ backgroundColor: color }}
                       />
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">{client.name}</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{client.name}</span>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">
+                    <div className="flex flex-wrap items-center gap-4 text-sm">
+                      <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
                         {formatPercent(client.percentage)}
                       </span>
                       <span className="font-bold text-gray-900 dark:text-white min-w-[100px] text-right">
@@ -2810,13 +2810,13 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                       }}
                     />
                   </div>
-                  <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span>{client.invoices} facture{client.invoices > 1 ? 's' : ''}</span>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-green-600 dark:text-green-400">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span className="whitespace-nowrap">{client.invoices} facture{client.invoices > 1 ? 's' : ''}</span>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-green-600 dark:text-green-400 whitespace-nowrap">
                         Net: {formatCurrency(client.revenueNet)}
                       </span>
-                      <span className="text-red-600 dark:text-red-400">
+                      <span className="text-red-600 dark:text-red-400 whitespace-nowrap">
                         Cotisations: {formatCurrency(client.contributions)}
                       </span>
                     </div>

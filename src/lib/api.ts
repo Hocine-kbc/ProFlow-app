@@ -385,10 +385,10 @@ export async function fetchServices(): Promise<Service[]> {
   let lastError: any = null;
 
   for (const selection of selectionVariants) {
-    const { data, error } = await supabase
-      .from('services')
+  const { data, error } = await supabase
+    .from('services')
       .select(selection)
-      .order('date', { ascending: false });
+    .order('date', { ascending: false });
 
     if (error) {
       lastError = error;
@@ -464,10 +464,10 @@ export async function createService(payload: Omit<Service, 'id' | 'client' | 'cr
       delete (insertPayload as Partial<DatabaseService>).user_id;
     }
     const response = await supabase
-      .from('services')
+    .from('services')
       .insert(insertPayload)
-      .select('*')
-      .single();
+    .select('*')
+    .single();
     if (response.error) {
       throw response.error;
     }
@@ -579,11 +579,11 @@ export async function updateService(id: string, payload: Partial<Service>): Prom
       delete (updatePayload as Partial<DatabaseService>).pricing_type;
     }
     const response = await supabase
-      .from('services')
+    .from('services')
       .update(updatePayload)
-      .eq('id', id)
-      .select('*')
-      .single();
+    .eq('id', id)
+    .select('*')
+    .single();
     if (response.error) {
       throw response.error;
     }
@@ -623,6 +623,91 @@ export async function deleteService(id: string): Promise<void> {
   const { error } = await supabase.from('services').delete().eq('id', id);
   if (error) throw error;
   persistServicePricingType(id, undefined);
+}
+
+const INVOICE_PAID_DATES_KEY = 'invoice-paid-dates';
+const INVOICE_PAID_AMOUNTS_KEY = 'invoice-paid-amounts';
+const INVOICE_MISSING_COLUMNS_KEY = 'invoice-missing-columns';
+
+function readInvoiceMetadataMap<T = any>(key: string): Record<string, T> {
+  try {
+    return JSON.parse(localStorage.getItem(key) || '{}');
+  } catch (_error) {
+    return {};
+  }
+}
+
+function persistInvoicePaidDate(invoiceId: string, value?: string | null) {
+  try {
+    const storage = readInvoiceMetadataMap<string>(INVOICE_PAID_DATES_KEY);
+    if (value) {
+      storage[invoiceId] = value;
+    } else if (storage[invoiceId]) {
+      delete storage[invoiceId];
+    }
+    localStorage.setItem(INVOICE_PAID_DATES_KEY, JSON.stringify(storage));
+  } catch (error) {
+    console.warn('Could not store invoice paid date in localStorage:', error);
+  }
+}
+
+function loadInvoicePaidDate(invoiceId: string): string | null {
+  try {
+    const storage = readInvoiceMetadataMap<string>(INVOICE_PAID_DATES_KEY);
+    return storage[invoiceId] || null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function persistInvoicePaidAmount(invoiceId: string, value?: number | null) {
+  try {
+    const storage = readInvoiceMetadataMap<number>(INVOICE_PAID_AMOUNTS_KEY);
+    if (typeof value === 'number' && !Number.isNaN(value)) {
+      storage[invoiceId] = value;
+    } else if (storage[invoiceId] !== undefined) {
+      delete storage[invoiceId];
+    }
+    localStorage.setItem(INVOICE_PAID_AMOUNTS_KEY, JSON.stringify(storage));
+  } catch (error) {
+    console.warn('Could not store invoice paid amount in localStorage:', error);
+  }
+}
+
+function loadInvoicePaidAmount(invoiceId: string): number | null {
+  try {
+    const storage = readInvoiceMetadataMap<number>(INVOICE_PAID_AMOUNTS_KEY);
+    const value = storage[invoiceId];
+    return typeof value === 'number' && !Number.isNaN(value) ? value : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function readMissingInvoiceColumns(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(INVOICE_MISSING_COLUMNS_KEY) || '{}');
+  } catch (_error) {
+    return {};
+  }
+}
+
+function isInvoiceColumnMarkedMissing(column: string): boolean {
+  const stored = readMissingInvoiceColumns();
+  return Boolean(stored[column]);
+}
+
+function rememberMissingInvoiceColumn(column: string) {
+  if (!column) return;
+  try {
+    const stored = readMissingInvoiceColumns();
+    if (!stored[column]) {
+      stored[column] = true;
+      localStorage.setItem(INVOICE_MISSING_COLUMNS_KEY, JSON.stringify(stored));
+    }
+  } catch (_error) {
+    // Ignore storage errors
+  }
 }
 
 // Invoices
@@ -672,6 +757,22 @@ export async function fetchInvoices(): Promise<Invoice[]> {
           summaryDescription = summaryDescriptions[invoice.id] || null;
         } catch (_e) {
           summaryDescription = null;
+        }
+      }
+
+      let paidDate: string | null = (invoice as any).paid_date ?? null;
+      if (!paidDate) {
+        paidDate = loadInvoicePaidDate(invoice.id);
+      }
+
+      let paidAmount: number | null =
+        typeof (invoice as any).paid_amount === 'number' && !Number.isNaN((invoice as any).paid_amount)
+          ? (invoice as any).paid_amount
+          : null;
+      if (paidAmount === null) {
+        const storedAmount = loadInvoicePaidAmount(invoice.id);
+        if (storedAmount !== null) {
+          paidAmount = storedAmount;
         }
       }
       
@@ -752,6 +853,8 @@ export async function fetchInvoices(): Promise<Invoice[]> {
         client: null,
         // Add payment_method from localStorage if not in database
         payment_method: paymentMethod,
+        paid_date: paidDate,
+        paid_amount: paidAmount,
         invoice_type: invoiceType,
         summary_description: summaryDescription,
         // Map database fields to camelCase for the new invoice-specific fields
@@ -835,7 +938,7 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
     baseInsert.company_siret = currentSettings.siret;
     baseInsert.company_logo_url = currentSettings.logoUrl;
   }
-
+  
   const hasInvoiceType = Boolean(invoiceType);
   const hasServices = Array.isArray(services) && services.length > 0;
   const hasSummaryDescription = typeof summaryDescription === 'string' && summaryDescription.length > 0;
@@ -847,7 +950,7 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
     ...(includeServices && hasServices ? { services } : {}),
     ...(includeSummary && hasSummaryDescription ? { summary_description: summaryDescription } : {}),
   } as Partial<DatabaseInvoice>);
-
+  
   const variantSet = new Map<string, Partial<DatabaseInvoice>>();
   const addVariant = (variant: Partial<DatabaseInvoice>) => {
     const key = JSON.stringify(variant);
@@ -884,8 +987,8 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
     if (!insertError && insertData) {
       insertedInvoice = insertData;
       break;
-    }
-
+      }
+      
     lastError = insertError;
 
     if (!insertError || insertError.code !== 'PGRST204') {
@@ -897,7 +1000,7 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
     if (lastError) {
       console.error('Error creating invoice:', lastError);
       throw lastError;
-    }
+      }
     throw new Error('Unknown error creating invoice');
   }
 
@@ -919,6 +1022,16 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
     } catch (e) {
       console.warn('Could not store invoice type in localStorage:', e);
     }
+  }
+
+  const initialPaidDate = (invoiceData as Partial<Invoice>).paid_date ?? null;
+  if (initialPaidDate) {
+    persistInvoicePaidDate(insertedInvoice.id, initialPaidDate);
+  }
+
+  const initialPaidAmount = (invoiceData as Partial<Invoice>).paid_amount;
+  if (typeof initialPaidAmount === 'number' && !Number.isNaN(initialPaidAmount)) {
+    persistInvoicePaidAmount(insertedInvoice.id, initialPaidAmount);
   }
 
   if (summaryDescription) {
@@ -1003,22 +1116,27 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
   if (updateData.net_amount !== undefined) dbUpdateData.net_amount = updateData.net_amount;
   if (updateData.status !== undefined) {
     dbUpdateData.status = updateData.status;
-    // Si la facture est marquée comme payée et qu'il n'y a pas de paid_date, définir la date actuelle
-    if (updateData.status === 'paid' && !updateData.paid_date) {
-      (dbUpdateData as any).paid_date = new Date().toISOString();
-    }
   }
   // Gérer summary_description
   if (updateData.summary_description !== undefined) {
     (dbUpdateData as any).summary_description = updateData.summary_description ?? null;
   }
-  // Gérer paid_date explicitement si fourni
-  if (updateData.paid_date !== undefined) {
-    (dbUpdateData as any).paid_date = updateData.paid_date;
+  const requestedPaidDate =
+    updateData.paid_date !== undefined
+      ? updateData.paid_date
+      : updateData.status === 'paid'
+        ? new Date().toISOString()
+        : undefined;
+  const requestedPaidAmount = updateData.paid_amount;
+
+  const supportsPaidDateColumn = !isInvoiceColumnMarkedMissing('paid_date');
+  const supportsPaidAmountColumn = !isInvoiceColumnMarkedMissing('paid_amount');
+
+  if (requestedPaidDate !== undefined && supportsPaidDateColumn) {
+    (dbUpdateData as any).paid_date = requestedPaidDate;
   }
-  // Gérer paid_amount si fourni
-  if (updateData.paid_amount !== undefined) {
-    (dbUpdateData as any).paid_amount = updateData.paid_amount;
+  if (requestedPaidAmount !== undefined && supportsPaidAmountColumn) {
+    (dbUpdateData as any).paid_amount = requestedPaidAmount;
   }
   // Toujours définir urssaf_deduction à 0 pour éviter les erreurs de contrainte
   if (updateData.subtotal !== undefined || updateData.net_amount !== undefined) {
@@ -1026,7 +1144,7 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
   }
   
   (dbUpdateData as any).urssaf_deduction = dbUpdateData.urssaf_deduction ?? 0;
-
+  
   const updatedInvoiceType = (payload as Invoice).invoice_type;
   if (updatedInvoiceType) {
     (dbUpdateData as any).invoice_type = updatedInvoiceType;
@@ -1075,26 +1193,96 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
   pushVariant(combineUpdateVariant(false, false, true));
   pushVariant(combineUpdateVariant(false, false, false));
 
+  const optionalColumnCandidates = [
+    'invoice_type',
+    'summary_description',
+    'services',
+    'paid_date',
+    'paid_amount',
+    'payment_method',
+    'invoice_terms',
+    'payment_terms',
+    'additional_terms',
+    'include_late_payment_penalties',
+    'show_legal_rate',
+    'show_fixed_fee',
+    'company_name',
+    'company_owner',
+    'company_email',
+    'company_phone',
+    'company_address',
+    'company_siret',
+    'company_logo_url',
+    'urssaf_deduction',
+  ];
+
+  const attemptVariantUpdate = async (initialVariant: Partial<DatabaseInvoice>) => {
+    let workingVariant: Partial<DatabaseInvoice> = { ...initialVariant };
+    const removedColumns = new Set<string>();
+    let attempt = 0;
+    let lastAttemptError: any = null;
+
+    while (attempt < optionalColumnCandidates.length + 2) {
+      attempt += 1;
+
+      const { data: updateResult, error: updateError } = await supabase
+        .from('invoices')
+        .update(workingVariant)
+        .eq('id', id)
+        .select('*')
+        .single();
+
+      if (!updateError && updateResult) {
+        return updateResult;
+      }
+
+      lastAttemptError = updateError;
+
+      if (!updateError || updateError.code !== 'PGRST204') {
+        throw updateError;
+      }
+
+      const message = updateError.message || '';
+      const match = message.match(/'([^']+)'/);
+      let columnToRemove = match && match[1] ? match[1] : null;
+
+      if (!columnToRemove || !Object.prototype.hasOwnProperty.call(workingVariant, columnToRemove)) {
+        columnToRemove =
+          optionalColumnCandidates.find(
+            candidate => !removedColumns.has(candidate) && Object.prototype.hasOwnProperty.call(workingVariant, candidate)
+          ) || null;
+      }
+
+      if (!columnToRemove) {
+        console.warn('No optional columns left to remove in invoice update payload', workingVariant);
+        throw updateError;
+      }
+
+      console.warn(`Removing unsupported column from invoice update payload: ${columnToRemove}`);
+      rememberMissingInvoiceColumn(columnToRemove);
+      delete (workingVariant as any)[columnToRemove];
+      removedColumns.add(columnToRemove);
+    }
+
+    if (lastAttemptError) {
+      throw lastAttemptError;
+    }
+    throw new Error('Unknown error updating invoice');
+  };
+
   let updatedInvoice: DatabaseInvoice | null = null;
   let lastError: any = null;
 
   for (const variant of variantSet.values()) {
-    const { data: updateResult, error: updateError } = await supabase
-        .from('invoices')
-      .update(variant)
-        .eq('id', id)
-        .select('*')
-        .single();
-        
-    if (!updateError && updateResult) {
+    try {
+      const updateResult = await attemptVariantUpdate(variant);
       updatedInvoice = updateResult;
       break;
-    }
-
-    lastError = updateError;
-
-    if (!updateError || updateError.code !== 'PGRST204') {
+    } catch (error: any) {
+      lastError = error;
+      if (!error || error.code !== 'PGRST204') {
       break;
+    }
     }
   }
 
@@ -1102,7 +1290,7 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
     if (lastError) {
       console.error('Error updating invoice:', lastError);
       throw lastError;
-    }
+      }
     throw new Error('Unknown error updating invoice');
   }
   
@@ -1153,8 +1341,32 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
     }
   }
   
+  const shouldClearPaidMeta = updateData.status !== undefined && updateData.status !== 'paid';
+  if (requestedPaidDate !== undefined) {
+    persistInvoicePaidDate(id, requestedPaidDate);
+  } else if (shouldClearPaidMeta) {
+    persistInvoicePaidDate(id, null);
+  }
+
+  if (requestedPaidAmount !== undefined) {
+    persistInvoicePaidAmount(id, requestedPaidAmount);
+  } else if (shouldClearPaidMeta) {
+    persistInvoicePaidAmount(id, null);
+  }
+
+  const normalizedInvoice: DatabaseInvoice = { ...updatedInvoice };
+  if (requestedPaidDate !== undefined && !normalizedInvoice.paid_date) {
+    normalizedInvoice.paid_date = requestedPaidDate;
+  }
+  if (
+    requestedPaidAmount !== undefined &&
+    (normalizedInvoice.paid_amount === undefined || normalizedInvoice.paid_amount === null)
+  ) {
+    normalizedInvoice.paid_amount = requestedPaidAmount;
+  }
+
   // Return the invoice with services array if provided
-  return { ...updatedInvoice, services: services || [], invoice_type: updatedInvoiceType } as Invoice;
+  return { ...normalizedInvoice, services: services || [], invoice_type: updatedInvoiceType } as Invoice;
 }
 
 export async function deleteInvoice(id: string): Promise<void> {
