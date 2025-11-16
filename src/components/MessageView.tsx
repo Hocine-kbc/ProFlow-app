@@ -69,8 +69,9 @@ export default function MessageView({
       {/* Header fixe avec navigation */}
       <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
         {/* Barre de navigation supérieure */}
-        <div className="px-6 py-2 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-800">
-          <div className="flex items-center gap-3">
+        <div className="px-3 sm:px-4 md:px-6 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-800">
+          {/* Navigation gauche */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={onBack}
               className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-700 dark:text-gray-300"
@@ -109,7 +110,7 @@ export default function MessageView({
           </div>
 
           {/* Actions rapides */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center flex-wrap gap-1 sm:gap-2 flex-shrink-0 justify-end">
             {!isFromMe && onMarkRead && (
               <button
                 onClick={() => onMarkRead(!message.read)}
@@ -171,12 +172,12 @@ export default function MessageView({
         </div>
 
         {/* En-tête du message - Compact */}
-        <div className="px-6 py-3">
+        <div className="px-3 sm:px-4 md:px-6 py-3">
           {/* Sujet et badges compacts */}
-          <div className="flex items-start justify-between mb-2">
+          <div className="flex flex-col gap-2 mb-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
                   {message.subject || '(Sans objet)'}
                 </h1>
                 {!isRead && (
@@ -196,7 +197,7 @@ export default function MessageView({
               </div>
               
               {/* Métadonnées très compactes */}
-              <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+              <div className="flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <User className="w-3 h-3" />
                   <span className="truncate max-w-[200px]">{message.sender?.email || 'Expéditeur inconnu'}</span>
@@ -227,9 +228,9 @@ export default function MessageView({
 
       {/* Contenu du message - Scrollable */}
       <div className="flex-1 overflow-y-auto scrollbar-visible bg-gray-50 dark:bg-gray-900/50">
-        <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
           {/* Contenu principal dans une carte */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 mb-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="prose prose-gray dark:prose-invert max-w-none">
               <div className="whitespace-pre-wrap text-gray-900 dark:text-gray-100 text-base leading-relaxed">
                 {message.content || <span className="text-gray-400 italic">Aucun contenu</span>}
@@ -313,71 +314,6 @@ export default function MessageView({
               </div>
             </div>
           )}
-
-          {/* Zone d'actions en bas */}
-          <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-800">
-            <div className="flex items-center gap-3">
-              {!isFromMe && onMarkRead && (
-                <button
-                  onClick={() => onMarkRead(!message.read)}
-                  className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 text-sm font-medium ${
-                    message.read
-                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      : 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/30'
-                  }`}
-                >
-                  {message.read ? (
-                    <>
-                      <Mail className="w-4 h-4" />
-                      <span>Marquer comme non lu</span>
-                    </>
-                  ) : (
-                    <>
-                      <MailOpen className="w-4 h-4" />
-                      <span>Marquer comme lu</span>
-                    </>
-                  )}
-                </button>
-              )}
-              
-              <button
-                onClick={onStar}
-                className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 text-sm font-medium ${
-                  message.is_starred 
-                    ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800' 
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                <Star className={`w-4 h-4 ${message.is_starred ? 'fill-current' : ''}`} />
-                <span>{message.is_starred ? 'Favori' : 'Ajouter aux favoris'}</span>
-              </button>
-              
-              <button
-                onClick={onArchive}
-                className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                {isArchived ? (
-                  <>
-                    <ArchiveRestore className="w-4 h-4" />
-                    <span>Désarchiver</span>
-                  </>
-                ) : (
-                  <>
-                    <Archive className="w-4 h-4" />
-                    <span>Archiver</span>
-                  </>
-                )}
-              </button>
-            </div>
-            
-            <button
-              onClick={onReply}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-full transition-colors flex items-center gap-2 font-medium shadow-sm hover:shadow-md"
-            >
-              <Reply className="w-5 h-5" />
-              <span>Répondre</span>
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -749,10 +749,10 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[96vh] flex flex-col border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header moderne */}
-        <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 px-6 py-4 flex items-center justify-between relative overflow-hidden">
+        <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between relative overflow-hidden">
           {/* Traits décoratifs - consistent with other page headers */}
           <div className="absolute inset-0 opacity-20">
             {/* Traits horizontaux qui traversent */}
@@ -769,11 +769,11 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
             <div className="absolute top-0 bottom-0 right-24 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
           </div>
           
-          <div className="flex items-center gap-3 relative z-10">
+          <div className="flex items-center gap-3 relative z-10 min-w-0">
             <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
               <Mail className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-lg sm:text-xl font-bold text-white truncate">
               {replyTo ? 'Répondre' : 'Nouveau message'}
             </h2>
           </div>
@@ -787,10 +787,10 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
 
         {/* Contenu scrollable */}
         <div className="flex-1 overflow-y-auto scrollbar-none">
-          <div className="p-6 space-y-4">
+          <div className="p-3 sm:p-6 space-y-4">
             {/* Destinataire principal */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <User className="w-4 h-4" />
                   À
@@ -870,14 +870,14 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
             </div>
 
             {/* Priorité */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Priorité:</label>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {(['low', 'normal', 'high', 'urgent'] as const).map((p) => (
                   <button
                     key={p}
                     onClick={() => setPriority(p)}
-                    className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold transition-all ${
                       priority === p
                         ? p === 'urgent' 
                           ? 'bg-red-500 text-white shadow-lg'
@@ -903,7 +903,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
               </label>
               
               {/* Barre d'outils de formatage */}
-              <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-t-xl border-b-0">
+              <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-t-xl border-b-0">
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
@@ -1387,7 +1387,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
         </div>
 
         {/* Footer avec actions */}
-        <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+        <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -1416,11 +1416,11 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
               <Clock className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-stretch sm:items-center justify-end gap-2 sm:gap-3">
             <button
               onClick={handleSaveDraft}
               disabled={sending}
-              className="px-5 py-2.5 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-all font-medium text-sm shadow-sm hover:shadow-md flex items-center gap-2"
+              className="px-4 sm:px-5 py-2.5 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-all font-medium text-xs sm:text-sm shadow-sm hover:shadow-md flex items-center gap-2"
             >
               <Save className="w-4 h-4" />
               <span>Brouillon</span>
@@ -1428,7 +1428,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
             <button
               onClick={handleSend}
               disabled={sending || uploading || !to.trim()}
-              className="px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-sm shadow-lg hover:shadow-xl flex items-center gap-2"
+              className="px-5 sm:px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-xs sm:text-sm shadow-lg hover:shadow-xl flex items-center gap-2 justify-center"
             >
               {sending ? (
                 <>

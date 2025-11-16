@@ -58,7 +58,7 @@ export default function EmailSidebar({
   };
 
   return (
-    <div className="w-64 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col shadow-lg rounded-2xl overflow-hidden flex-shrink-0 h-full">
+    <div className="w-full md:w-72 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shadow-xl md:rounded-none rounded-2xl overflow-hidden flex-shrink-0 h-auto md:h-full">
       {/* Compose Button */}
       <div className="px-4 py-4">
         <button

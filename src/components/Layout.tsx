@@ -146,7 +146,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
+    <div className="h-screen min-h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -260,26 +260,39 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       {/* Header fixe en haut - Toute la largeur, derrière le menu */}
       <div className="bg-gradient-to-r from-white via-white to-gray-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 shadow-md border-b border-gray-200/80 dark:border-gray-700/80 backdrop-blur-sm px-4 lg:px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-30" style={{ height: '64px' }}>
         {/* Mobile: Menu hamburger */}
-        <button
+        <div className="flex items-center lg:hidden flex-1">
+          <button
           type="button"
           onClick={() => setSidebarOpen(true)}
-          className="lg:hidden p-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+            className="p-2 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
         
         {/* Mobile: Logo */}
-        <div className="lg:hidden flex items-center">
-          <img src="/ProFlowlogo.png" alt="ProFlow" className="h-10 w-auto invert dark:invert-0" />
+        <div className="lg:hidden flex items-center justify-center px-2 absolute left-[48%] -translate-x-1/2 pointer-events-none">
+          <div className="relative h-10 sm:h-12 w-[180px] sm:w-[220px] flex items-center justify-center overflow-visible">
+            <img
+              src="/ProFlowlogo.png"
+              alt="ProFlow"
+              className="h-full w-auto object-contain"
+              style={{
+                transform: 'scale(2.8)',
+                transformOrigin: 'center',
+                filter: `${!isDark ? 'invert(1) saturate(1.1) ' : ''}drop-shadow(0 6px 16px rgba(0,0,0,0.25))`
+              }}
+            />
+          </div>
         </div>
         
         {/* Desktop: Espace vide à gauche */}
         <div className="hidden lg:block flex-1" />
         
         {/* Actions à droite */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 flex-shrink-0 mr-1 sm:mr-2 relative z-10 lg:ml-2 flex-1 justify-end">
           <NotificationBell onNavigate={onPageChange} />
           <button
             type="button"
@@ -310,12 +323,9 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       </div>
 
       {/* Main content */}
-      <div className={`transition-all duration-500 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'}`}>
-        {/* Espace pour le header */}
-        <div className="h-[64px]"></div>
-        
+      <div className={`pt-[64px] transition-all duration-500 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'} flex flex-col h-full overflow-hidden`}>
         {/* Page content */}
-        <main className="p-4 md:p-6 lg:p-8 min-h-screen pb-12">
+        <main className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 lg:p-8 pb-12">
           {children}
         </main>
       </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Mail, MailOpen, Archive, ArchiveRestore, Trash2, Star, RefreshCw, User, FileText, Calendar, Clock, ChevronDown } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Mail, MailOpen, Archive, ArchiveRestore, Trash2, Star, RefreshCw, User, FileText, Calendar, Clock, ChevronDown, Menu } from 'lucide-react';
 import { EmailMessage, MessageFolder, MessageFilters, MessageStats } from '../types/index.ts';
 import { supabase } from '../lib/supabase.ts';
 import { useApp } from '../contexts/AppContext.tsx';
@@ -34,6 +35,7 @@ export default function EmailInboxPage() {
   const [filters, setFilters] = useState<MessageFilters>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { showNotification } = useApp();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Récupérer l'utilisateur actuel
   useEffect(() => {
@@ -752,52 +754,168 @@ export default function EmailInboxPage() {
   const hasSelection = selectedMessages.size > 0;
 
   return (
-    <div className="email-inbox-container flex bg-gray-100 dark:bg-gray-900 overflow-hidden overflow-x-hidden p-3 gap-3 -m-4 md:-m-6 lg:-m-8" style={{ height: 'calc(100vh - 64px)', maxHeight: 'calc(100vh - 64px)', minWidth: '100%', width: '100%' }}>
-      {/* Sidebar */}
-      <EmailSidebar
-        currentFolder={currentFolder}
-        onFolderChange={(folder) => {
-          setCurrentFolder(folder);
-          // Revenir à la vue tableau si un message est ouvert
-          if (selectedMessage) {
-            setSelectedMessage(null);
-            selectedMessageRef.current = null;
+    <div
+      className="email-inbox-container flex flex-col md:flex-row h-full min-h-[420px] bg-gray-100 dark:bg-gray-900 overflow-hidden overflow-x-hidden gap-3 rounded-2xl"
+    >
+      {/* Sidebar desktop / tablette large - même style que le menu principal */}
+      <div className="hidden md:block flex-none w-72 max-w-xs h-full">
+        <EmailSidebar
+          currentFolder={currentFolder}
+          onFolderChange={(folder) => {
+            setCurrentFolder(folder);
+            if (selectedMessage) {
+              setSelectedMessage(null);
+              selectedMessageRef.current = null;
+            }
+          }}
+          stats={stats}
+          onCompose={() => setShowComposer(true)}
+        />
+      </div>
+
+      {/* Drawer sidebar mobile/tablette (overlay) - rendu via portal pour couvrir toute la page */}
+      {isSidebarOpen && createPortal(
+        <>
+          {/* Overlay qui couvre toute la largeur de l'écran, y compris derrière le menu */}
+          <button
+            type="button"
+            className="fixed z-40 md:hidden bg-black/40"
+            style={{
+              top: '64px',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              animation: 'inboxOverlayFadeIn 220ms ease-out',
+            }}
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Fermer le menu des dossiers"
+          />
+          {/* Panneau latéral similaire au menu principal, qui glisse depuis la gauche sans couvrir le header */}
+          <div
+            className="fixed z-50 md:hidden w-72 max-w-full h-full shadow-2xl bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-r border-gray-200 dark:border-gray-800"
+            style={{
+              top: '64px',
+              left: 0,
+              bottom: 0,
+              animation: 'inboxSidebarSlideIn 220ms ease-out',
+            }}
+          >
+            <EmailSidebar
+              currentFolder={currentFolder}
+              onFolderChange={(folder) => {
+                setCurrentFolder(folder);
+                setIsSidebarOpen(false);
+                if (selectedMessage) {
+                  setSelectedMessage(null);
+                  selectedMessageRef.current = null;
+                }
+              }}
+              stats={stats}
+              onCompose={() => {
+                setShowComposer(true);
+                setIsSidebarOpen(false);
+              }}
+            />
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* Animation CSS pour le slide-in du menu des dossiers sur mobile */}
+      <style>
+        {`
+          @keyframes inboxSidebarSlideIn {
+            from {
+              transform: translateX(-100%);
+            }
+            to {
+              transform: translateX(0);
+            }
           }
-        }}
-        stats={stats}
-        onCompose={() => setShowComposer(true)}
-      />
+          @keyframes inboxOverlayFadeIn {
+            from {
+              opacity: 0;
+            }
+            to {
+              opacity: 1;
+            }
+          }
+        `}
+      </style>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800 shadow-lg rounded-2xl min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800 shadow-lg rounded-2xl min-w-0 mt-3 md:mt-0 relative z-0">
         {/* Gmail-like Header - Fixe */}
-        <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 shadow-sm rounded-t-2xl">
-          <div className="flex items-center gap-3">
-            {/* Logo/Titre */}
-            <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 shadow-sm rounded-t-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 relative">
+            {/* Section gauche (vide sur desktop, peut contenir des éléments sur mobile) */}
+            <div className="hidden sm:block sm:w-72 sm:flex-shrink-0"></div>
+
+            {/* Logo/Titre - Centré */}
+            <div className="flex items-center justify-center gap-2.5 min-w-0 flex-1 sm:flex-none sm:absolute sm:left-1/2 sm:-translate-x-1/2">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/30 dark:shadow-blue-400/20 transition-transform hover:scale-105">
                 <Mail className="w-5 h-5 text-white drop-shadow-sm" />
               </div>
               <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Messagerie</span>
             </div>
 
-            {/* Barre de recherche */}
-            <div className="flex-1 max-w-2xl mx-4">
-              <SearchBar
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                filters={filters}
-                onFiltersChange={setFilters}
-              />
+            {/* Barre de recherche avec bouton menu intégré */}
+            <div className="w-full sm:flex-1 sm:max-w-2xl sm:mx-auto relative">
+              {/* Bouton menu dossiers (mobile) - intégré à gauche de la barre de recherche */}
+              <button
+                type="button"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 inline-flex md:hidden items-center justify-center rounded-full bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors shadow-sm"
+                style={{ height: '42px', width: '42px', minHeight: '42px', minWidth: '42px' }}
+                onClick={() => setIsSidebarOpen(true)}
+                aria-label="Ouvrir le menu des dossiers"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <div className="md:pl-0 pl-[54px]">
+                <SearchBar
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Toolbar - Fixe */}
-        {!selectedMessage && (
-          <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <div className="px-6 py-2 flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
+        {!selectedMessage && (() => {
+          const filtered = getFilteredMessages();
+          const allSelected = filtered.length > 0 && selectedMessages.size === filtered.length;
+          const someSelected = selectedMessages.size > 0 && selectedMessages.size < filtered.length;
+          
+          return (
+            <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <div className="px-3 sm:px-6 py-2 flex flex-row items-center justify-between gap-2 sm:gap-3">
+                {/* Checkbox à gauche */}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(input) => {
+                      if (input) {
+                        input.indeterminate = someSelected;
+                      }
+                    }}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer"
+                    title={allSelected ? 'Désélectionner tout' : 'Sélectionner tout'}
+                  />
+                  {hasSelection && (
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {selectedMessages.size} sélectionné(s)
+                    </span>
+                  )}
+                </div>
+              
+                {/* Boutons à droite */}
+                <div className={`flex items-center gap-1 sm:gap-2 transition-opacity duration-200 ${hasSelection ? 'opacity-100' : 'opacity-30'}`}>
                 <button
                   onClick={() => loadMessages(currentFolder)}
                   className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
@@ -805,14 +923,6 @@ export default function EmailInboxPage() {
                 >
                   <RefreshCw className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                 </button>
-                {hasSelection && (
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {selectedMessages.size} sélectionné(s)
-                  </span>
-                )}
-              </div>
-              
-              <div className={`flex items-center gap-1 transition-opacity duration-200 ${hasSelection ? 'opacity-100' : 'opacity-30'}`}>
                 {(() => {
                   // Vérifier si tous les messages sélectionnés sont lus ou non
                   const selectedMessagesData = messages.filter(m => selectedMessages.has(m.id) && m.sender_id !== currentUserId);
@@ -887,14 +997,15 @@ export default function EmailInboxPage() {
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Messages List or View - Scrollable */}
         {!selectedMessage ? (
           <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800">
-            {/* Table Header - Fixe */}
-            <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800">
-              <div className="grid grid-cols-[40px_40px_280px_1fr_140px_auto] gap-3 px-6 py-3 items-center">
+            {/* Table Header - Fixe (desktop) */}
+            <div className="hidden sm:block flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800">
+              <div className="grid grid-cols-[32px_32px_minmax(0,2fr)_minmax(0,3fr)_120px_auto] lg:grid-cols-[40px_40px_280px_1fr_140px_auto] gap-3 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 items-center text-xs sm:text-sm">
                 {/* Colonne checkbox */}
                 <div className="flex items-center justify-center relative" ref={selectionMenuRef}>
                   <div className="flex items-center gap-1">
@@ -1072,35 +1183,36 @@ export default function EmailInboxPage() {
                 }
 
                 return (
-                  <div>
+                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
                     {filteredMessages.map((message, index) => (
-                      <MessageItem
-                        key={message.id}
-                        message={message}
-                        isSelected={selectedMessages.has(message.id)}
-                        onSelect={() => toggleMessageSelection(message.id)}
-                        onClick={() => {
-                          // Si c'est un brouillon, ouvrir le composeur au lieu de la vue message
-                          if (message.status === 'draft') {
-                            setSelectedMessage(message);
-                            setShowComposer(true);
-                          } else {
-                            setSelectedMessage(message);
-                            selectedMessageRef.current = message;
-                            if (!message.read) {
-                              handleMarkAsRead(message.id);
+                      <div key={message.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors">
+                        <MessageItem
+                          message={message}
+                          isSelected={selectedMessages.has(message.id)}
+                          onSelect={() => toggleMessageSelection(message.id)}
+                          onClick={() => {
+                            // Si c'est un brouillon, ouvrir le composeur au lieu de la vue message
+                            if (message.status === 'draft') {
+                              setSelectedMessage(message);
+                              setShowComposer(true);
+                            } else {
+                              setSelectedMessage(message);
+                              selectedMessageRef.current = message;
+                              if (!message.read) {
+                                handleMarkAsRead(message.id);
+                              }
                             }
-                          }
-                        }}
-                        onStar={() => handleStar(message.id, message.is_starred)}
-                        onArchive={() => handleArchive(message.id)}
-                        onDelete={() => handleDelete(message.id)}
-                        onSnooze={() => handleSnooze(message.id)}
-                        onMarkRead={(read) => handleMarkAsRead(message.id, read)}
-                        currentUserId={currentUserId}
-                        isFirst={index === 0}
-                        isLast={index === filteredMessages.length - 1}
-                      />
+                          }}
+                          onStar={() => handleStar(message.id, message.is_starred)}
+                          onArchive={() => handleArchive(message.id)}
+                          onDelete={() => handleDelete(message.id)}
+                          onSnooze={() => handleSnooze(message.id)}
+                          onMarkRead={(read) => handleMarkAsRead(message.id, read)}
+                          currentUserId={currentUserId}
+                          isFirst={index === 0}
+                          isLast={index === filteredMessages.length - 1}
+                        />
+                      </div>
                     ))}
                   </div>
                 );

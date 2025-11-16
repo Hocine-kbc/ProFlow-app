@@ -79,7 +79,8 @@ export default function MessageItem({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={`
-        grid grid-cols-[40px_40px_280px_1fr_140px_auto] gap-3 px-6 py-3 cursor-pointer transition-[background-color,box-shadow,transform] duration-200 ease-in-out 
+        px-3 sm:px-4 md:px-6 py-3 cursor-pointer transition-[background-color,box-shadow,transform] duration-200 ease-in-out 
+        grid grid-cols-[32px_32px_minmax(0,2fr)] sm:grid-cols-[40px_40px_280px_1fr_120px_auto] gap-2 sm:gap-3
         ${isFirst ? '' : 'border-t border-gray-200 dark:border-gray-700'}
         items-center transform overflow-x-hidden
         ${isSelected 
@@ -122,15 +123,23 @@ export default function MessageItem({
         </button>
       </div>
 
-      {/* Expéditeur */}
-      <div className="truncate">
-        <span className={`text-sm ${isUnread ? 'text-gray-900 dark:text-gray-100 font-bold' : 'text-gray-900 dark:text-gray-200 font-medium'}`}>
+      {/* Expéditeur + sujet (stack sur mobile) */}
+      <div className="col-span-1 sm:col-span-1 truncate">
+        <span className={`block text-xs sm:text-sm ${isUnread ? 'text-gray-900 dark:text-gray-100 font-bold' : 'text-gray-900 dark:text-gray-200 font-medium'}`}>
           {displayName}
         </span>
+        <div className="mt-0.5 flex items-center gap-1 sm:hidden">
+          <span className={`text-xs truncate ${isUnread ? 'text-gray-900 dark:text-gray-100 font-semibold' : 'text-gray-700 dark:text-gray-300'}`}>
+            {message.subject || '(Sans objet)'}
+          </span>
+          {hasAttachments && (
+            <Paperclip className="w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+          )}
+        </div>
       </div>
 
-      {/* Sujet */}
-      <div className="truncate flex items-center gap-2">
+      {/* Sujet (desktop) */}
+      <div className="hidden sm:flex truncate items-center gap-2">
         <span className={`text-sm truncate ${isUnread ? 'text-gray-900 dark:text-gray-100 font-semibold' : 'text-gray-700 dark:text-gray-300'}`}>
           {message.subject || '(Sans objet)'}
         </span>
@@ -140,14 +149,14 @@ export default function MessageItem({
       </div>
 
       {/* Date */}
-      <div className="text-right">
+      <div className="hidden sm:block text-right">
         <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
           {timeAgo}
         </span>
       </div>
 
-      {/* Boutons d'action au survol */}
-      <div className="flex items-center justify-center gap-1">
+      {/* Boutons d'action au survol (desktop) */}
+      <div className="hidden sm:flex items-center justify-center gap-1">
         {isHovered && (
           <>
             {!isFromMe && onMarkRead && (

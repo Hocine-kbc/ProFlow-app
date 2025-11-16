@@ -376,9 +376,9 @@ export default function URSSAFPage() {
   const upcomingDeadlines = getUpcomingDeadlines();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-red-600 via-red-600 to-red-700 dark:from-red-700 dark:via-red-700 dark:to-red-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-red-600 via-red-600 to-red-700 dark:from-red-700 dark:via-red-700 dark:to-red-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
         {/* Traits décoratifs */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -392,23 +392,23 @@ export default function URSSAFPage() {
           <div className="absolute top-0 bottom-0 right-8 w-0.5 h-full bg-white/25 transform rotate-6"></div>
         </div>
         <div className="relative z-10">
-          <div className="flex items-center space-x-4">
-            <div className="p-4 bg-white/20 rounded-xl backdrop-blur-sm">
-              <Scale className="w-8 h-8 text-white" />
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="p-2 sm:p-4 bg-white/20 rounded-lg sm:rounded-xl backdrop-blur-sm flex-shrink-0">
+              <Scale className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-white">URSSAF & Cotisations</h1>
-              <p className="text-red-100 mt-1 text-sm sm:text-base">Gestion des cotisations sociales et déclarations</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate">URSSAF & Cotisations</h1>
+              <p className="text-red-100 mt-1 text-xs sm:text-sm md:text-base line-clamp-2">Gestion des cotisations sociales et déclarations</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Navigation de période - juste sous le header */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 sm:p-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
           {/* Onglets pour le type de période avec effet de glissement */}
-          <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 inline-grid grid-cols-2 relative gap-0.5">
+          <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 inline-grid grid-cols-2 relative gap-0.5 w-full md:w-auto">
             {/* Indicateur de glissement */}
             <div 
               className={`absolute top-1 bottom-1 bg-red-600 rounded-full shadow-md transition-all duration-300 ease-in-out ${
@@ -420,7 +420,7 @@ export default function URSSAFPage() {
             <button
               type="button"
               onClick={() => setPeriodType('trimestrielle')}
-              className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-200 whitespace-nowrap ${
+              className={`relative z-10 px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap ${
                 periodType === 'trimestrielle'
                   ? 'text-white'
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -431,7 +431,7 @@ export default function URSSAFPage() {
             <button
               type="button"
               onClick={() => setPeriodType('mensuelle')}
-              className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-200 whitespace-nowrap ${
+              className={`relative z-10 px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap ${
                 periodType === 'mensuelle'
                   ? 'text-white'
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -443,7 +443,7 @@ export default function URSSAFPage() {
 
           {/* Navigation de période */}
           {periodType === 'mensuelle' ? (
-            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-3 py-2">
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-2 sm:px-3 py-2 w-full md:w-auto justify-center md:justify-start">
               <button
                 type="button"
                 onClick={() => {
@@ -458,9 +458,9 @@ export default function URSSAFPage() {
               <button
                 type="button"
                 onClick={() => setSelectedMonth(new Date().toISOString().slice(0, 7))}
-                className="px-4 py-1.5 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
+                className="px-3 sm:px-4 py-1.5 text-gray-900 dark:text-white font-semibold text-xs sm:text-sm hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors min-w-0 flex-1 sm:flex-none"
               >
-                {new Date(selectedMonth + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                <span className="truncate">{new Date(selectedMonth + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</span>
               </button>
               <button
                 type="button"
@@ -475,7 +475,7 @@ export default function URSSAFPage() {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-3 py-2">
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-2 sm:px-3 py-2 w-full md:w-auto flex-wrap justify-center md:justify-start">
               {/* Navigation année */}
               <button
                 type="button"
@@ -486,7 +486,7 @@ export default function URSSAFPage() {
               </button>
               
               {/* Sélection trimestre avec effet de glissement */}
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 inline-flex relative gap-0.5">
+              <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 inline-flex relative gap-0.5 flex-1 sm:flex-none min-w-0">
                 {/* Indicateur de glissement */}
                 <div 
                   className="absolute top-1 bottom-1 bg-red-600 rounded-full shadow-md transition-all duration-300 ease-in-out"
@@ -504,7 +504,7 @@ export default function URSSAFPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedQuarter('T1')}
-                  className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 ${
+                  className={`relative z-10 px-2 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
                     selectedQuarter === 'T1'
                       ? 'text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -515,7 +515,7 @@ export default function URSSAFPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedQuarter('T2')}
-                  className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 ${
+                  className={`relative z-10 px-2 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
                     selectedQuarter === 'T2'
                       ? 'text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -526,7 +526,7 @@ export default function URSSAFPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedQuarter('T3')}
-                  className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 ${
+                  className={`relative z-10 px-2 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
                     selectedQuarter === 'T3'
                       ? 'text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -537,7 +537,7 @@ export default function URSSAFPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedQuarter('T4')}
-                  className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 ${
+                  className={`relative z-10 px-2 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
                     selectedQuarter === 'T4'
                       ? 'text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -548,7 +548,7 @@ export default function URSSAFPage() {
               </div>
               
               {/* Affichage année */}
-              <div className="px-3 py-1.5 text-gray-900 dark:text-white font-semibold text-sm min-w-[60px] text-center">
+              <div className="px-2 sm:px-3 py-1.5 text-gray-900 dark:text-white font-semibold text-xs sm:text-sm min-w-[50px] sm:min-w-[60px] text-center">
                 {selectedQuarterYear}
               </div>
               
@@ -578,18 +578,18 @@ export default function URSSAFPage() {
       </div>
 
       {/* Calculateur de cotisations */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <Calculator className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Calculateur de Cotisations</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 overflow-hidden">
+        <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+          <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Calculateur de Cotisations</h2>
         </div>
 
         {/* Description du statut et activité */}
-        <div className="mb-6 p-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg border border-teal-200 dark:border-teal-800">
+        <div className="mb-4 sm:mb-6 p-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg border border-teal-200 dark:border-teal-800">
           <p className="text-xs text-teal-700 dark:text-teal-300">
             <strong>Micro-entreprise :</strong> Régime fiscal de la micro-entreprise avec abattements fiscaux
           </p>
-          <p className="text-xs text-teal-700 dark:text-teal-300 mt-1">
+          <p className="text-xs text-teal-700 dark:text-teal-300 mt-1 break-words">
             <strong>Type d'activité :</strong>{' '}
             {urssafStatuses.find(s => s.id === selectedStatus)?.activities.find(a => a.type === selectedActivity)?.description || 'Non défini'}
             {' '}({rate.toFixed(2)}% de cotisations)
@@ -600,8 +600,8 @@ export default function URSSAFPage() {
         </div>
 
         {/* CA selon la période choisie */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div className="mb-4 sm:mb-6">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Chiffre d'affaires {periodType === 'mensuelle' ? 'mensuel' : 'trimestriel'} (€)
           </label>
           <input
@@ -615,7 +615,7 @@ export default function URSSAFPage() {
                 setQuarterlyRevenue(value);
               }
             }}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent text-lg font-semibold"
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent text-base sm:text-lg font-semibold"
             placeholder="0"
           />
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -629,10 +629,10 @@ export default function URSSAFPage() {
 
           {/* Affichage détaillé du trimestre avec progression */}
           {periodType === 'trimestrielle' && quarterlyMonthlyBreakdown.total > 0 && (
-            <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden transition-all duration-500 ease-out hover:shadow-xl">
+            <div className="mt-4 sm:mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden transition-all duration-500 ease-out hover:shadow-xl min-w-0">
               {/* En-tête */}
-              <div className="bg-gradient-to-r from-teal-500 to-cyan-500 dark:from-teal-600 dark:to-cyan-600 px-6 py-4">
-                <div className="flex items-center justify-between">
+              <div className="bg-gradient-to-r from-teal-500 to-cyan-500 dark:from-teal-600 dark:to-cyan-600 px-4 sm:px-6 py-3 sm:py-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                   <div className="flex items-center gap-3">
                     <Calculator className="w-5 h-5 text-white" />
                     <div>
@@ -644,9 +644,9 @@ export default function URSSAFPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <div className="text-xs text-teal-100 dark:text-teal-200 mb-1">Total trimestriel</div>
-                    <div className="text-2xl font-bold text-white">
+                    <div className="text-xl sm:text-2xl font-bold text-white">
                       {quarterlyMonthlyBreakdown.total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                     </div>
                   </div>
@@ -654,8 +654,8 @@ export default function URSSAFPage() {
               </div>
 
               {/* Cartes des mois */}
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
                   {/* Mois 1 */}
                   <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 rounded-lg p-4 border border-teal-200 dark:border-teal-800 transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-md">
                     <div className="flex items-center justify-between mb-2">
@@ -810,9 +810,9 @@ export default function URSSAFPage() {
             Visualisation des données
           </h3>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Graphique en barres */}
-            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 hover:shadow-xl transition-all duration-300">
+            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 hover:shadow-xl transition-all duration-300 min-w-0">
               <style>{`
                 .recharts-tooltip-cursor {
                   fill: transparent !important;
@@ -838,7 +838,7 @@ export default function URSSAFPage() {
                   <span className="dark:text-gray-200">Net</span>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={240} className="min-h-[240px] sm:min-h-[280px] min-w-0">
                 <BarChart 
                   data={[
                     { name: 'Chiffre d\'affaires', montant: revenue, label: 'CA', gradient: ['#3b82f6', '#2563eb', '#1d4ed8'] },
@@ -913,7 +913,7 @@ export default function URSSAFPage() {
             </div>
 
             {/* Jauges de progression et indicateurs */}
-            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 hover:shadow-xl transition-all duration-300">
+            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 hover:shadow-xl transition-all duration-300 min-w-0">
               <h4 className="text-base font-bold text-gray-900 dark:text-white mb-6 animate-in fade-in slide-in-from-left duration-500">Répartition du CA</h4>
               
               {/* Jauge pour le revenu net */}
@@ -994,13 +994,58 @@ export default function URSSAFPage() {
         </div>
 
         {/* Tableau récapitulatif détaillé */}
-        <div className="mt-6">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-            <Receipt className="w-5 h-5 mr-2 text-teal-600 dark:text-teal-400" />
-            Tableau récapitulatif
+        <div className="mt-4 sm:mt-6">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center">
+            <Receipt className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+            <span>Tableau récapitulatif</span>
           </h3>
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <table className="w-full">
+          {/* Vue mobile - Cartes */}
+          <div className="md:hidden space-y-3">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center mb-3">
+                <div className="w-2 h-2 rounded-full bg-blue-500 mr-3 flex-shrink-0"></div>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">Chiffre d'affaires {periodType === 'mensuelle' ? 'mensuel' : 'trimestriel'}</span>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                  {revenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">100,00 %</p>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center mb-3">
+                <div className="w-2 h-2 rounded-full bg-red-500 mr-3 flex-shrink-0"></div>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">Cotisations URSSAF ({rate.toFixed(2)}%)</span>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-red-700 dark:text-red-400">
+                  − {contributions.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                </p>
+                <p className="text-xs text-red-700 dark:text-red-400">
+                  {revenue > 0 ? ((contributions / revenue) * 100).toFixed(2).replace('.', ',') : '0,00'} %
+                </p>
+              </div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl border-2 border-gray-300 dark:border-gray-600 p-4">
+              <div className="flex items-center mb-3">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 mr-3 flex-shrink-0"></div>
+                <span className="text-base font-bold text-gray-900 dark:text-white">Revenu net</span>
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
+                  {netRevenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                </p>
+                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  {revenue > 0 ? ((netRevenue / revenue) * 100).toFixed(2).replace('.', ',') : '0,00'} %
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Vue desktop - Tableau */}
+          <div className="hidden md:block bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden overflow-x-auto">
+            <table className="w-full min-w-[500px]">
               <thead>
                 <tr className="bg-gray-100 dark:bg-gray-700">
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Élément</th>
@@ -1055,24 +1100,24 @@ export default function URSSAFPage() {
         </div>
 
         {/* Cartes récapitulatives */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Taux de cotisation</span>
-              <Receipt className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Taux de cotisation</span>
+              <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
             </div>
-            <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-400 mb-2">{rate.toFixed(2)} %</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
+            <p className="text-2xl sm:text-3xl font-bold text-indigo-700 dark:text-indigo-400 mb-1 sm:mb-2">{rate.toFixed(2)} %</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 break-words">
               {urssafStatuses.find(s => s.id === selectedStatus)?.activities.find(a => a.type === selectedActivity)?.description}
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Cotisations à payer</span>
-              <TrendingDown className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Cotisations à payer</span>
+              <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
             </div>
-            <p className="text-3xl font-bold text-rose-700 dark:text-rose-400 mb-2">
+            <p className="text-2xl sm:text-3xl font-bold text-rose-700 dark:text-rose-400 mb-1 sm:mb-2 break-words">
               {contributions.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
             </p>
             <p className="text-xs text-gray-600 dark:text-gray-400">
@@ -1080,12 +1125,12 @@ export default function URSSAFPage() {
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Revenu net</span>
-              <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700 sm:col-span-2 md:col-span-1">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Revenu net</span>
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             </div>
-            <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-400 mb-2">
+            <p className="text-2xl sm:text-3xl font-bold text-emerald-700 dark:text-emerald-400 mb-1 sm:mb-2 break-words">
               {netRevenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
             </p>
             <p className="text-xs text-gray-600 dark:text-gray-400">
@@ -1096,10 +1141,10 @@ export default function URSSAFPage() {
       </div>
 
       {/* Prochaines échéances */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <CalendarDays className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Prochaines Échéances</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 overflow-hidden">
+        <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+          <CalendarDays className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">Prochaines Échéances</h2>
         </div>
 
         <div className="space-y-4">
@@ -1107,19 +1152,19 @@ export default function URSSAFPage() {
             upcomingDeadlines.map((deadline, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-4 bg-gradient-to-r from-cyan-50 to-teal-50 dark:from-cyan-900/20 dark:to-teal-900/20 rounded-lg border border-cyan-200 dark:border-cyan-800"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gradient-to-r from-cyan-50 to-teal-50 dark:from-cyan-900/20 dark:to-teal-900/20 rounded-lg border border-cyan-200 dark:border-cyan-800 gap-3"
               >
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
-                    <Calendar className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                  <div className="p-2 sm:p-3 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg flex-shrink-0">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 dark:text-cyan-400" />
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">{deadline.period}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{deadline.description}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate">{deadline.period}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{deadline.description}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-cyan-600 dark:text-cyan-400">{deadline.declarationDate}</p>
+                <div className="text-left sm:text-right flex-shrink-0">
+                  <p className="font-bold text-sm sm:text-base text-cyan-600 dark:text-cyan-400">{deadline.declarationDate}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-500">Date limite</p>
                 </div>
               </div>
@@ -1132,19 +1177,19 @@ export default function URSSAFPage() {
             }).slice(0, 3).map((deadline, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-4 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-lg border border-teal-200 dark:border-teal-800"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-lg border border-teal-200 dark:border-teal-800 gap-3"
               >
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
-                    <Calendar className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                  <div className="p-2 sm:p-3 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex-shrink-0">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600 dark:text-teal-400" />
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">{deadline.period}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{deadline.description}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate">{deadline.period}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{deadline.description}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-teal-600 dark:text-teal-400">{deadline.declarationDate}</p>
+                <div className="text-left sm:text-right flex-shrink-0">
+                  <p className="font-bold text-sm sm:text-base text-teal-600 dark:text-teal-400">{deadline.declarationDate}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-500">Date limite</p>
                 </div>
               </div>
@@ -1154,20 +1199,20 @@ export default function URSSAFPage() {
       </div>
 
       {/* Calendrier complet des échéances */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <Calendar className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Calendrier Complet des Échéances 2025</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 overflow-hidden">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+            <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+            <h2 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 dark:text-white truncate">Calendrier Complet des Échéances 2025</h2>
           </div>
         </div>
 
         {/* Onglets pour mensuel/trimestriel */}
-        <div className="flex space-x-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex space-x-1 sm:space-x-2 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
           <button
             type="button"
             onClick={() => setPeriodType('trimestrielle')}
-            className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+            className={`px-3 sm:px-4 py-2 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
               periodType === 'trimestrielle'
                 ? 'border-teal-600 text-teal-600 dark:text-teal-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -1178,7 +1223,7 @@ export default function URSSAFPage() {
           <button
             type="button"
             onClick={() => setPeriodType('mensuelle')}
-            className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+            className={`px-3 sm:px-4 py-2 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
               periodType === 'mensuelle'
                 ? 'border-teal-600 text-teal-600 dark:text-teal-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -1190,20 +1235,21 @@ export default function URSSAFPage() {
 
         {/* Tableau des échéances */}
         <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800 shadow-sm">
-          <div className="overflow-x-auto">
+          {/* Vue desktop - Tableau */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-gradient-to-r from-teal-600 to-cyan-600 dark:from-teal-700 dark:to-cyan-700">
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <th className="px-4 sm:px-5 py-3 sm:py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Période
                   </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <th className="px-4 sm:px-5 py-3 sm:py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Date de déclaration
                   </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <th className="px-4 sm:px-5 py-3 sm:py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Date de paiement
                   </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  <th className="px-4 sm:px-5 py-3 sm:py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Description
                   </th>
                 </tr>
@@ -1273,6 +1319,76 @@ export default function URSSAFPage() {
                 })}
               </tbody>
             </table>
+          </div>
+          
+          {/* Vue mobile/tablette - Cartes */}
+          <div className="lg:hidden space-y-3 p-2 sm:p-3">
+            {(periodType === 'mensuelle' ? declarationDates : quarterlyDeadlines).map((date, index) => {
+              const [day, month, year] = date.declarationDate.split('/').map(Number);
+              const deadlineDate = new Date(year, month - 1, day);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              deadlineDate.setHours(0, 0, 0, 0);
+              const isPast = deadlineDate < today;
+              const isToday = deadlineDate.getTime() === today.getTime();
+              const isUpcoming = deadlineDate >= today && deadlineDate.getTime() - today.getTime() <= 7 * 24 * 60 * 60 * 1000;
+              
+              return (
+                <div
+                  key={index}
+                  className={`p-4 rounded-lg border ${
+                    isPast
+                      ? 'bg-gray-50/50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700'
+                      : isToday
+                      ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                      : isUpcoming
+                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{date.period}</h4>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{date.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Déclaration:</span>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                          isPast
+                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                            : isToday
+                            ? 'bg-amber-500 text-white'
+                            : isUpcoming
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300'
+                        }`}
+                      >
+                        {date.declarationDate}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Paiement:</span>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                          isPast
+                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                            : isToday
+                            ? 'bg-amber-500 text-white'
+                            : isUpcoming
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300'
+                        }`}
+                      >
+                        {date.paymentDate}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

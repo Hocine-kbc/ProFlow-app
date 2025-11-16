@@ -204,9 +204,10 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
           />
           
           {/* Panel */}
-          <div className="absolute right-0 top-12 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[50] max-h-[600px] flex flex-col">
+          <div className="fixed inset-x-0 top-[76px] px-4 pb-6 md:px-0 md:pb-0 md:absolute md:right-0 md:top-12 z-[50] pointer-events-none md:pointer-events-auto">
+            <div className="mx-auto md:mx-0 w-full md:w-96 max-w-full bg-white dark:bg-gray-800 rounded-2xl md:rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[70vh] md:max-h-[600px] flex flex-col overflow-hidden pointer-events-auto">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Notifications
                 {unreadCount > 0 && (
@@ -240,7 +241,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
             </div>
 
             {/* Liste des notifications */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overscroll-contain">
               {loading ? (
                 <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                   Chargement...
@@ -299,6 +300,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
                   ))}
                 </div>
               )}
+            </div>
             </div>
           </div>
         </>

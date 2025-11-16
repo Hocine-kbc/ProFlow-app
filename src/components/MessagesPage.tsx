@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, Search, User, Trash2, Check, CheckCheck, Paperclip, X, Download, File, Image, FileText, FileJson, Plus, Mail } from 'lucide-react';
+import { MessageCircle, Send, Search, User, Trash2, Check, CheckCheck, Paperclip, X, Download, File, Image, FileText, FileJson, Plus, Mail, ArrowLeft } from 'lucide-react';
 import { Conversation, Message, MessageAttachment } from '../types/index.ts';
 import {
   fetchConversations,
@@ -31,6 +31,7 @@ export default function MessagesPage() {
   const [recipientEmail, setRecipientEmail] = useState('');
   const [recipientId, setRecipientId] = useState('');
   const [clients, setClients] = useState<any[]>([]);
+  const [isMobileListView, setIsMobileListView] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ isOpen: boolean; messageId: string | null; type: 'message' | 'conversation' }>({
     isOpen: false,
     messageId: null,
@@ -358,9 +359,13 @@ export default function MessagesPage() {
 
 
   return (
-    <div className="flex h-[calc(100vh-120px)] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden backdrop-blur-sm">
+    <div className="flex flex-col lg:flex-row w-full h-full min-h-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden backdrop-blur-sm">
       {/* Sidebar des conversations - Design moderne */}
-      <div className="w-96 border-r border-gray-200/50 dark:border-gray-700/50 flex flex-col bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg">
+      <div
+        className={`w-full lg:w-80 xl:w-96 border-r border-gray-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg flex-shrink-0 flex flex-col ${
+          isMobileListView ? 'flex' : 'hidden'
+        } lg:flex`}
+      >
         {/* Header sidebar avec gradient */}
         <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 dark:from-blue-600 dark:via-blue-700 dark:to-indigo-700">
           <div className="flex items-center justify-between mb-5">
@@ -419,7 +424,7 @@ export default function MessagesPage() {
         </div>
 
         {/* Liste des conversations - Design moderne avec cards */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-[40vh] md:max-h-none">
           {loading && conversations.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -459,7 +464,10 @@ export default function MessagesPage() {
                 <div className="flex items-start gap-4">
                   <button
                     type="button"
-                    onClick={() => setSelectedConversation(conversation)}
+                    onClick={() => {
+                      setSelectedConversation(conversation);
+                      setIsMobileListView(false);
+                    }}
                     className="flex-1 flex items-start gap-4 text-left min-w-0"
                   >
                     {/* Avatar avec badge */}
@@ -535,14 +543,29 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      {/* Zone principale de conversation - Design moderne */}
-      <div className="flex-1 flex flex-col bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+      <div
+        className={`flex-1 flex flex-col bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm min-h-0 mt-2 lg:mt-0 ${
+          isMobileListView ? 'hidden' : 'flex'
+        } lg:flex`}
+      >
         {selectedConversation ? (
           <>
             {/* Header de conversation avec gradient */}
             <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900/50 backdrop-blur-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
+                  {/* Bouton retour mobile */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedConversation(null);
+                      setIsMobileListView(true);
+                    }}
+                    className="md:hidden mr-1 p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    title="Retour aux conversations"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 dark:from-blue-600 dark:to-indigo-700 flex items-center justify-center shadow-lg">
                     <User className="w-8 h-8 text-white" />
                   </div>
@@ -572,7 +595,7 @@ export default function MessagesPage() {
             </div>
 
             {/* Messages - Design moderne avec bulles */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-gray-50/50 to-transparent dark:from-gray-900/30 dark:to-transparent">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-gradient-to-b from-gray-50/50 to-transparent dark:from-gray-900/30 dark:to-transparent min-h-0">
               {loading && messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
@@ -600,7 +623,7 @@ export default function MessagesPage() {
                       onMouseEnter={() => setHoveredMessageId(message.id)}
                       onMouseLeave={() => setHoveredMessageId(null)}
                     >
-                      <div className={`flex items-start gap-3 max-w-[75%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`flex items-start gap-3 max-w-[85%] sm:max-w-[75%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                         {/* Avatar pour les messages reçus */}
                         {!isOwn && (
                           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center flex-shrink-0 shadow-md">
@@ -700,7 +723,7 @@ export default function MessagesPage() {
             </div>
 
             {/* Formulaire d'envoi - Design moderne */}
-            <div className="p-6 border-t border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900/50 backdrop-blur-lg">
+            <div className="p-4 sm:p-6 border-t border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900/50 backdrop-blur-lg">
               {/* Pièces jointes uploadées */}
               {uploadedAttachments.length > 0 && (
                 <div className="mb-4 flex flex-wrap gap-2">
@@ -737,7 +760,7 @@ export default function MessagesPage() {
                 onChange={(e) => setMessageSubject(e.target.value)}
                 className="w-full mb-3 px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
               />
-              <div className="flex items-end gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -769,7 +792,7 @@ export default function MessagesPage() {
                     }
                   }}
                   rows={3}
-                  className="flex-1 px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-sm"
+                  className="flex-1 px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-2xl sm:rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-sm"
                 />
                 <button
                   type="button"
