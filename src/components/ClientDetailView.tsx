@@ -3251,13 +3251,13 @@ export default function ClientDetailView({
 
       {/* Attestation fiscale */}
       {isProfessionalClient ? (
-      <section className="mt-12 sm:mt-16">
-          <div className="rounded-3xl border border-blue-200 dark:border-blue-500/40 bg-blue-50/80 dark:bg-blue-500/10 px-6 sm:px-10 py-8 text-sm text-blue-700 dark:text-blue-100 shadow-sm">
+      <section className="mt-8 sm:mt-12 md:mt-16">
+          <div className="rounded-2xl sm:rounded-3xl border border-blue-200 dark:border-blue-500/40 bg-blue-50/80 dark:bg-blue-500/10 px-4 sm:px-6 md:px-10 py-6 sm:py-8 text-sm text-blue-700 dark:text-blue-100 shadow-sm">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 mt-0.5" />
-              <div>
+              <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0">
                 <h2 className="text-base sm:text-lg font-semibold text-blue-900 dark:text-blue-50 mb-1">Attestation fiscale indisponible</h2>
-                <p>
+                <p className="text-xs sm:text-sm">
                   Cette attestation est réservée aux clients particuliers (sans numéro SIREN). Ce client est enregistré comme professionnel.
                 </p>
               </div>
@@ -3265,79 +3265,79 @@ export default function ClientDetailView({
           </div>
         </section>
       ) : (
-        <section className="mt-12 sm:mt-16">
-          <div className="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl">
+        <section className="mt-8 sm:mt-12 md:mt-16">
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl">
           <div className="absolute inset-0 pointer-events-none">
               <div className="absolute -top-24 right-8 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl"></div>
               <div className="absolute bottom-0 -left-10 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl"></div>
           </div>
             <div className="relative z-10">
-              <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 sm:px-10 py-6 sm:py-8 text-white">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
-                      <ShieldCheck className="w-5 h-5" />
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-4 sm:px-6 md:px-10 py-4 sm:py-6 md:py-8 text-white">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
+              <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-white/15 backdrop-blur flex-shrink-0">
+                      <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                    <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-3">
-                        <h2 className="text-xl sm:text-2xl font-semibold">Attestation fiscale</h2>
-                        <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
+                    <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <h2 className="text-lg sm:text-xl md:text-2xl font-semibold">Attestation fiscale</h2>
+                        <span className="inline-flex items-center rounded-full bg-white/15 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium whitespace-nowrap">
                       {attestationAvailableYears.length > 0
                         ? `Années ${attestationAvailableYears[attestationAvailableYears.length - 1]}–${attestationAvailableYears[0]}`
                         : 'En attente de données'}
                     </span>
                   </div>
-                      <p className="text-sm text-white/80 max-w-2xl">
+                      <p className="text-xs sm:text-sm text-white/80 max-w-2xl">
                         Préparez en un clic l'attestation annuelle de {client?.name ?? 'votre client'} à partir des factures confirmées et encaissées.
                   </p>
                 </div>
               </div>
-                  <div className="inline-flex items-center gap-3 rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-white/90">
-                <span>Synchronisation automatique</span>
+                  <div className="inline-flex items-center gap-2 sm:gap-3 rounded-full bg-white/10 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium text-white/90 flex-shrink-0">
+                <span className="whitespace-nowrap">Synchronisation automatique</span>
                     <span className="text-white/50">•</span>
-                    <span>TVA art. 293 B</span>
+                    <span className="whitespace-nowrap">TVA art. 293 B</span>
                   </div>
               </div>
             </div>
 
-              <div className="px-6 sm:px-10 py-8 space-y-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                  <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total facturé</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(attestationSummary.totalBilled)}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Somme des factures clôturées pour l'exercice.</p>
+              <div className="px-4 sm:px-6 md:px-10 py-6 sm:py-8 space-y-6 sm:space-y-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-4 sm:p-5 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-2 sm:space-y-3 min-w-0 flex-1">
+                        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total facturé</p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{formatCurrency(attestationSummary.totalBilled)}</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 line-clamp-2">Somme des factures clôturées pour l'exercice.</p>
                   </div>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-200">
-                    <TrendingUp className="w-5 h-5" />
+                      <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-200 flex-shrink-0">
+                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                 </div>
               </div>
-                  <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total encaissé</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(attestationSummary.totalPaid)}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Paiements enregistrés pour l'année sélectionnée.</p>
+                  <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-4 sm:p-5 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-2 sm:space-y-3 min-w-0 flex-1">
+                        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total encaissé</p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{formatCurrency(attestationSummary.totalPaid)}</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 line-clamp-2">Paiements enregistrés pour l'année sélectionnée.</p>
                   </div>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-200">
-                    <CreditCard className="w-5 h-5" />
+                      <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-200 flex-shrink-0">
+                    <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                 </div>
               </div>
                   <div
-                    className={`rounded-2xl border p-5 shadow-sm ${
+                    className={`rounded-xl sm:rounded-2xl border p-4 sm:p-5 shadow-sm ${
                       attestationSummary.totalOutstanding > 0
                         ? 'border-rose-200 dark:border-rose-500/40 bg-rose-50/80 dark:bg-rose-500/10'
                         : 'border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70'
                     }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-300">Reste à encaisser</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-2 sm:space-y-3 min-w-0 flex-1">
+                        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-300">Reste à encaisser</p>
                         <p
-                          className={`text-2xl font-bold ${
+                          className={`text-xl sm:text-2xl font-bold truncate ${
                             attestationSummary.totalOutstanding > 0
                               ? 'text-rose-700 dark:text-rose-200'
                               : 'text-gray-900 dark:text-white'
@@ -3345,39 +3345,39 @@ export default function ClientDetailView({
                         >
                           {formatCurrency(attestationSummary.totalOutstanding)}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
                           {attestationSummary.totalOutstanding > 0
                             ? "Identifiez les relances à prévoir pour finaliser l'attestation."
                             : "Tous les montants prévus sont déjà encaissés."}
                         </p>
                   </div>
                       <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                        className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0 ${
                           attestationSummary.totalOutstanding > 0
                             ? 'bg-rose-100 dark:bg-rose-500/30 text-rose-700 dark:text-rose-100'
                             : 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-200'
                         }`}
                       >
-                        <AlertCircle className="w-5 h-5" />
+                        <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Factures retenues</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{attestationSummary.invoiceCount}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Documents pris en compte dans l'attestation.</p>
+                  <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-4 sm:p-5 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-2 sm:space-y-3 min-w-0 flex-1">
+                        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Factures retenues</p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{attestationSummary.invoiceCount}</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 line-clamp-2">Documents pris en compte dans l'attestation.</p>
                       </div>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-200">
-                    <FileText className="w-5 h-5" />
+                      <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-200 flex-shrink-0">
+                    <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                 </div>
               </div>
             </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr),minmax(0,0.8fr)] gap-6">
-                  <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr),minmax(0,0.8fr)] gap-4 sm:gap-6">
+                  <div className="space-y-4 sm:space-y-6">
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Sélectionner l"exercice
@@ -3389,7 +3389,7 @@ export default function ClientDetailView({
                       setAttestationYear(Number.isNaN(next) ? null : next);
                     }}
                     disabled={attestationAvailableYears.length === 0}
-                        className="mt-2 w-full appearance-none rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm font-medium text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="mt-2 w-full appearance-none rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {attestationAvailableYears.length === 0 ? (
                       <option value="">Aucune donnée disponible</option>
@@ -3401,7 +3401,7 @@ export default function ClientDetailView({
                       ))
                     )}
                   </select>
-                      <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                         Seules les factures marquées comme payées pour l"exercice sélectionné seront exportées.
                 </p>
                     </div>
@@ -3424,40 +3424,40 @@ export default function ClientDetailView({
                   </div>
                 )}
 
-                    <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/50 px-5 py-4">
+                    <div className="rounded-xl sm:rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/50 px-4 sm:px-5 py-3 sm:py-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
                         Comment ça marche ?
                       </p>
-                      <div className="space-y-4">
-                        <div className="flex gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40 text-sm font-semibold text-blue-700 dark:text-blue-200">
+                      <div className="space-y-3 sm:space-y-4">
+                        <div className="flex gap-2 sm:gap-3">
+                          <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40 text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-200 flex-shrink-0">
                             1
               </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">Clôturez vos factures</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Clôturez vos factures</p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                               Validez les montants et assurez-vous que chaque facture contient une date de paiement.
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-sm font-semibold text-indigo-700 dark:text-indigo-200">
+                        <div className="flex gap-2 sm:gap-3">
+                          <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-xs sm:text-sm font-semibold text-indigo-700 dark:text-indigo-200 flex-shrink-0">
                             2
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">Sélectionnez l"exercice</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Sélectionnez l"exercice</p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                               Choisissez l"année fiscale souhaitée pour filtrer automatiquement les documents.
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/40 text-sm font-semibold text-purple-700 dark:text-purple-200">
+                        <div className="flex gap-2 sm:gap-3">
+                          <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/40 text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-200 flex-shrink-0">
                             3
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">Générez le PDF</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Générez le PDF</p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                               Téléchargez l"attestation prête à l"emploi et archivez-la dans l"espace client.
                             </p>
                           </div>
@@ -3466,13 +3466,13 @@ export default function ClientDetailView({
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-6 shadow-sm space-y-5">
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
                       <div className="space-y-1">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <p className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                           Prêt à générer l"attestation {effectiveAttestationYear ?? ''}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                           Vérifiez les montants ci-dessus puis déclenchez l"export pour obtenir le document PDF signé ProFlow.
                         </p>
                       </div>
@@ -3480,14 +3480,14 @@ export default function ClientDetailView({
                   type="button"
                   onClick={handleExportFiscalAttestation}
                   disabled={attestationAvailableYears.length === 0 || attestationLoading}
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                 >
                   {attestationLoading ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
                   ) : (
                     <Download className="h-4 w-4" />
                   )}
-                  <span>
+                  <span className="truncate">
                     {attestationLoading
                       ? 'Génération…'
                       : effectiveAttestationYear
@@ -3496,23 +3496,23 @@ export default function ClientDetailView({
                   </span>
                 </button>
                 {attestationSummary.invoiceCount === 0 && (
-                        <div className="rounded-xl border border-yellow-200 dark:border-yellow-500/40 bg-yellow-50/80 dark:bg-yellow-500/10 px-4 py-3 text-xs text-yellow-700 dark:text-yellow-100">
+                        <div className="rounded-xl border border-yellow-200 dark:border-yellow-500/40 bg-yellow-50/80 dark:bg-yellow-500/10 px-3 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs text-yellow-700 dark:text-yellow-100">
                           Ajoutez ou marquez comme payées des factures pour activer l"export automatique.
                         </div>
                 )}
                 {attestationAvailableYears.length === 0 && (
-                        <div className="rounded-xl border border-blue-200 dark:border-blue-500/40 bg-blue-50/80 dark:bg-blue-500/10 px-4 py-3 text-xs text-blue-700 dark:text-blue-100">
+                        <div className="rounded-xl border border-blue-200 dark:border-blue-500/40 bg-blue-50/80 dark:bg-blue-500/10 px-3 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs text-blue-700 dark:text-blue-100">
                           Aucune année disponible pour le moment. Créez et clôturez vos premières factures pour alimenter l"attestation.
                         </div>
                       )}
                       {isProfessionalClient && (
-                        <div className="rounded-xl border border-red-200 dark:border-red-500/40 bg-red-50/80 dark:bg-red-500/10 px-4 py-3 text-xs text-red-700 dark:text-red-100">
+                        <div className="rounded-xl border border-red-200 dark:border-red-500/40 bg-red-50/80 dark:bg-red-500/10 px-3 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs text-red-700 dark:text-red-100">
                           Attestation fiscale disponible uniquement pour un client particulier (sans SIREN).
               </div>
                       )}
             </div>
 
-                    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/60 px-5 py-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/60 px-4 sm:px-5 py-3 sm:py-4 text-[10px] sm:text-xs md:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
               <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">Rappel administratif</p>
               <p>
                         Ce document atteste des revenus commerciaux {effectiveAttestationYear ?? 'en cours'}. Pour une attestation de régularité

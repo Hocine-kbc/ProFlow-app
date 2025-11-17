@@ -1930,7 +1930,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                   } hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-600/70 dark:hover:to-gray-600/50 transition-all duration-200 ease-out group cursor-pointer hover:shadow-md hover:-translate-y-0.5`}
                 >
                   <td className="py-2.5 px-3">
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+                    <div className="flex flex-wrap items-center justify-start gap-2">
                       <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 opacity-0 group-hover:opacity-100 transition-transform duration-300 transition-shadow duration-300 group-hover:scale-150"></div>
                       <span className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 capitalize">
                         {periodFilter === 'quarter' ? (item as QuarterlyRevenue).quarter : (item as MonthlyRevenue).month}

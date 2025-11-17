@@ -315,6 +315,7 @@ export default function ServicesPage() {
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'hours' | 'amount' | 'date'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed' | 'invoiced'>('all');
   const [clientFilter, setClientFilter] = useState<string>('');
   
@@ -797,7 +798,7 @@ export default function ServicesPage() {
   }, [formData.pricing_type]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 text-white shadow-lg overflow-hidden">
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
@@ -841,12 +842,26 @@ export default function ServicesPage() {
       {/* Onglets */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
         <div className="relative flex p-1 bg-gray-100 dark:bg-gray-700/60 rounded-full" role="tablist">
+          {/* Indicateur bleu pour Prestations */}
           <div
-            className="absolute h-9 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 shadow-md transition-all duration-200"
+            className={`absolute h-9 rounded-full shadow-md bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 ${
+              currentTab === 'services' ? 'opacity-100' : 'opacity-0'
+            }`}
             style={{
               width: tabIndicatorStyle.width ? `${tabIndicatorStyle.width}px` : '50%',
               left: tabIndicatorStyle.width ? `${tabIndicatorStyle.left}px` : currentTab === 'services' ? '0%' : '50%',
-              transition: 'left 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in-out',
+            }}
+          />
+          {/* Indicateur orange pour Articles */}
+          <div
+            className={`absolute h-9 rounded-full shadow-md bg-gradient-to-r from-orange-500 to-amber-600 dark:from-orange-500 dark:to-amber-500 ${
+              currentTab === 'articles' ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{
+              width: tabIndicatorStyle.width ? `${tabIndicatorStyle.width}px` : '50%',
+              left: tabIndicatorStyle.width ? `${tabIndicatorStyle.left}px` : currentTab === 'services' ? '0%' : '50%',
+              transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in-out',
             }}
           />
           <button
@@ -1139,66 +1154,102 @@ export default function ServicesPage() {
         return null;
       })()}
 
-      {/* Total mensuel */}
-      <div className="mb-6 p-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-900/20 dark:via-teal-900/20 dark:to-cyan-900/20 border border-emerald-200 dark:border-emerald-600 rounded-2xl shadow-xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mr-5 shadow-lg">
-              <Package className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-1">
-                Total mensuel des prestations
-              </h3>
-              <p className="text-base text-gray-600 dark:text-gray-300 font-semibold">
-                {currentMonth.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
-              </p>
-            </div>
+      {/* Total mensuel - Style comme le header du calendrier */}
+      <div className="mb-6 rounded-xl sm:rounded-2xl overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-4 sm:px-6 py-3 sm:py-4 text-white relative overflow-hidden">
+          {/* Motifs décoratifs comme le header du calendrier */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+            <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+            <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
           </div>
           
-          {/* Navigation des mois */}
-          <div className="flex items-center space-x-4">
-            <button
-              type="button"
-              onClick={() => {
-                const newMonth = new Date(currentMonth);
-                newMonth.setMonth(newMonth.getMonth() - 1);
-                setCurrentMonth(newMonth);
-              }}
-              className="w-12 h-12 bg-white dark:bg-gray-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 border border-emerald-200 dark:border-emerald-600 flex items-center justify-center"
-            >
-              <ChevronLeft className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-            </button>
-            
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setCurrentMonth(new Date())}
-                className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent dark:from-emerald-400 dark:to-teal-400 hover:scale-110 transition-transform duration-200 cursor-pointer"
-                title="Revenir au mois actuel"
-              >
-                {monthlyTotal.toFixed(2)}€
-              </button>
-              <div className="text-sm text-gray-600 dark:text-gray-400 font-medium mt-1">
-                {filteredServices.filter(service => {
-                  const serviceDate = new Date(service.date);
-                  return serviceDate.getFullYear() === currentMonth.getFullYear() && 
-                         serviceDate.getMonth() === currentMonth.getMonth();
-                }).length} prestation(s)
+          {/* Traits décoratifs comme les headers de page */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-4 left-0 right-0 w-full h-0.5 bg-white/40 transform rotate-12"></div>
+            <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-6"></div>
+            <div className="absolute bottom-8 left-0 right-0 w-full h-0.5 bg-white/40 transform rotate-24"></div>
+            <div className="absolute bottom-4 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-12"></div>
+          </div>
+          
+          <div className="relative z-10">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
+              {/* Section gauche - Titre et icône */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                    <Package className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg sm:text-xl font-bold truncate">
+                      Total mensuel des prestations
+                    </h3>
+                  </div>
+                </div>
+                {/* Mois sélectionné - Badge discret en bulle */}
+                <div className="flex items-center sm:ml-2">
+                  <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
+                    <p className="text-white/90 text-xs sm:text-sm font-medium whitespace-nowrap">
+                      {currentMonth.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Section droite - Montant et navigation */}
+              <div className="flex items-center justify-center gap-2 sm:gap-3 flex-shrink-0">
+                {/* Bouton précédent */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newMonth = new Date(currentMonth);
+                    newMonth.setMonth(newMonth.getMonth() - 1);
+                    setCurrentMonth(newMonth);
+                  }}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg flex items-center justify-center"
+                  title="Mois précédent"
+                >
+                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+                
+                {/* Montant total - Cliquable pour revenir à aujourd'hui */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentMonth(new Date())}
+                  className="text-center min-w-0 flex-1 sm:flex-none cursor-pointer transition-all duration-200 hover:scale-105"
+                  title="Revenir au mois actuel"
+                >
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1">
+                    {monthlyTotal.toFixed(2)}€
+                  </div>
+                  <div className="text-xs sm:text-sm text-white/80 font-medium">
+                    {filteredServices.filter(service => {
+                      const serviceDate = new Date(service.date);
+                      return serviceDate.getFullYear() === currentMonth.getFullYear() && 
+                             serviceDate.getMonth() === currentMonth.getMonth();
+                    }).length} prestation{filteredServices.filter(service => {
+                      const serviceDate = new Date(service.date);
+                      return serviceDate.getFullYear() === currentMonth.getFullYear() && 
+                             serviceDate.getMonth() === currentMonth.getMonth();
+                    }).length !== 1 ? 's' : ''}
+                  </div>
+                </button>
+                
+                {/* Bouton suivant */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newMonth = new Date(currentMonth);
+                    newMonth.setMonth(newMonth.getMonth() + 1);
+                    setCurrentMonth(newMonth);
+                  }}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg flex items-center justify-center"
+                  title="Mois suivant"
+                >
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
               </div>
             </div>
-            
-            <button
-              type="button"
-              onClick={() => {
-                const newMonth = new Date(currentMonth);
-                newMonth.setMonth(newMonth.getMonth() + 1);
-                setCurrentMonth(newMonth);
-              }}
-              className="w-12 h-12 bg-white dark:bg-gray-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 border border-emerald-200 dark:border-emerald-600 flex items-center justify-center"
-            >
-              <ChevronRight className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-            </button>
           </div>
         </div>
       </div>
@@ -1644,13 +1695,13 @@ export default function ServicesPage() {
           ) : (
             /* Vue Calendrier */
             <div 
-              className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden"
+              className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden w-full"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
               {/* Header du calendrier - Design moderne */}
-              <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-6 py-4 text-white relative overflow-hidden">
+              <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-4 sm:px-6 py-3 sm:py-4 text-white relative overflow-hidden">
                 {/* Motifs décoratifs comme le header principal */}
                 <div className="absolute inset-0 opacity-20">
                   <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
@@ -1667,52 +1718,52 @@ export default function ServicesPage() {
                 </div>
                 
                 <div className="relative z-10">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    {/* Titre et navigation */}
-                    <div className="flex items-center justify-between lg:justify-start gap-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
-                          <Calendar className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold">
-                            {formatMonthYear(currentMonth)}
-                          </h3>
-                          <p className="text-white/80 text-xs">Vue calendrier des prestations</p>
-                        </div>
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
+                    {/* Titre */}
+                    <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                        <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      
-                      {/* Navigation */}
-                      <div className="flex items-center space-x-3">
-                        <button
-                          type="button"
-                          onClick={() => navigateMonth('prev')}
-                          className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg flex items-center justify-center"
-                        >
-                          <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCurrentMonth(new Date())}
-                          className="px-3 py-1.5 text-xs font-semibold bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
-                        >
-                          Aujourd'hui
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => navigateMonth('next')}
-                          className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg flex items-center justify-center"
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </button>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-lg sm:text-xl font-bold truncate">
+                          {formatMonthYear(currentMonth)}
+                        </h3>
+                        <p className="text-white/80 text-xs hidden sm:block">Vue calendrier des prestations</p>
                       </div>
                     </div>
                     
+                    {/* Navigation - Centrée */}
+                    <div className="flex items-center justify-center space-x-2 sm:space-x-3 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => navigateMonth('prev')}
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg flex items-center justify-center"
+                        title="Mois précédent"
+                      >
+                        <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentMonth(new Date())}
+                        className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-105 shadow-lg whitespace-nowrap"
+                      >
+                        Aujourd'hui
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateMonth('next')}
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg flex items-center justify-center"
+                        title="Mois suivant"
+                      >
+                        <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </button>
+                    </div>
+                    
                     {/* Total mensuel - Design compact */}
-                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-xl">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-white/20 shadow-xl flex-shrink-0">
                       <div className="text-center">
                         <p className="text-white/80 text-xs font-medium mb-1">Total du mois</p>
-                        <p className="text-white text-2xl font-bold">
+                        <p className="text-xl sm:text-2xl font-bold text-white">
                           {getMonthlyTotal(currentMonth).toFixed(2)}€
                         </p>
                         <div className="mt-1 flex items-center justify-center space-x-1">
@@ -1727,23 +1778,25 @@ export default function ServicesPage() {
               </div>
 
               {/* Grille du calendrier */}
-              <div className="p-6">
-                {/* En-têtes des jours - Design moderne (semaine française) */}
-                <div className="grid grid-cols-7 gap-2 mb-4">
-                  {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day, index) => (
-                    <div key={day} className={`p-3 text-center text-sm font-bold rounded-xl transition-all duration-300 ${
-                      index === 5 || index === 6 
-                        ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' 
-                        : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800'
-                    }`}>
-                      <span className="hidden sm:inline">{day}</span>
-                      <span className="sm:hidden">{day.charAt(0)}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="overflow-x-auto w-full" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin' }}>
+                <div className="p-2 sm:p-4 md:p-6 min-w-[calc(100vw-3rem)] sm:min-w-[560px] md:min-w-0 inline-block sm:block">
+                  {/* En-têtes des jours - Design moderne (semaine française) */}
+                  <div>
+                  <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 mb-3 sm:mb-4">
+                    {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day, index) => (
+                      <div key={day} className={`p-1 sm:p-2 md:p-3 text-center text-xs sm:text-sm font-bold rounded-lg sm:rounded-xl transition-all duration-300 ${
+                        index === 5 || index === 6 
+                          ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' 
+                          : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800'
+                      }`}>
+                        <span className="hidden sm:inline">{day}</span>
+                        <span className="sm:hidden">{day.charAt(0)}</span>
+                      </div>
+                    ))}
+                  </div>
 
-                {/* Grille des jours - Design premium */}
-                <div className="grid grid-cols-7 gap-2 min-h-[600px]">
+                  {/* Grille des jours - Design premium */}
+                  <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 min-h-[400px] sm:min-h-[500px] md:min-h-[600px]">
                   {getDaysInMonth(currentMonth).map((date, index) => {
                     const dayServices = getServicesForDate(date);
                     const isToday = date.toDateString() === new Date().toDateString();
@@ -1754,7 +1807,7 @@ export default function ServicesPage() {
                       <div
                         key={index}
                         onClick={() => handleDayClick(date)}
-                        className={`h-32 rounded-2xl border-2 p-3 transition-all duration-300 hover:shadow-2xl hover:scale-105 cursor-pointer relative group ${
+                        className={`h-20 sm:h-24 md:h-28 lg:h-32 rounded-lg sm:rounded-xl md:rounded-2xl border-2 p-1 sm:p-1.5 md:p-2 lg:p-3 transition-all duration-300 hover:shadow-2xl hover:scale-105 cursor-pointer relative group overflow-hidden ${
                           isCurrentMonth 
                             ? isToday
                               ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-400 shadow-xl ring-4 ring-indigo-200/50'
@@ -1765,7 +1818,7 @@ export default function ServicesPage() {
                         } ${!isCurrentMonth ? 'opacity-60' : ''}`}
                       >
                         {/* Numéro du jour - Design moderne */}
-                        <div className={`text-lg font-bold mb-2 flex items-center justify-between ${
+                        <div className={`text-sm sm:text-base md:text-lg font-bold mb-1 sm:mb-2 flex items-center justify-between ${
                           isCurrentMonth 
                             ? isToday
                               ? 'text-white'
@@ -1776,143 +1829,197 @@ export default function ServicesPage() {
                         }`}>
                           <span>{date.getDate()}</span>
                           {isToday && (
-                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse"></div>
                           )}
                         </div>
                         
-                        {/* Prestations du jour - Design premium */}
-                        <div className={`overflow-hidden max-h-16 ${!isCurrentMonth ? 'opacity-70' : ''}`}>
-                          {dayServices.length === 1 ? (
-                            // Une seule prestation - design premium
-                            dayServices[0] ? (
-                              <div
-                                className={`w-full rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-gray-400/50 border-l-4 backdrop-blur-sm relative group ${
-                                  dayServices[0].status === 'completed'
-                                    ? 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border-emerald-400 shadow-emerald-200/50 dark:shadow-emerald-800/30'
-                                    : dayServices[0].status === 'invoiced'
-                                    ? 'bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/30 dark:to-pink-900/30 border-rose-400 shadow-rose-200/50 dark:shadow-rose-800/30'
-                                    : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30'
-                                }`}
-                                onClick={() => handleEdit(dayServices[0])}
-                                title={`${clients.find(c => c.id === dayServices[0].client_id)?.name || 'Client inconnu'} - ${formatQuantityWithUnit(dayServices[0].hours, dayServices[0].pricing_type)} - ${calculateAmount(dayServices[0].hours, dayServices[0].hourly_rate).toFixed(2)}€`}
-                              >
-                                {/* Bouton de suppression - Design compact */}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(dayServices[0].id);
-                                  }}
-                                  className="absolute top-1 right-1 w-5 h-5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md border border-red-200 dark:border-red-700 z-10 opacity-0 group-hover:opacity-100"
-                                  title="Supprimer cette prestation"
-                                >
-                                  <Trash className="w-2.5 h-2.5 text-red-600 dark:text-red-400" />
-                                </button>
-                                
-                                <div className="px-2 py-1.5">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <div className="flex items-center space-x-1.5">
-                                      <div className={`w-1.5 h-1.5 rounded-full ${
-                                        dayServices[0].status === 'completed' ? 'bg-emerald-500' :
-                                        dayServices[0].status === 'invoiced' ? 'bg-rose-500' : 'bg-blue-500'
-                                      }`}></div>
-                                      <div className={`text-xs font-bold ${
-                                        dayServices[0].status === 'completed' ? 'text-emerald-700 dark:text-emerald-300' :
-                                        dayServices[0].status === 'invoiced' ? 'text-rose-700 dark:text-rose-300' : 'text-blue-700 dark:text-blue-300'
-                                      }`}>
-                                        {formatQuantityWithUnit(dayServices[0].hours, dayServices[0].pricing_type)}
+                        {/* Prestations du jour - Nouveau système mobile avec badges visibles */}
+                        {dayServices.length > 0 && (
+                          <div className={`mt-1 ${!isCurrentMonth ? 'opacity-70' : ''}`}>
+                            {/* Version mobile : badges colorés très visibles */}
+                            <div className="sm:hidden space-y-1">
+                              {dayServices.length === 1 ? (
+                                // Une seule prestation - badge coloré grand
+                                dayServices[0] && (
+                                  <div
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEdit(dayServices[0]);
+                                    }}
+                                    className={`w-full rounded-lg p-1 cursor-pointer transition-all duration-200 active:scale-95 border-2 overflow-hidden ${
+                                      dayServices[0].status === 'completed'
+                                        ? 'bg-emerald-500 dark:bg-emerald-600 border-emerald-600 dark:border-emerald-500'
+                                        : dayServices[0].status === 'invoiced'
+                                        ? 'bg-rose-500 dark:bg-rose-600 border-rose-600 dark:border-rose-500'
+                                        : 'bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500'
+                                    }`}
+                                  >
+                                    <div className="text-white text-[10px] font-bold leading-tight min-w-0">
+                                      <div className="truncate text-[10px]">
+                                        {clients.find(c => c.id === dayServices[0].client_id)?.name || 'Client'}
+                                      </div>
+                                      <div className="flex items-center justify-between mt-0.5 gap-1">
+                                        <span className="text-[9px] opacity-90 truncate flex-shrink-0">
+                                          {formatQuantityWithUnit(dayServices[0].hours, dayServices[0].pricing_type)}
+                                        </span>
+                                        <span className="text-[11px] font-extrabold flex-shrink-0">
+                                          {calculateAmount(dayServices[0].hours, dayServices[0].hourly_rate).toFixed(0)}€
+                                        </span>
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate leading-tight mb-0.5">
-                                    {clients.find(c => c.id === dayServices[0].client_id)?.name || 'Client inconnu'}
-                                  </div>
-                                  <div className="text-xs text-gray-600 dark:text-gray-400 font-semibold">
-                                    {calculateAmount(dayServices[0].hours, dayServices[0].hourly_rate).toFixed(0)}€
+                                )
+                              ) : (
+                                // Plusieurs prestations - badge avec nombre et montant total
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedDateForModal(date);
+                                  }}
+                                  className="w-full rounded-lg p-1 cursor-pointer transition-all duration-200 active:scale-95 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-600 dark:to-purple-700 border-2 border-indigo-600 dark:border-indigo-500 overflow-hidden"
+                                >
+                                  <div className="text-white text-[10px] font-bold leading-tight">
+                                    <div className="flex items-center justify-between gap-1">
+                                      <span className="flex items-center gap-0.5 flex-shrink-0">
+                                        <span className="text-[11px]">📋</span>
+                                        <span className="truncate">{dayServices.length} prest{dayServices.length > 1 ? 's' : ''}</span>
+                                      </span>
+                                      <span className="text-[11px] font-extrabold flex-shrink-0">
+                                        {dayServices.reduce((sum, s) => sum + (s ? calculateAmount(s.hours, s.hourly_rate) : 0), 0).toFixed(0)}€
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ) : null
-                          ) : (
-                            // Plusieurs prestations - système de glissement horizontal unifié
-                            <div className="relative overflow-hidden rounded-md sm:rounded-lg">
-                              <div className="flex transition-transform duration-300 ease-in-out"
-                                   style={{ transform: `translateX(-${getSlidingState(date).currentIndex * 100}%)` }}>
-                                {dayServices.map((service, _index) => {
-                                  if (!service) return null;
-                                  const client = clients.find(c => c.id === service.client_id);
-                                  return (
-                                    <div key={service.id} className="w-full flex-shrink-0">
-                                      <div
-                                        className={`w-full rounded-md sm:rounded-lg cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-l-2 sm:border-l-4 backdrop-blur-sm relative ${
-                                          service.status === 'completed'
-                                            ? 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border-emerald-400 shadow-emerald-200/50 dark:shadow-emerald-800/30'
-                                            : service.status === 'invoiced'
-                                            ? 'bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/30 dark:to-pink-900/30 border-rose-400 shadow-rose-200/50 dark:shadow-rose-800/30'
-                                            : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30'
-                                        }`}
-                                        onClick={() => handleEdit(service)}
-                                        title={`${client?.name || 'Client inconnu'} - ${formatQuantityWithUnit(service.hours, service.pricing_type)} - ${calculateAmount(service.hours, service.hourly_rate).toFixed(2)}€`}
-                                      >
-                                        {/* Bouton de suppression */}
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(service.id);
-                                          }}
-                                          className="absolute top-1 right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-full flex items-center justify-center transition-colors shadow-sm border border-red-200 dark:border-red-700 z-10"
-                                          title="Supprimer cette prestation"
-                                        >
-                                          <Trash className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-red-600 dark:text-red-400" />
-                                        </button>
-                                        
-                                        <div className="px-1.5 sm:px-3 py-1 sm:py-2">
-                                          <div className="flex items-center justify-between mb-0.5 sm:mb-1">
-                                            <div className="flex items-center space-x-1.5">
-                                              <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
-                                                service.status === 'completed' ? 'bg-emerald-500' :
-                                                service.status === 'invoiced' ? 'bg-rose-500' : 'bg-blue-500'
-                                              }`}></div>
-                                              <div className={`text-xs font-semibold ${
-                                                service.status === 'completed' ? 'text-emerald-700 dark:text-emerald-300' :
-                                                service.status === 'invoiced' ? 'text-rose-700 dark:text-rose-300' : 'text-blue-700 dark:text-blue-300'
-                                              }`}>
-                                                {formatQuantityWithUnit(service.hours, service.pricing_type)}
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate leading-tight">
-                                            {client?.name || 'Client inconnu'}
-                                          </div>
-                                          <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                                            {calculateAmount(service.hours, service.hourly_rate).toFixed(0)}€
+                              )}
+                            </div>
+                            
+                            {/* Version desktop/tablette : système original */}
+                            <div className="hidden sm:block overflow-hidden max-h-14 md:max-h-16">
+                              {dayServices.length === 1 ? (
+                                dayServices[0] && (
+                                  <div
+                                    className={`w-full rounded-lg sm:rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-gray-400/50 border-l-4 backdrop-blur-sm relative group ${
+                                      dayServices[0].status === 'completed'
+                                        ? 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border-emerald-400 shadow-emerald-200/50 dark:shadow-emerald-800/30'
+                                        : dayServices[0].status === 'invoiced'
+                                        ? 'bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/30 dark:to-pink-900/30 border-rose-400 shadow-rose-200/50 dark:shadow-rose-800/30'
+                                        : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30'
+                                    }`}
+                                    onClick={() => handleEdit(dayServices[0])}
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(dayServices[0].id);
+                                      }}
+                                      className="absolute top-1 right-1 w-5 h-5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md border border-red-200 dark:border-red-700 z-10 opacity-0 group-hover:opacity-100"
+                                      title="Supprimer cette prestation"
+                                    >
+                                      <Trash className="w-2.5 h-2.5 text-red-600 dark:text-red-400" />
+                                    </button>
+                                    <div className="px-2 py-1.5">
+                                      <div className="flex items-center justify-between mb-1">
+                                        <div className="flex items-center space-x-1.5">
+                                          <div className={`w-1.5 h-1.5 rounded-full ${
+                                            dayServices[0].status === 'completed' ? 'bg-emerald-500' :
+                                            dayServices[0].status === 'invoiced' ? 'bg-rose-500' : 'bg-blue-500'
+                                          }`}></div>
+                                          <div className={`text-xs font-bold ${
+                                            dayServices[0].status === 'completed' ? 'text-emerald-700 dark:text-emerald-300' :
+                                            dayServices[0].status === 'invoiced' ? 'text-rose-700 dark:text-rose-300' : 'text-blue-700 dark:text-blue-300'
+                                          }`}>
+                                            {formatQuantityWithUnit(dayServices[0].hours, dayServices[0].pricing_type)}
                                           </div>
                                         </div>
                                       </div>
+                                      <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate leading-tight mb-0.5">
+                                        {clients.find(c => c.id === dayServices[0].client_id)?.name || 'Client inconnu'}
+                                      </div>
+                                      <div className="text-xs text-gray-600 dark:text-gray-400 font-semibold">
+                                        {calculateAmount(dayServices[0].hours, dayServices[0].hourly_rate).toFixed(0)}€
+                                      </div>
                                     </div>
-                                  );
-                                })}
-                              </div>
+                                  </div>
+                                )
+                              ) : (
+                                <div className="relative overflow-hidden rounded-md sm:rounded-lg">
+                                  <div className="flex transition-transform duration-300 ease-in-out"
+                                       style={{ transform: `translateX(-${getSlidingState(date).currentIndex * 100}%)` }}>
+                                    {dayServices.map((service) => {
+                                      if (!service) return null;
+                                      const client = clients.find(c => c.id === service.client_id);
+                                      return (
+                                        <div key={service.id} className="w-full flex-shrink-0">
+                                          <div
+                                            className={`w-full rounded-md sm:rounded-lg cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-l-4 backdrop-blur-sm relative ${
+                                              service.status === 'completed'
+                                                ? 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border-emerald-400 shadow-emerald-200/50 dark:shadow-emerald-800/30'
+                                                : service.status === 'invoiced'
+                                                ? 'bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/30 dark:to-pink-900/30 border-rose-400 shadow-rose-200/50 dark:shadow-rose-800/30'
+                                                : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30'
+                                            }`}
+                                            onClick={() => handleEdit(service)}
+                                          >
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(service.id);
+                                              }}
+                                              className="absolute top-1 right-1 w-5 h-5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-full flex items-center justify-center transition-colors shadow-sm border border-red-200 dark:border-red-700 z-10"
+                                              title="Supprimer cette prestation"
+                                            >
+                                              <Trash className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-red-600 dark:text-red-400" />
+                                            </button>
+                                            <div className="px-1.5 md:px-3 py-1 md:py-2">
+                                              <div className="flex items-center justify-between mb-1">
+                                                <div className="flex items-center space-x-1.5">
+                                                  <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${
+                                                    service.status === 'completed' ? 'bg-emerald-500' :
+                                                    service.status === 'invoiced' ? 'bg-rose-500' : 'bg-blue-500'
+                                                  }`}></div>
+                                                  <div className={`text-xs font-semibold ${
+                                                    service.status === 'completed' ? 'text-emerald-700 dark:text-emerald-300' :
+                                                    service.status === 'invoiced' ? 'text-rose-700 dark:text-rose-300' : 'text-blue-700 dark:text-blue-300'
+                                                  }`}>
+                                                    {formatQuantityWithUnit(service.hours, service.pricing_type)}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate leading-tight">
+                                                {client?.name || 'Client inconnu'}
+                                              </div>
+                                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                                                {calculateAmount(service.hours, service.hourly_rate).toFixed(0)}€
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                         
-                        {/* Contrôles de glissement sur la case du jour */}
+                        {/* Contrôles de glissement sur la case du jour - Desktop/Tablette uniquement */}
                         {dayServices.length >= 2 && (
                           <>
-                            {/* Boutons de navigation */}
-                            <div className="absolute top-0.5 sm:top-1 right-0.5 sm:right-1 flex space-x-0.5 z-20">
+                            {/* Boutons de navigation - Desktop/Tablette uniquement */}
+                            <div className="hidden sm:flex absolute top-0.5 sm:top-1 right-0.5 sm:right-1 space-x-0.5 z-20">
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   slideToPrev(date, dayServices);
                                 }}
-                                className="w-4 h-4 sm:w-5 sm:h-5 bg-white/90 dark:bg-gray-700/90 hover:bg-white dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors shadow-md border border-gray-200 dark:border-gray-600"
+                                className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-white/90 dark:bg-gray-700/90 hover:bg-white dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors shadow-md border border-gray-200 dark:border-gray-600"
                                 title="Prestation précédente"
                               >
-                                <ChevronLeft className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600 dark:text-gray-300" />
+                                <ChevronLeft className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-gray-600 dark:text-gray-300" />
                               </button>
                               <button
                                 type="button"
@@ -1920,19 +2027,19 @@ export default function ServicesPage() {
                                   e.stopPropagation();
                                   slideToNext(date, dayServices);
                                 }}
-                                className="w-4 h-4 sm:w-5 sm:h-5 bg-white/90 dark:bg-gray-700/90 hover:bg-white dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors shadow-md border border-gray-200 dark:border-gray-600"
+                                className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-white/90 dark:bg-gray-700/90 hover:bg-white dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors shadow-md border border-gray-200 dark:border-gray-600"
                                 title="Prestation suivante"
                               >
-                                <ChevronRight className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600 dark:text-gray-300" />
+                                <ChevronRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-gray-600 dark:text-gray-300" />
                               </button>
                             </div>
                             
-                            {/* Indicateurs de position */}
-                            <div className="absolute bottom-0.5 sm:bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-0.5 sm:space-x-1 z-20">
+                            {/* Indicateurs de position - Desktop/Tablette uniquement */}
+                            <div className="hidden sm:flex absolute bottom-0.5 sm:bottom-1 left-1/2 transform -translate-x-1/2 space-x-0.5 sm:space-x-1 z-20">
                               {dayServices.map((_, index) => (
                                 <div
                                   key={index}
-                                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors ${
+                                  className={`w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 rounded-full transition-colors ${
                                     index === getSlidingState(date).currentIndex 
                                       ? 'bg-gray-600 dark:bg-gray-300' 
                                       : 'bg-gray-400 dark:bg-gray-500'
@@ -1945,12 +2052,14 @@ export default function ServicesPage() {
                       </div>
                     );
                   })}
+                  </div>
+                  </div>
                 </div>
               </div>
 
               {/* Légende des couleurs */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
-                <div className="flex items-center justify-center space-x-6">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
+                <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 rounded-md bg-emerald-500 border border-emerald-600"></div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Terminées</span>
@@ -2703,6 +2812,83 @@ export default function ServicesPage() {
 
       {/* Alert Modal */}
       {/* Modal des prestations d'un jour */}
+      {/* Modal mobile pour afficher les prestations d'un jour */}
+      {selectedDateForModal && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setSelectedDateForModal(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 rounded-t-3xl sm:rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-white">
+                    {selectedDateForModal.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  </h3>
+                  <p className="text-white/80 text-sm mt-1">
+                    {getServicesForDate(selectedDateForModal).length} prestation{getServicesForDate(selectedDateForModal).length > 1 ? 's' : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDateForModal(null)}
+                  className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+                  title="Fermer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Contenu */}
+            <div className="overflow-y-auto flex-1 p-4">
+              <div className="space-y-3">
+                {getServicesForDate(selectedDateForModal).map((service) => {
+                  if (!service) return null;
+                  const client = clients.find(c => c.id === service.client_id);
+                  return (
+                    <div
+                      key={service.id}
+                      onClick={() => {
+                        setSelectedDateForModal(null);
+                        handleEdit(service);
+                      }}
+                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 active:scale-95 ${
+                        service.status === 'completed'
+                          ? 'bg-emerald-500 dark:bg-emerald-600 border-emerald-600 dark:border-emerald-500'
+                          : service.status === 'invoiced'
+                          ? 'bg-rose-500 dark:bg-rose-600 border-rose-600 dark:border-rose-500'
+                          : 'bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500'
+                      }`}
+                    >
+                      <div className="text-white">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-bold text-base">
+                            {client?.name || 'Client inconnu'}
+                          </h4>
+                          <span className="text-lg font-extrabold">
+                            {calculateAmount(service.hours, service.hourly_rate).toFixed(0)}€
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm opacity-90">
+                          <span>{formatQuantityWithUnit(service.hours, service.pricing_type)}</span>
+                          <span className="font-semibold">
+                            {service.status === 'completed' ? 'Terminée' : service.status === 'invoiced' ? 'Facturée' : 'En attente'}
+                          </span>
+                        </div>
+                        {service.description && (
+                          <p className="text-xs opacity-75 mt-2 line-clamp-2">
+                            {service.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedDayServices.length > 0 && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">

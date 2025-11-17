@@ -712,12 +712,12 @@ export default function URSSAFPage() {
                 </div>
 
                 {/* Barre de progression visuelle améliorée */}
-                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                    <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 truncate">
                       Progression du trimestre
                     </span>
-                    <span className="text-sm font-bold text-teal-600 dark:text-teal-400">
+                    <span className="text-xs sm:text-sm font-bold text-teal-600 dark:text-teal-400 whitespace-nowrap">
                       {quarterlyMonthlyBreakdown.total > 0
                         ? Math.round(
                             ((quarterlyMonthlyBreakdown.month1.revenue + quarterlyMonthlyBreakdown.month2.revenue) /
@@ -773,18 +773,18 @@ export default function URSSAFPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-3 text-xs text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center gap-2 transition-transform duration-200 hover:scale-105">
-                      <div className="w-2 h-2 rounded-full bg-teal-500"></div>
-                      <span>{quarterlyMonthlyBreakdown.month1.name}</span>
+                  <div className="flex items-center justify-between mt-2 sm:mt-3 text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 gap-1 sm:gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2 transition-transform duration-200 hover:scale-105 min-w-0">
+                      <div className="w-2 h-2 rounded-full bg-teal-500 flex-shrink-0"></div>
+                      <span className="truncate">{quarterlyMonthlyBreakdown.month1.name}</span>
                     </div>
-                    <div className="flex items-center gap-2 transition-transform duration-200 hover:scale-105">
-                      <div className="w-2 h-2 rounded-full bg-cyan-500"></div>
-                      <span>{quarterlyMonthlyBreakdown.month2.name}</span>
+                    <div className="flex items-center gap-1 sm:gap-2 transition-transform duration-200 hover:scale-105 min-w-0">
+                      <div className="w-2 h-2 rounded-full bg-cyan-500 flex-shrink-0"></div>
+                      <span className="truncate">{quarterlyMonthlyBreakdown.month2.name}</span>
                     </div>
-                    <div className="flex items-center gap-2 transition-transform duration-200 hover:scale-105">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                      <span>{quarterlyMonthlyBreakdown.month3.name}</span>
+                    <div className="flex items-center gap-1 sm:gap-2 transition-transform duration-200 hover:scale-105 min-w-0">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></div>
+                      <span className="truncate">{quarterlyMonthlyBreakdown.month3.name}</span>
                     </div>
                   </div>
                 </div>
@@ -827,15 +827,15 @@ export default function URSSAFPage() {
                   background-color: transparent !important;
                 }
               `}</style>
-              <div className="flex items-center justify-between mb-6">
-                <h4 className="text-base font-bold text-gray-900 dark:text-white animate-in fade-in slide-in-from-left duration-500">Montants comparatifs</h4>
-                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-300 animate-in fade-in slide-in-from-right duration-500 delay-100">
-                  <div className="w-3 h-3 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 animate-pulse"></div>
-                  <span className="dark:text-gray-200">CA</span>
-                  <div className="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-red-700 ml-2 animate-pulse delay-100"></div>
-                  <span className="dark:text-gray-200">Cotisations</span>
-                  <div className="w-3 h-3 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 ml-2 animate-pulse delay-200"></div>
-                  <span className="dark:text-gray-200">Net</span>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4 sm:mb-6">
+                <h4 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white animate-in fade-in slide-in-from-left duration-500">Montants comparatifs</h4>
+                <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-gray-500 dark:text-gray-300 animate-in fade-in slide-in-from-right duration-500 delay-100 flex-wrap">
+                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 animate-pulse flex-shrink-0"></div>
+                  <span className="dark:text-gray-200 whitespace-nowrap">CA</span>
+                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-gradient-to-br from-red-500 to-red-700 ml-1 sm:ml-2 animate-pulse delay-100 flex-shrink-0"></div>
+                  <span className="dark:text-gray-200 whitespace-nowrap">Cotisations</span>
+                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 ml-1 sm:ml-2 animate-pulse delay-200 flex-shrink-0"></div>
+                  <span className="dark:text-gray-200 whitespace-nowrap">Net</span>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={240} className="min-h-[240px] sm:min-h-[280px] min-w-0">
@@ -913,8 +913,8 @@ export default function URSSAFPage() {
             </div>
 
             {/* Jauges de progression et indicateurs */}
-            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 hover:shadow-xl transition-all duration-300 min-w-0">
-              <h4 className="text-base font-bold text-gray-900 dark:text-white mb-6 animate-in fade-in slide-in-from-left duration-500">Répartition du CA</h4>
+            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 hover:shadow-xl transition-all duration-300 min-w-0">
+              <h4 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 animate-in fade-in slide-in-from-left duration-500">Répartition du CA</h4>
               
               {/* Jauge pour le revenu net */}
               <div className="mb-6 animate-in fade-in slide-in-from-left duration-500 delay-200">
@@ -975,18 +975,18 @@ export default function URSSAFPage() {
               </div>
 
               {/* Indicateurs visuels */}
-              <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 animate-in fade-in slide-in-from-bottom duration-500 delay-700">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700 animate-in fade-in slide-in-from-bottom duration-500 delay-700">
                 <div className="text-center transform transition-transform duration-300 hover:scale-105">
-                  <div className="text-2xl font-bold text-blue-700 dark:text-blue-400 mb-1 animate-in fade-in zoom-in duration-500 delay-900">
+                  <div className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-400 mb-1 animate-in fade-in zoom-in duration-500 delay-900 truncate">
                     {revenue.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
                   </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Chiffre d'affaires</div>
+                  <div className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">Chiffre d'affaires</div>
                 </div>
                 <div className="text-center transform transition-transform duration-300 hover:scale-105">
-                  <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-400 mb-1 animate-in fade-in zoom-in duration-500 delay-1000">
+                  <div className="text-xl sm:text-2xl font-bold text-indigo-700 dark:text-indigo-400 mb-1 animate-in fade-in zoom-in duration-500 delay-1000">
                     {rate.toFixed(2)}%
                   </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Taux de cotisation</div>
+                  <div className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">Taux de cotisation</div>
                 </div>
               </div>
             </div>
@@ -1101,39 +1101,39 @@ export default function URSSAFPage() {
 
         {/* Cartes récapitulatives */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Taux de cotisation</span>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+              <span className="text-[10px] sm:text-xs md:text-sm font-medium text-gray-600 dark:text-gray-300 min-w-0 flex-1">Taux de cotisation</span>
               <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-indigo-700 dark:text-indigo-400 mb-1 sm:mb-2">{rate.toFixed(2)} %</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400 break-words">
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-indigo-700 dark:text-indigo-400 mb-1 sm:mb-2 truncate">{rate.toFixed(2)} %</p>
+            <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
               {urssafStatuses.find(s => s.id === selectedStatus)?.activities.find(a => a.type === selectedActivity)?.description}
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Cotisations à payer</span>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+              <span className="text-[10px] sm:text-xs md:text-sm font-medium text-gray-600 dark:text-gray-300 min-w-0 flex-1">Cotisations à payer</span>
               <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-rose-700 dark:text-rose-400 mb-1 sm:mb-2 break-words">
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-rose-700 dark:text-rose-400 mb-1 sm:mb-2 truncate">
               {contributions.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
             </p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
+            <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
               {revenue > 0 ? ((contributions / revenue) * 100).toFixed(1).replace('.', ',') : '0,0'} % du CA
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700 sm:col-span-2 md:col-span-1">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Revenu net</span>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 dark:border-gray-700 sm:col-span-2 md:col-span-1">
+            <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+              <span className="text-[10px] sm:text-xs md:text-sm font-medium text-gray-600 dark:text-gray-300 min-w-0 flex-1">Revenu net</span>
               <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-emerald-700 dark:text-emerald-400 mb-1 sm:mb-2 break-words">
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-emerald-700 dark:text-emerald-400 mb-1 sm:mb-2 truncate">
               {netRevenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
             </p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
+            <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
               Après déduction des cotisations
             </p>
           </div>
@@ -1141,31 +1141,31 @@ export default function URSSAFPage() {
       </div>
 
       {/* Prochaines échéances */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 overflow-hidden">
-        <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 overflow-hidden">
+        <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4 md:mb-6">
           <CalendarDays className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">Prochaines Échéances</h2>
+          <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate">Prochaines Échéances</h2>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {periodType === 'mensuelle' ? (
             upcomingDeadlines.map((deadline, index) => (
               <div
                 key={index}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gradient-to-r from-cyan-50 to-teal-50 dark:from-cyan-900/20 dark:to-teal-900/20 rounded-lg border border-cyan-200 dark:border-cyan-800 gap-3"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gradient-to-r from-cyan-50 to-teal-50 dark:from-cyan-900/20 dark:to-teal-900/20 rounded-lg border border-cyan-200 dark:border-cyan-800 gap-2 sm:gap-3"
               >
-                <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-                  <div className="p-2 sm:p-3 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg flex-shrink-0">
+                <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 min-w-0 flex-1">
+                  <div className="p-1.5 sm:p-2 md:p-3 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg flex-shrink-0">
                     <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 dark:text-cyan-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate">{deadline.period}</p>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{deadline.description}</p>
+                    <p className="font-semibold text-xs sm:text-sm md:text-base text-gray-900 dark:text-white truncate">{deadline.period}</p>
+                    <p className="text-[10px] sm:text-xs md:text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{deadline.description}</p>
                   </div>
                 </div>
                 <div className="text-left sm:text-right flex-shrink-0">
-                  <p className="font-bold text-sm sm:text-base text-cyan-600 dark:text-cyan-400">{deadline.declarationDate}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">Date limite</p>
+                  <p className="font-bold text-xs sm:text-sm md:text-base text-cyan-600 dark:text-cyan-400 whitespace-nowrap">{deadline.declarationDate}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-500">Date limite</p>
                 </div>
               </div>
             ))
@@ -1177,20 +1177,20 @@ export default function URSSAFPage() {
             }).slice(0, 3).map((deadline, index) => (
               <div
                 key={index}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-lg border border-teal-200 dark:border-teal-800 gap-3"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-lg border border-teal-200 dark:border-teal-800 gap-2 sm:gap-3"
               >
-                <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-                  <div className="p-2 sm:p-3 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex-shrink-0">
+                <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 min-w-0 flex-1">
+                  <div className="p-1.5 sm:p-2 md:p-3 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex-shrink-0">
                     <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600 dark:text-teal-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate">{deadline.period}</p>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{deadline.description}</p>
+                    <p className="font-semibold text-xs sm:text-sm md:text-base text-gray-900 dark:text-white truncate">{deadline.period}</p>
+                    <p className="text-[10px] sm:text-xs md:text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{deadline.description}</p>
                   </div>
                 </div>
                 <div className="text-left sm:text-right flex-shrink-0">
-                  <p className="font-bold text-sm sm:text-base text-teal-600 dark:text-teal-400">{deadline.declarationDate}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">Date limite</p>
+                  <p className="font-bold text-xs sm:text-sm md:text-base text-teal-600 dark:text-teal-400 whitespace-nowrap">{deadline.declarationDate}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-500">Date limite</p>
                 </div>
               </div>
             ))
@@ -1199,11 +1199,11 @@ export default function URSSAFPage() {
       </div>
 
       {/* Calendrier complet des échéances */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 overflow-hidden">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 overflow-hidden">
+        <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
             <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
-            <h2 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 dark:text-white truncate">Calendrier Complet des Échéances 2025</h2>
+            <h2 className="text-sm sm:text-base md:text-lg lg:text-2xl font-bold text-gray-900 dark:text-white truncate">Calendrier Complet des Échéances 2025</h2>
           </div>
         </div>
 
@@ -1322,7 +1322,7 @@ export default function URSSAFPage() {
           </div>
           
           {/* Vue mobile/tablette - Cartes */}
-          <div className="lg:hidden space-y-3 p-2 sm:p-3">
+          <div className="lg:hidden space-y-2 sm:space-y-3 p-2 sm:p-3">
             {(periodType === 'mensuelle' ? declarationDates : quarterlyDeadlines).map((date, index) => {
               const [day, month, year] = date.declarationDate.split('/').map(Number);
               const deadlineDate = new Date(year, month - 1, day);
@@ -1336,7 +1336,7 @@ export default function URSSAFPage() {
               return (
                 <div
                   key={index}
-                  className={`p-4 rounded-lg border ${
+                  className={`p-3 sm:p-4 rounded-lg border ${
                     isPast
                       ? 'bg-gray-50/50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700'
                       : isToday
@@ -1346,17 +1346,17 @@ export default function URSSAFPage() {
                       : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                   }`}
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-2 sm:mb-3">
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{date.period}</h4>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{date.description}</p>
+                      <h4 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white mb-1 truncate">{date.period}</h4>
+                      <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{date.description}</p>
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Déclaration:</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 sm:pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                      <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Déclaration:</span>
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                        className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap ${
                           isPast
                             ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                             : isToday
@@ -1369,10 +1369,10 @@ export default function URSSAFPage() {
                         {date.declarationDate}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Paiement:</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                      <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Paiement:</span>
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                        className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap ${
                           isPast
                             ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                             : isToday
@@ -1394,119 +1394,119 @@ export default function URSSAFPage() {
       </div>
 
       {/* Informations légales et règles - Collapsible */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6">
         <button
           type="button"
           onClick={() => setShowRules(!showRules)}
           className="w-full flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-2 -m-2 transition-colors"
         >
-          <div className="flex items-center space-x-3">
-          <BookOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Règles et Informations Légales</h2>
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+          <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+          <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate">Règles et Informations Légales</h2>
         </div>
           {showRules ? (
-            <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
           )}
         </button>
 
         {showRules && (
-          <div className="mt-6 space-y-6">
+          <div className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
           {/* Micro-entreprise */}
-          <div className="border-l-4 border-blue-500 pl-4">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+          <div className="border-l-4 border-blue-500 pl-3 sm:pl-4">
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">
               Régime Micro-entreprise
             </h3>
-            <div className="space-y-3 text-gray-700 dark:text-gray-300">
+            <div className="space-y-2 sm:space-y-3 text-sm sm:text-base text-gray-700 dark:text-gray-300">
               <div className="flex items-start space-x-2">
-                <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                <p>
-                  <strong>Prestations de services (BIC) :</strong> 21,2% de cotisations URSSAF (2024-2025) + abattement 50% pour impôt
+                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <p className="min-w-0">
+                  <strong className="text-xs sm:text-sm">Prestations de services (BIC) :</strong> <span className="text-xs sm:text-sm">21,2% de cotisations URSSAF (2024-2025) + abattement 50% pour impôt</span>
                 </p>
               </div>
               <div className="flex items-start space-x-2">
-                <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                <p>
-                  <strong>Vente de marchandises (BIC) :</strong> 12,3% de cotisations URSSAF (2024-2025) + abattement 71% pour impôt
+                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <p className="min-w-0">
+                  <strong className="text-xs sm:text-sm">Vente de marchandises (BIC) :</strong> <span className="text-xs sm:text-sm">12,3% de cotisations URSSAF (2024-2025) + abattement 71% pour impôt</span>
                 </p>
               </div>
               <div className="flex items-start space-x-2">
-                <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                <p>
-                  <strong>Professions libérales (BNC) :</strong> 24,6% de cotisations URSSAF (2024-2025) + abattement 34% pour impôt
+                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <p className="min-w-0">
+                  <strong className="text-xs sm:text-sm">Professions libérales (BNC) :</strong> <span className="text-xs sm:text-sm">24,6% de cotisations URSSAF (2024-2025) + abattement 34% pour impôt</span>
                 </p>
               </div>
               <div className="flex items-start space-x-2">
-                <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-                <p>
-                  <strong>Plafonds 2025 :</strong> 77 700€ (prestations/services) ou 188 700€ (ventes)
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                <p className="min-w-0">
+                  <strong className="text-xs sm:text-sm">Plafonds 2025 :</strong> <span className="text-xs sm:text-sm">77 700€ (prestations/services) ou 188 700€ (ventes)</span>
                 </p>
               </div>
             </div>
           </div>
 
           {/* Obligations déclaratives */}
-          <div className="border-l-4 border-purple-500 pl-4">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+          <div className="border-l-4 border-purple-500 pl-3 sm:pl-4">
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">
               Obligations Déclaratives
             </h3>
-            <div className="space-y-3 text-gray-700 dark:text-gray-300">
+            <div className="space-y-2 sm:space-y-3 text-sm sm:text-base text-gray-700 dark:text-gray-300">
               <div className="flex items-start space-x-2">
-                <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
-                <p>
-                  <strong>Déclaration mensuelle :</strong> Si le CA annuel dépasse 25 000€ ou si vous le souhaitez
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                <p className="min-w-0">
+                  <strong className="text-xs sm:text-sm">Déclaration mensuelle :</strong> <span className="text-xs sm:text-sm">Si le CA annuel dépasse 25 000€ ou si vous le souhaitez</span>
                 </p>
               </div>
               <div className="flex items-start space-x-2">
-                <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
-                <p>
-                  <strong>Déclaration trimestrielle :</strong> Si le CA annuel est inférieur à 25 000€
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                <p className="min-w-0">
+                  <strong className="text-xs sm:text-sm">Déclaration trimestrielle :</strong> <span className="text-xs sm:text-sm">Si le CA annuel est inférieur à 25 000€</span>
                 </p>
               </div>
               <div className="flex items-start space-x-2">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-                <p>
-                  <strong>Date limite :</strong> Le 8 de chaque mois suivant (déclaration mensuelle) ou le dernier jour du trimestre (trimestrielle)
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                <p className="min-w-0">
+                  <strong className="text-xs sm:text-sm">Date limite :</strong> <span className="text-xs sm:text-sm">Le 8 de chaque mois suivant (déclaration mensuelle) ou le dernier jour du trimestre (trimestrielle)</span>
                 </p>
               </div>
             </div>
           </div>
 
           {/* Impôts */}
-          <div className="border-l-4 border-green-500 pl-4">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+          <div className="border-l-4 border-green-500 pl-3 sm:pl-4">
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">
               Impôt sur le Revenu
             </h3>
-            <div className="space-y-3 text-gray-700 dark:text-gray-300">
+            <div className="space-y-2 sm:space-y-3 text-sm sm:text-base text-gray-700 dark:text-gray-300">
               <div className="flex items-start space-x-2">
-                <Info className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                <p>
-                  <strong>Option micro-fiscal :</strong> Abattement forfaitaire selon l'activité (50% services, 71% ventes, 34% libérales)
+                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                <p className="min-w-0">
+                  <strong className="text-xs sm:text-sm">Option micro-fiscal :</strong> <span className="text-xs sm:text-sm">Abattement forfaitaire selon l'activité (50% services, 71% ventes, 34% libérales)</span>
                 </p>
               </div>
               <div className="flex items-start space-x-2">
-                <Info className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                <p>
-                  <strong>Option classique :</strong> Déclaration du résultat réel (bénéfices réels)
+                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                <p className="min-w-0">
+                  <strong className="text-xs sm:text-sm">Option classique :</strong> <span className="text-xs sm:text-sm">Déclaration du résultat réel (bénéfices réels)</span>
                 </p>
               </div>
               <div className="flex items-start space-x-2">
-                <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-                <p>
-                  <strong>Déclaration fiscale :</strong> Avant le 31 mai (papier) ou début juin (en ligne) de l'année suivante
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                <p className="min-w-0">
+                  <strong className="text-xs sm:text-sm">Déclaration fiscale :</strong> <span className="text-xs sm:text-sm">Avant le 31 mai (papier) ou début juin (en ligne) de l'année suivante</span>
                 </p>
               </div>
             </div>
           </div>
 
           {/* Avertissements */}
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-            <div className="flex items-start space-x-3">
-              <Shield className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <h4 className="font-bold text-yellow-900 dark:text-yellow-100 mb-2">Points importants</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm text-yellow-800 dark:text-yellow-200">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 sm:p-4">
+            <div className="flex items-start space-x-2 sm:space-x-3">
+              <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <h4 className="font-bold text-sm sm:text-base text-yellow-900 dark:text-yellow-100 mb-2">Points importants</h4>
+                <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm text-yellow-800 dark:text-yellow-200">
                   <li>Les cotisations sont calculées sur le chiffre d'affaires réel (prélèvement à la source)</li>
                   <li>En cas d'absence de CA, aucune cotisation n'est due (mais déclaration obligatoire)</li>
                   <li>Les cotisations sont déductibles du résultat imposable dans le régime réel</li>
@@ -1518,12 +1518,12 @@ export default function URSSAFPage() {
       </div>
 
       {/* Législation */}
-      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-6 border border-indigo-200 dark:border-indigo-800">
-        <div className="flex items-center space-x-3 mb-4">
-          <Scale className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Références Légales</h3>
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 sm:p-6 border border-indigo-200 dark:border-indigo-800">
+        <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+          <Scale className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+          <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">Références Légales</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
           <div>
             <p className="font-semibold mb-2">Code de la Sécurité Sociale :</p>
             <ul className="list-disc list-inside space-y-1">

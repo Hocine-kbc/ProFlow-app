@@ -90,12 +90,26 @@ export default function ClientModal({
                 Type de client *
               </label>
               <div className="relative grid grid-cols-2 bg-gray-200/80 dark:bg-gray-700 rounded-full p-1 overflow-hidden transition-colors">
+                {/* Les deux indicateurs se déplacent vers la même position selon le type sélectionné */}
+                {/* Indicateur vert pour Particulier */}
                 <span
-                  className={`absolute inset-[4px] w-[calc(50%-4px)] rounded-full shadow transition-all duration-300 ease-out ${
-                    formData.clientType === 'particulier'
-                      ? 'translate-x-0 bg-gradient-to-r from-green-500 to-green-600'
-                      : 'translate-x-full bg-gradient-to-r from-blue-500 to-blue-600'
+                  className={`absolute inset-[4px] w-[calc(50%-4px)] rounded-full shadow bg-gradient-to-r from-green-500 to-green-600 ${
+                    formData.clientType === 'particulier' ? 'opacity-100' : 'opacity-0'
                   }`}
+                  style={{
+                    transform: formData.clientType === 'particulier' ? 'translateX(0)' : 'translateX(100%)',
+                    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in-out',
+                  }}
+                />
+                {/* Indicateur bleu pour Professionnel */}
+                <span
+                  className={`absolute inset-[4px] w-[calc(50%-4px)] rounded-full shadow bg-gradient-to-r from-blue-500 to-blue-600 ${
+                    formData.clientType === 'professionnel' ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  style={{
+                    transform: formData.clientType === 'professionnel' ? 'translateX(100%)' : 'translateX(0)',
+                    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in-out',
+                  }}
                 />
                 <button
                   type="button"
