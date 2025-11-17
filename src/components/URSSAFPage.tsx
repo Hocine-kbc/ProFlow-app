@@ -443,7 +443,7 @@ export default function URSSAFPage() {
 
           {/* Navigation de période */}
           {periodType === 'mensuelle' ? (
-            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-2 sm:px-3 py-2 w-full md:w-auto justify-center md:justify-start">
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-2 sm:px-3 h-[42px] sm:h-[44px] w-full md:w-auto justify-center md:justify-start">
               <button
                 type="button"
                 onClick={() => {
@@ -451,14 +451,14 @@ export default function URSSAFPage() {
                   currentDate.setMonth(currentDate.getMonth() - 1);
                   setSelectedMonth(currentDate.toISOString().slice(0, 7));
                 }}
-                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
+                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors flex-shrink-0"
               >
                 <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedMonth(new Date().toISOString().slice(0, 7))}
-                className="px-3 sm:px-4 py-1.5 text-gray-900 dark:text-white font-semibold text-xs sm:text-sm hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors min-w-0 flex-1 sm:flex-none"
+                className="px-3 sm:px-4 h-full flex items-center text-gray-900 dark:text-white font-semibold text-xs sm:text-sm hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors min-w-0 flex-1 sm:flex-none"
               >
                 <span className="truncate">{new Date(selectedMonth + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</span>
               </button>
@@ -469,13 +469,13 @@ export default function URSSAFPage() {
                   currentDate.setMonth(currentDate.getMonth() + 1);
                   setSelectedMonth(currentDate.toISOString().slice(0, 7));
                 }}
-                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
+                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors flex-shrink-0"
               >
                 <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-2 sm:px-3 py-2 w-full md:w-auto flex-wrap justify-center md:justify-start">
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-2 sm:px-3 h-[42px] sm:h-[44px] w-full md:w-auto flex-wrap justify-center md:justify-start">
               {/* Navigation année */}
               <button
                 type="button"
@@ -486,7 +486,7 @@ export default function URSSAFPage() {
               </button>
               
               {/* Sélection trimestre avec effet de glissement */}
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 inline-flex relative gap-0.5 flex-1 sm:flex-none min-w-0">
+              <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 inline-flex relative gap-0.5 flex-1 sm:flex-none min-w-0 h-full flex items-center">
                 {/* Indicateur de glissement */}
                 <div 
                   className="absolute top-1 bottom-1 bg-red-600 rounded-full shadow-md transition-all duration-300 ease-in-out"
@@ -504,7 +504,7 @@ export default function URSSAFPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedQuarter('T1')}
-                  className={`relative z-10 px-2 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
+                  className={`relative z-10 px-2 sm:px-4 h-full flex items-center rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
                     selectedQuarter === 'T1'
                       ? 'text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -515,7 +515,7 @@ export default function URSSAFPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedQuarter('T2')}
-                  className={`relative z-10 px-2 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
+                  className={`relative z-10 px-2 sm:px-4 h-full flex items-center rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
                     selectedQuarter === 'T2'
                       ? 'text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -526,7 +526,7 @@ export default function URSSAFPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedQuarter('T3')}
-                  className={`relative z-10 px-2 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
+                  className={`relative z-10 px-2 sm:px-4 h-full flex items-center rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
                     selectedQuarter === 'T3'
                       ? 'text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -537,7 +537,7 @@ export default function URSSAFPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedQuarter('T4')}
-                  className={`relative z-10 px-2 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
+                  className={`relative z-10 px-2 sm:px-4 h-full flex items-center rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-1 min-w-0 ${
                     selectedQuarter === 'T4'
                       ? 'text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -548,7 +548,7 @@ export default function URSSAFPage() {
               </div>
               
               {/* Affichage année */}
-              <div className="px-2 sm:px-3 py-1.5 text-gray-900 dark:text-white font-semibold text-xs sm:text-sm min-w-[50px] sm:min-w-[60px] text-center">
+              <div className="px-2 sm:px-3 h-full flex items-center text-gray-900 dark:text-white font-semibold text-xs sm:text-sm min-w-[50px] sm:min-w-[60px] text-center">
                 {selectedQuarterYear}
               </div>
               

@@ -1,5 +1,6 @@
 {
   "name": "proflow",
+  "description": "ProFlow - Votre flux professionnel simplifié",
   "private": true,
   "version": "0.0.0",
   "type": "module",
