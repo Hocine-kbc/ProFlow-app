@@ -846,33 +846,44 @@ export default function EmailInboxPage() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800 shadow-lg rounded-2xl min-w-0 mt-3 md:mt-0 relative z-0">
-        {/* Gmail-like Header - Fixe */}
-        <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 shadow-sm rounded-t-2xl">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 relative">
-            {/* Section gauche (vide sur desktop, peut contenir des éléments sur mobile) */}
-            <div className="hidden sm:block sm:w-72 sm:flex-shrink-0"></div>
-
-            {/* Logo/Titre - Centré */}
-            <div className="flex items-center justify-center gap-2.5 min-w-0 flex-1 sm:flex-none sm:absolute sm:left-1/2 sm:-translate-x-1/2">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/30 dark:shadow-blue-400/20 transition-transform hover:scale-105">
-                <Mail className="w-5 h-5 text-white drop-shadow-sm" />
+        {/* Header */}
+        <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-3">
+          {/* Desktop Layout */}
+          <div className="hidden sm:flex sm:items-center sm:px-6">
+            <div className="flex items-center gap-2.5 mr-4">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-500 flex items-center justify-center shadow-lg">
+                <Mail className="w-5 h-5 text-white" />
               </div>
               <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Messagerie</span>
             </div>
+            <div className="flex-1">
+              <SearchBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                filters={filters}
+                onFiltersChange={setFilters}
+              />
+            </div>
+          </div>
 
-            {/* Barre de recherche avec bouton menu intégré */}
-            <div className="w-full sm:flex-1 sm:max-w-2xl sm:mx-auto relative">
-              {/* Bouton menu dossiers (mobile) - intégré à gauche de la barre de recherche */}
+          {/* Mobile Layout */}
+          <div className="flex flex-col sm:hidden gap-3 px-3">
+            <div className="flex items-center justify-center gap-2.5">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-500 flex items-center justify-center shadow-lg">
+                <Mail className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Messagerie</span>
+            </div>
+            <div className="w-full relative">
               <button
                 type="button"
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 inline-flex md:hidden items-center justify-center rounded-full bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors shadow-sm"
-                style={{ height: '42px', width: '42px', minHeight: '42px', minWidth: '42px' }}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-500"
                 onClick={() => setIsSidebarOpen(true)}
-                aria-label="Ouvrir le menu des dossiers"
+                aria-label="Ouvrir le menu"
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <div className="md:pl-0 pl-[54px]">
+              <div className="pl-14">
                 <SearchBar
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
@@ -893,8 +904,8 @@ export default function EmailInboxPage() {
           return (
             <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <div className="px-3 sm:px-6 py-2 flex flex-row items-center justify-between gap-2 sm:gap-3">
-                {/* Checkbox à gauche */}
-                <div className="flex items-center gap-2 sm:gap-3">
+                {/* Checkbox à gauche - Caché sur desktop */}
+                <div className="flex items-center gap-2 sm:gap-3 sm:hidden">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -913,6 +924,9 @@ export default function EmailInboxPage() {
                     </span>
                   )}
                 </div>
+                
+                {/* Espace vide sur desktop pour aligner les boutons à droite */}
+                <div className="hidden sm:block"></div>
               
                 {/* Boutons à droite */}
                 <div className={`flex items-center gap-1 sm:gap-2 transition-opacity duration-200 ${hasSelection ? 'opacity-100' : 'opacity-30'}`}>

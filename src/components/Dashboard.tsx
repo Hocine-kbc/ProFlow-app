@@ -2,12 +2,141 @@ import { useState, useEffect } from 'react';
 import { Users, Clock, Euro, FileText, TrendingUp, BarChart3, PieChart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../contexts/AppContext.tsx';
 
+// Composant pour afficher un chiffre avec segments LED
+const SegmentDigit = ({ digit, showColons }: { digit: string; showColons?: boolean }) => {
+  const digitSegments: { [key: string]: string[] } = {
+    '0': ['a', 'b', 'c', 'd', 'e', 'f'],
+    '1': ['b', 'c'],
+    '2': ['a', 'b', 'd', 'e', 'g'],
+    '3': ['a', 'b', 'c', 'd', 'g'],
+    '4': ['b', 'c', 'f', 'g'],
+    '5': ['a', 'c', 'd', 'f', 'g'],
+    '6': ['a', 'c', 'd', 'e', 'f', 'g'],
+    '7': ['a', 'b', 'c'],
+    '8': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+    '9': ['a', 'b', 'c', 'd', 'f', 'g'],
+  };
+
+  const activeSegments = digitSegments[digit] || [];
+
+  if (digit === ':') {
+    return (
+      <div className="flex flex-col justify-center items-center gap-3 sm:gap-3.5 mx-1.5">
+        <div className={`w-2 h-2 rounded-full ${
+          showColons 
+            ? 'bg-white opacity-100' 
+            : 'bg-white opacity-30'
+        }`}></div>
+        <div className={`w-2 h-2 rounded-full ${
+          showColons 
+            ? 'bg-white opacity-100' 
+            : 'bg-white opacity-30'
+        }`}></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-12 h-18 sm:w-14 sm:h-20">
+      {/* Segment A (top horizontal) */}
+      <div 
+        className={`absolute top-0 left-2 right-2 h-2 transition-all duration-100 ${
+          activeSegments.includes('a')
+            ? 'bg-white'
+            : 'bg-white/5'
+        }`}
+        style={{ clipPath: 'polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%)' }}
+      ></div>
+      
+      {/* Segment B (top-right vertical) */}
+      <div 
+        className={`absolute top-2 right-0 w-2 h-[calc(50%-10px)] transition-all duration-100 ${
+          activeSegments.includes('b')
+            ? 'bg-white'
+            : 'bg-white/5'
+        }`}
+        style={{ clipPath: 'polygon(0% 10%, 50% 0%, 100% 10%, 100% 90%, 50% 100%, 0% 90%)' }}
+      ></div>
+      
+      {/* Segment C (bottom-right vertical) */}
+      <div 
+        className={`absolute top-[calc(50%+2px)] right-0 bottom-2 w-2 h-[calc(50%-10px)] transition-all duration-100 ${
+          activeSegments.includes('c')
+            ? 'bg-white'
+            : 'bg-white/5'
+        }`}
+        style={{ clipPath: 'polygon(0% 10%, 50% 0%, 100% 10%, 100% 90%, 50% 100%, 0% 90%)' }}
+      ></div>
+      
+      {/* Segment D (bottom horizontal) */}
+      <div 
+        className={`absolute bottom-0 left-2 right-2 h-2 transition-all duration-100 ${
+          activeSegments.includes('d')
+            ? 'bg-white'
+            : 'bg-white/5'
+        }`}
+        style={{ clipPath: 'polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%)' }}
+      ></div>
+      
+      {/* Segment E (bottom-left vertical) */}
+      <div 
+        className={`absolute top-[calc(50%+2px)] left-0 bottom-2 w-2 h-[calc(50%-10px)] transition-all duration-100 ${
+          activeSegments.includes('e')
+            ? 'bg-white'
+            : 'bg-white/5'
+        }`}
+        style={{ clipPath: 'polygon(0% 10%, 50% 0%, 100% 10%, 100% 90%, 50% 100%, 0% 90%)' }}
+      ></div>
+      
+      {/* Segment F (top-left vertical) */}
+      <div 
+        className={`absolute top-2 left-0 w-2 h-[calc(50%-10px)] transition-all duration-100 ${
+          activeSegments.includes('f')
+            ? 'bg-white'
+            : 'bg-white/5'
+        }`}
+        style={{ clipPath: 'polygon(0% 10%, 50% 0%, 100% 10%, 100% 90%, 50% 100%, 0% 90%)' }}
+      ></div>
+      
+      {/* Segment G (middle horizontal) */}
+      <div 
+        className={`absolute top-1/2 left-2 right-2 h-2 -translate-y-1/2 transition-all duration-100 ${
+          activeSegments.includes('g')
+            ? 'bg-white'
+            : 'bg-white/5'
+        }`}
+        style={{ clipPath: 'polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%)' }}
+      ></div>
+    </div>
+  );
+};
+
 interface DashboardProps {
   onNavigate?: (page: string) => void;
 }
 
 export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   console.log('🔄 Dashboard: Composant Dashboard monté');
+  
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [showColons, setShowColons] = useState(true);
+
+  useEffect(() => {
+    // Mettre à jour l'heure chaque seconde
+    const timeTimer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    // Faire clignoter les points toutes les 500ms (0.5s allumé, 0.5s éteint = 1 seconde complète)
+    const blinkTimer = setInterval(() => {
+      setShowColons(prev => !prev);
+    }, 500);
+
+    return () => {
+      clearInterval(timeTimer);
+      clearInterval(blinkTimer);
+    };
+  }, []);
   const { state } = useApp();
   const { services, clients, invoices, settings } = state;
   console.log('🔄 Dashboard: Composant rendu avec settings:', settings);
@@ -130,27 +259,52 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
     
     // Récupérer le prénom du gérant depuis l'état local
     const getOwnerFirstName = () => {
-      console.log('🔍 Dashboard: getOwnerFirstName appelé avec localSettings:', localSettings);
       if (localSettings && localSettings.ownerName) {
         const fullName = localSettings.ownerName;
-        console.log('🔍 Dashboard: fullName extrait:', fullName);
-        // Extraire seulement le prénom (premier mot)
         const firstName = fullName.split(' ')[0];
-        console.log('🔍 Dashboard: firstName extrait:', firstName);
         return firstName;
       }
-      console.log('🔍 Dashboard: Pas de localSettings ou ownerName, retour Entrepreneur');
       return "Entrepreneur";
     };
     
     const ownerFirstName = getOwnerFirstName();
     
     const messages = [
-      { time: [5, 6, 7, 8, 9, 10, 11], message: `Bonjour ${ownerFirstName}`, emoji: "🌅", subtitle: "Une belle journée commence !" },
-      { time: [12, 13, 14], message: `Bon après-midi ${ownerFirstName}`, emoji: "☀️", subtitle: "Une pause déj pour recharger, et retour à l'attaque 💪" },
-      { time: [15, 16, 17, 18], message: `Bon après-midi ${ownerFirstName}`, emoji: "🌤️", subtitle: "L'après-midi se déroule bien !" },
-      { time: [19, 20, 21, 22], message: `Bonsoir ${ownerFirstName}`, emoji: "🌆", subtitle: "Une belle soirée qui s'annonce !" },
-      { time: [23, 0, 1, 2, 3, 4], message: `Bonsoir ${ownerFirstName}`, emoji: "🌙", subtitle: "Travail de nuit ou nuit blanche ? 😴" }
+      { 
+        time: [5, 6, 7, 8, 9, 10, 11], 
+        message: `Bonjour ${ownerFirstName}`, 
+        emoji: "🌅", 
+        subtitle: "Une belle journée commence !",
+        gradient: "from-amber-500 via-orange-500 to-yellow-500"
+      },
+      { 
+        time: [12, 13, 14], 
+        message: `Bon après-midi ${ownerFirstName}`, 
+        emoji: "☀️", 
+        subtitle: "Une pause déj pour recharger, et retour à l'attaque 💪",
+        gradient: "from-yellow-500 via-amber-500 to-orange-500"
+      },
+      { 
+        time: [15, 16, 17, 18], 
+        message: `Bon après-midi ${ownerFirstName}`, 
+        emoji: "🌤️", 
+        subtitle: "L'après-midi se déroule bien !",
+        gradient: "from-blue-500 via-indigo-500 to-purple-500"
+      },
+      { 
+        time: [19, 20, 21, 22], 
+        message: `Bonsoir ${ownerFirstName}`, 
+        emoji: "🌆", 
+        subtitle: "Une belle soirée qui s'annonce !",
+        gradient: "from-purple-500 via-indigo-500 to-blue-600"
+      },
+      { 
+        time: [23, 0, 1, 2, 3, 4], 
+        message: `Bonsoir ${ownerFirstName}`, 
+        emoji: "🌙", 
+        subtitle: "Travail de nuit ou nuit blanche ? 😴",
+        gradient: "from-indigo-600 via-purple-600 to-blue-700"
+      }
     ];
     
     const currentMessage = messages.find(msg => msg.time.includes(hour)) || messages[0];
@@ -187,13 +341,51 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
         </div>
         
 
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-center sm:text-left">
-            <div className="flex items-center justify-center sm:justify-start space-x-2 sm:space-x-3">
-              <span className="text-xl sm:text-2xl">{greeting.emoji}</span>
-              <h1 className="text-xl sm:text-2xl font-bold">{greeting.message} !</h1>
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="text-center sm:text-left flex-1">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3">
+              <div className="text-3xl sm:text-4xl animate-pulse">{greeting.emoji}</div>
+              <div className="flex flex-col">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white drop-shadow-lg">
+                  {greeting.message}
+                </h1>
+                <p className="text-white/90 mt-2 text-sm sm:text-base font-medium">
+                  {greeting.subtitle}
+                </p>
+              </div>
             </div>
-            <p className="text-white/80 mt-1 text-sm sm:text-base">{greeting.subtitle}</p>
+          </div>
+          
+          {/* Horloge numérique style LED avec segments - Centrée */}
+          <div className="hidden lg:flex flex-col items-center justify-center flex-shrink-0">
+            <div className="px-4 py-2">
+              <div className="flex items-center gap-2">
+                {currentTime.toLocaleTimeString('fr-FR', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  hour12: false 
+                }).split('').map((char, index) => (
+                  <SegmentDigit key={index} digit={char} showColons={showColons} />
+                ))}
+              </div>
+            </div>
+            {/* Date */}
+            <div className="text-white/90 text-xs sm:text-sm font-medium tracking-wide mt-1">
+              {currentTime.toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </div>
+          </div>
+          
+          <div className="hidden md:block flex-shrink-0 flex items-center">
+            <img 
+              src="/hero_image.svg" 
+              alt="Hero illustration" 
+              className="h-16 sm:h-20 lg:h-24 w-auto opacity-90"
+            />
           </div>
         </div>
       </div>

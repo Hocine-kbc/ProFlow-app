@@ -148,50 +148,98 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
   return (
     <div className="h-screen min-h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed top-0 left-0 right-0 bottom-0 w-full h-full z-30 bg-black bg-opacity-50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      <div 
+        className={`fixed top-0 left-0 right-0 bottom-0 w-full h-full z-30 bg-black/50 lg:hidden transition-opacity duration-300 ease-out ${
+          sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setSidebarOpen(false)}
+      />
 
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-40 ${sidebarCollapsed ? 'w-16' : 'w-72'} bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg transform lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      } flex flex-col`} style={{
-        transition: 'width 300ms ease-in-out, transform 300ms ease-in-out',
-        zIndex: 40
-      }}>
+      } flex flex-col transition-all duration-300 ease-in-out`}>
         {/* Header avec gradient - Masqué sur mobile */}
-        <div className="hidden lg:block relative h-20 p-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700">
-          <div className="flex items-center justify-between h-full">
-            {!sidebarCollapsed && (
-              <div className="flex items-center justify-center w-full h-full">
-                <img src="/ProFlowlogo.png" alt="ProFlow Logo" className="w-full h-full object-cover" />
-              </div>
-            )}
-            {sidebarCollapsed && (
-              <div className="flex items-center justify-center w-full h-full">
-                <img src="/logoPF.png" alt="ProFlow Logo" className="w-full h-full object-cover" />
-              </div>
-            )}
-            <div className={`flex items-center space-x-2 absolute top-1 h-auto ${sidebarCollapsed ? 'right-1' : 'right-1'}`}>
+        <div className="hidden lg:block relative h-20 p-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 overflow-hidden">
+          {/* Traits décoratifs - Style identique aux headers des pages */}
+          <div className="absolute inset-0 opacity-20">
+            {/* Traits horizontaux qui traversent */}
+            <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
+            <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
+            <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-12"></div>
+            <div className="absolute bottom-6 left-0 right-0 w-full h-0.5 bg-white/15 transform -rotate-6"></div>
+            
+            {/* Traits verticaux */}
+            <div className="absolute top-0 bottom-0 left-12 w-0.5 h-full bg-white/20 transform rotate-6"></div>
+            <div className="absolute top-0 bottom-0 left-1/2 w-0.5 h-full bg-white/25 transform -rotate-6"></div>
+            <div className="absolute top-0 bottom-0 right-16 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
+            <div className="absolute top-0 bottom-0 right-8 w-0.5 h-full bg-white/25 transform rotate-6"></div>
+            
+            {/* Traits diagonaux qui traversent */}
+            <div className="absolute top-0 bottom-0 left-0 right-0 w-full h-0.5 bg-white/15 transform rotate-45 origin-center"></div>
+            <div className="absolute top-0 bottom-0 left-0 right-0 w-full h-0.5 bg-white/20 transform -rotate-30 origin-center"></div>
+          </div>
+          
+          <div className="flex items-center justify-between h-full relative">
+            {/* Logo complet - visible quand ouvert */}
+            <div 
+              className="absolute inset-0 flex items-center justify-center w-full h-full transition-opacity duration-300 ease-in-out"
+              style={{
+                opacity: sidebarCollapsed ? 0 : 1,
+                pointerEvents: sidebarCollapsed ? 'none' : 'auto',
+                zIndex: sidebarCollapsed ? 1 : 2
+              }}
+            >
+              <img 
+                src="/ProFlowlogo.png" 
+                alt="ProFlow Logo" 
+                className="w-full h-full object-cover"
+                style={{
+                  transition: 'opacity 300ms ease-in-out, transform 300ms ease-in-out',
+                  transform: sidebarCollapsed ? 'scale(0.95)' : 'scale(1)'
+                }}
+              />
+            </div>
+            
+            {/* Logo réduit - visible quand fermé */}
+            <div 
+              className="absolute inset-0 flex items-center justify-center w-full h-full transition-opacity duration-300 ease-in-out"
+              style={{
+                opacity: sidebarCollapsed ? 1 : 0,
+                pointerEvents: sidebarCollapsed ? 'auto' : 'none',
+                zIndex: sidebarCollapsed ? 2 : 1
+              }}
+            >
+              <img 
+                src="/logoPF.png" 
+                alt="ProFlow Logo" 
+                className="w-full h-full object-cover"
+                style={{
+                  transition: 'opacity 300ms ease-in-out, transform 300ms ease-in-out',
+                  transform: sidebarCollapsed ? 'scale(1)' : 'scale(0.95)'
+                }}
+              />
+            </div>
+            <div 
+              className={`flex items-center space-x-2 absolute top-1 h-auto ${sidebarCollapsed ? 'right-1' : 'right-1'} transition-all duration-300`}
+              style={{ zIndex: 20 }}
+            >
               <button
                 type="button"
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className={`h-5 w-5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all duration-300 hidden lg:block z-10 border border-white/30 hover:border-white/50 hover:scale-110 hover:shadow-lg`}
+                className={`h-5 w-5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all duration-300 hidden lg:block border border-white/30 hover:border-white/50 hover:scale-110 hover:shadow-lg active:scale-95`}
                 title={sidebarCollapsed ? 'Agrandir le menu' : 'Réduire le menu'}
               >
-                <div className="flex items-center justify-center h-full">
+                <div className="flex items-center justify-center h-full transition-transform duration-300">
                   {sidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
                 </div>
               </button>
               <button
                 type="button"
                 onClick={() => setSidebarOpen(false)}
-                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors lg:hidden z-10"
+                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all duration-200 lg:hidden active:scale-95"
               >
-                <X size={16} />
+                <X size={16} className="transition-transform duration-200" />
               </button>
             </div>
           </div>
@@ -205,35 +253,51 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
             const colors = getColorClasses(item.color);
             
             return (
-              <div key={item.id} className={`${sidebarCollapsed ? 'flex justify-center' : ''}`}>
+              <div key={item.id} className="transition-all duration-300">
                 <button
                   type="button"
                   onClick={() => {
                     onPageChange(item.id);
                     setSidebarOpen(false);
                   }}
-                  className={`${sidebarCollapsed ? 'w-12' : 'w-full'} flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-1.5'} text-left rounded-xl group relative ${
+                  className={`relative rounded-xl group overflow-hidden transition-all duration-300 ease-in-out ${
+                    sidebarCollapsed ? 'w-12' : 'w-full'
+                  } ${
                     isActive
                       ? `${colors.active} text-white`
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                   }`}
-                  style={{ height: '48px', minHeight: '48px' }}
+                  style={{ 
+                    height: '48px', 
+                    minHeight: '48px'
+                  }}
                   title={sidebarCollapsed ? item.label : ''}
                 >
-                  <div className={`rounded-lg relative ${
-                    isActive 
-                      ? 'bg-white/20' 
-                      : `${colors.icon} ${colors.iconHover}`
-                  }`} style={{ 
-                    minWidth: '38px', 
-                    minHeight: '38px', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    marginRight: sidebarCollapsed ? '0' : '8px',
-                    padding: '6px'
-                  }}>
-                    <Icon size={16} className={isActive ? 'text-white' : `${colors.iconColor} group-hover:${colors.iconColor.split(' ')[0]}`} />
+                  {/* Conteneur de l'icône - position absolue fixe, jamais de mouvement */}
+                  <div 
+                    className={`rounded-lg ${
+                      isActive 
+                        ? 'bg-white/20' 
+                        : `${colors.icon} ${colors.iconHover}`
+                    }`} 
+                    style={{ 
+                      width: '38px',
+                      height: '38px',
+                      position: 'absolute',
+                      left: '5px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      padding: '6px',
+                      zIndex: 10
+                    }}
+                  >
+                    <Icon 
+                      size={16} 
+                      className={`${isActive ? 'text-white' : `${colors.iconColor} group-hover:${colors.iconColor.split(' ')[0]}`}`}
+                    />
                     {/* Badge pour les messages non lus - visible même quand la sidebar est réduite */}
                     {item.id === 'messages' && unreadMessagesCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-4 px-1 text-[10px] font-bold text-white bg-red-500 dark:bg-red-600 rounded-full shadow-lg z-10">
@@ -241,14 +305,26 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                       </span>
                     )}
                   </div>
-                  {!sidebarCollapsed && (
-                    <div className="flex-1 flex items-center justify-between">
-                      <span className="font-medium whitespace-nowrap">{item.label}</span>
-                      {isActive && item.id !== 'messages' && (
-                        <div className="absolute top-1/2 right-4 transform -translate-y-1/2 w-2 h-2 bg-white rounded-full"></div>
-                      )}
-                    </div>
-                  )}
+                  
+                  {/* Conteneur du texte - s'étend/se rétracte autour de l'icône fixe */}
+                  <div 
+                    className={`flex items-center justify-between h-full ${
+                      sidebarCollapsed ? 'opacity-0' : 'opacity-100'
+                    }`}
+                    style={{
+                      paddingLeft: '48px',
+                      paddingRight: '12px',
+                      width: '100%',
+                      overflow: sidebarCollapsed ? 'hidden' : 'visible',
+                      transition: 'opacity 200ms ease-out',
+                      transitionDelay: sidebarCollapsed ? '0ms' : '100ms'
+                    }}
+                  >
+                    <span className="font-medium whitespace-nowrap">{item.label}</span>
+                    {isActive && item.id !== 'messages' && !sidebarCollapsed && (
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    )}
+                  </div>
                 </button>
               </div>
             );
@@ -264,9 +340,9 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
           <button
           type="button"
           onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95"
+            className="p-2 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-300 active:scale-95"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
@@ -297,7 +373,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
           <button
             type="button"
             onClick={toggleTheme}
-            className="relative p-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95 group"
+            className="relative p-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-300 active:scale-95 group"
             title={isDark ? 'Mode clair' : 'Mode sombre'}
           >
             <div className="relative">
@@ -307,23 +383,23 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                 <Moon className="w-5 h-5 transition-transform group-hover:rotate-12 duration-300" />
               )}
             </div>
-            <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-yellow-400/20 to-orange-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-yellow-400/20 to-orange-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </button>
-          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-1" />
+          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-1 transition-colors duration-300" />
           <button
             type="button"
             onClick={() => setShowLogoutAlert(true)}
-            className="relative p-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 active:scale-95 group"
+            className="relative p-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all duration-300 active:scale-95 group"
             title="Se déconnecter"
           >
-            <Power className="w-5 h-5 transition-transform group-hover:scale-110 duration-200" />
-            <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-red-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            <Power className="w-5 h-5 transition-transform group-hover:scale-110 duration-300" />
+            <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-red-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </button>
         </div>
       </div>
 
       {/* Main content */}
-      <div className={`pt-[64px] transition-all duration-500 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'} flex flex-col h-full overflow-hidden`}>
+      <div className={`pt-[64px] transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'} flex flex-col h-full overflow-hidden`}>
         {/* Page content */}
         <main className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 lg:p-8 pb-12">
           {children}
