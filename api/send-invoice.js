@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import sgMail from '@sendgrid/mail';
+import { generatePDFWithPuppeteer } from './pdf-generator-vercel.js';
+import { generateSharedInvoiceHTML } from './invoice-template.js';
 
 // Fonction principale pour Vercel
 export default async function handler(req, res) {
@@ -140,12 +142,21 @@ export default async function handler(req, res) {
       showFixedFee: companySettings?.showFixedFee !== false
     };
 
-    // Pour Vercel, on génère un PDF simple (sans Puppeteer)
-    console.log('📄 Génération du PDF...');
-    let pdfContent;
+    // Générer le PDF avec Puppeteer (MÊME RENDU qu'en local !)
+    console.log('📄 Génération du PDF avec Puppeteer...');
+    let pdfBuffer;
     try {
-      pdfContent = generateSimplePDF(invoice, companyData);
-      console.log('✅ PDF généré avec succès');
+      // Générer le HTML avec le template exact utilisé en local
+      const htmlContent = generateSharedInvoiceHTML(
+        invoice,
+        invoice.client,
+        invoice.services,
+        companyData
+      );
+      
+      // Générer le PDF avec Puppeteer
+      pdfBuffer = await generatePDFWithPuppeteer(htmlContent);
+      console.log('✅ PDF généré avec succès (taille:', pdfBuffer.length, 'octets)');
     } catch (pdfError) {
       console.error('❌ Erreur lors de la génération du PDF:', pdfError);
       return res.status(500).json({ 
@@ -157,8 +168,12 @@ export default async function handler(req, res) {
 
     // Données email
   const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question ou précision, je reste à votre disposition.\n\nCordialement,\n${companyData.name || 'ProFlow'}`;
-    const emailSubject = customEmailData?.subject || `Facture ${invoice.invoice_number}`;
-    const fromEmail = userEmail || process.env.SENDGRID_FROM_EMAIL;
+    const emailSubject = customEmailData?.subject || `Facture N° ${invoice.invoice_number} - ${new Date().toLocaleDateString('fr-FR')}`;
+    
+    // 🔑 SOLUTION AU PROBLÈME 1 : Email expéditeur
+    // Utiliser un email FIXE vérifié sur SendGrid comme expéditeur
+    // L'email de l'utilisateur sera en "replyTo" pour que le client puisse répondre directement
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL; // ✅ Email fixe vérifié
     const fromName = companyData.name || 'ProFlow';
 
     // Template HTML simple
@@ -169,22 +184,25 @@ export default async function handler(req, res) {
     const msg = {
       to: invoice.client.email,
       from: {
-        email: fromEmail,
+        email: fromEmail,  // ✅ Email fixe vérifié sur SendGrid
         name: fromName
       },
+      replyTo: userEmail,  // ✅ Le client peut répondre directement à l'utilisateur
       subject: emailSubject,
       text: emailMessage,
       html: htmlContent,
       attachments: [
         {
-          content: pdfContent,
-          filename: `facture-${invoice.invoice_number}.html`,  // HTML au lieu de PDF pour Vercel
-          type: 'text/html',
+          content: pdfBuffer.toString('base64'),  // ✅ PDF en base64
+          filename: `facture-${invoice.invoice_number}.pdf`,  // ✅ Vrai fichier PDF
+          type: 'application/pdf',  // ✅ Type MIME PDF
           disposition: 'attachment'
         }
       ]
     };
     console.log('✅ Message préparé');
+    console.log('📧 Expéditeur (From):', fromEmail);
+    console.log('📧 Répondre à (ReplyTo):', userEmail || 'Non configuré');
 
     try {
       console.log('📧 Tentative d\'envoi via SendGrid...');
@@ -225,101 +243,6 @@ export default async function handler(req, res) {
       message: 'Erreur lors de l\'envoi de la facture',
       details: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
-  }
-}
-
-// Fonction pour générer un PDF simple (sans Puppeteer)
-function generateSimplePDF(invoice, companyData) {
-  try {
-    // Pour Vercel, on génère un PDF basique en HTML
-    // SendGrid peut utiliser du HTML simple qui sera converti en PDF
-    const servicesHTML = invoice.services && invoice.services.length > 0 
-      ? invoice.services.map(service => {
-          const hours = service.hours || service.quantity || 1;
-          const rate = service.hourly_rate || service.unit_price || 0;
-          const total = hours * rate;
-          return `<tr>
-            <td style="border: 1px solid #ddd; padding: 8px;">${service.description || 'Service'}</td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${hours}h</td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${rate.toFixed(2)}€</td>
-            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${total.toFixed(2)}€</td>
-          </tr>`;
-        }).join('')
-      : '<tr><td colspan="4" style="border: 1px solid #ddd; padding: 8px;">Aucun service</td></tr>';
-    
-    const pdfHTML = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    .header { background: #1e3c72; color: white; padding: 20px; margin-bottom: 20px; }
-    .section { margin: 20px 0; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    th { background: #1e3c72; color: white; padding: 10px; text-align: left; }
-    td { padding: 8px; border: 1px solid #ddd; }
-    .total { font-size: 18px; font-weight: bold; text-align: right; margin-top: 20px; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>FACTURE</h1>
-    <p>N° ${invoice.invoice_number || 'N/A'}</p>
-    <p>Date: ${invoice.date || new Date().toLocaleDateString('fr-FR')}</p>
-  </div>
-  
-  <div class="section">
-    <h3>Entreprise</h3>
-    <p><strong>${companyData.name || 'ProFlow'}</strong></p>
-    <p>${companyData.address || ''}</p>
-    <p>${companyData.email || ''}</p>
-    <p>${companyData.phone || ''}</p>
-    ${companyData.siret ? `<p>SIRET: ${companyData.siret}</p>` : ''}
-  </div>
-  
-  <div class="section">
-    <h3>Client</h3>
-    <p><strong>${invoice.client?.name || 'Client'}</strong></p>
-    <p>${invoice.client?.email || ''}</p>
-    <p>${invoice.client?.address || ''}</p>
-  </div>
-  
-  <div class="section">
-    <h3>Prestations</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Description</th>
-          <th style="text-align: right;">Quantité</th>
-          <th style="text-align: right;">Prix unitaire</th>
-          <th style="text-align: right;">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${servicesHTML}
-      </tbody>
-    </table>
-  </div>
-  
-  <div class="total">
-    <p>Total HT: ${(invoice.subtotal || 0).toFixed(2)}€</p>
-    <p>TVA (0%): 0.00€</p>
-    <p>Total TTC: ${(invoice.subtotal || 0).toFixed(2)}€</p>
-  </div>
-  
-  <div class="section" style="margin-top: 40px; font-size: 12px; color: #666;">
-    <p>Échéance: ${invoice.due_date || 'À réception'}</p>
-    <p>Conditions de paiement: ${companyData.paymentTerms || 'Net 30 jours'}</p>
-  </div>
-</body>
-</html>`;
-    
-    // Convertir le HTML en base64 pour l'attachement
-    return Buffer.from(pdfHTML).toString('base64');
-  } catch (error) {
-    console.error('❌ Erreur dans generateSimplePDF:', error);
-    throw new Error(`Erreur génération PDF: ${error.message}`);
   }
 }
 
