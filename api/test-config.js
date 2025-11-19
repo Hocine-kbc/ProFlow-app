@@ -21,34 +21,26 @@ export default async function handler(req, res) {
         length: process.env.SUPABASE_SERVICE_KEY?.length || 0
       },
       
-      // Email services
+      // Email service (SendGrid)
       SENDGRID_API_KEY: {
         exists: !!process.env.SENDGRID_API_KEY,
-        configured: process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.test-key-not-configured'
+        configured: process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.test-key-not-configured',
+        startsWithSG: process.env.SENDGRID_API_KEY?.startsWith('SG.')
       },
       SENDGRID_FROM_EMAIL: {
         exists: !!process.env.SENDGRID_FROM_EMAIL,
         value: process.env.SENDGRID_FROM_EMAIL || null
-      },
-      GMAIL_USER: {
-        exists: !!process.env.GMAIL_USER,
-        value: process.env.GMAIL_USER || null
-      },
-      GMAIL_APP_PASSWORD: {
-        exists: !!process.env.GMAIL_APP_PASSWORD,
-        configured: !!process.env.GMAIL_APP_PASSWORD
       }
     },
     status: {
       supabase: !!process.env.VITE_SUPABASE_URL && !!process.env.VITE_SUPABASE_ANON_KEY,
-      email: (!!process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.test-key-not-configured') || 
-             (!!process.env.GMAIL_USER && !!process.env.GMAIL_APP_PASSWORD),
+      sendgrid: !!process.env.SENDGRID_API_KEY && !!process.env.SENDGRID_FROM_EMAIL,
       ready: false
     }
   };
 
   // Statut global
-  config.status.ready = config.status.supabase && config.status.email;
+  config.status.ready = config.status.supabase && config.status.sendgrid;
 
   // Messages d'aide
   const messages = [];
@@ -59,15 +51,20 @@ export default async function handler(req, res) {
     messages.push('✅ Configuration Supabase OK');
   }
 
-  if (!config.status.email) {
-    messages.push('⚠️ Aucun service d\'email configuré. Ajoutez SendGrid (SENDGRID_API_KEY + SENDGRID_FROM_EMAIL) ou Gmail (GMAIL_USER + GMAIL_APP_PASSWORD)');
+  if (!config.status.sendgrid) {
+    if (!config.variables.SENDGRID_API_KEY.exists) {
+      messages.push('❌ SENDGRID_API_KEY manquante');
+    } else if (!config.variables.SENDGRID_API_KEY.startsWithSG) {
+      messages.push('⚠️ SENDGRID_API_KEY invalide (doit commencer par "SG.")');
+    }
+    
+    if (!config.variables.SENDGRID_FROM_EMAIL.exists) {
+      messages.push('❌ SENDGRID_FROM_EMAIL manquante');
+    }
+    
+    messages.push('💡 Créez un compte gratuit sur https://sendgrid.com et configurez les variables');
   } else {
-    if (config.variables.SENDGRID_API_KEY.configured) {
-      messages.push('✅ SendGrid configuré');
-    }
-    if (config.variables.GMAIL_USER.exists && config.variables.GMAIL_APP_PASSWORD.configured) {
-      messages.push('✅ Gmail configuré');
-    }
+    messages.push('✅ SendGrid configuré');
   }
 
   if (config.status.ready) {

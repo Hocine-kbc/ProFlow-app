@@ -1,38 +1,5 @@
-import express from 'express';
-import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import sgMail from '@sendgrid/mail';
-import nodemailer from 'nodemailer';
-import juice from 'juice';
-
-// Configuration
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-// Configuration SendGrid
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-if (SENDGRID_API_KEY && SENDGRID_API_KEY !== 'SG.test-key-not-configured') {
-  sgMail.setApiKey(SENDGRID_API_KEY);
-}
-
-// Configuration Gmail (solution de secours)
-let gmailTransporter = null;
-if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-  gmailTransporter = nodemailer.createTransporter({
-    service: 'gmail',
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD
-    }
-  });
-}
-
-// Supabase
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY
-);
 
 // Fonction principale pour Vercel
 export default async function handler(req, res) {
@@ -58,7 +25,7 @@ export default async function handler(req, res) {
       VITE_SUPABASE_ANON_KEY: !!process.env.VITE_SUPABASE_ANON_KEY,
       SUPABASE_SERVICE_KEY: !!process.env.SUPABASE_SERVICE_KEY,
       SENDGRID_API_KEY: !!process.env.SENDGRID_API_KEY,
-      GMAIL_USER: !!process.env.GMAIL_USER,
+      SENDGRID_FROM_EMAIL: !!process.env.SENDGRID_FROM_EMAIL,
     });
 
     // Vérifier les variables d'environnement critiques
@@ -71,14 +38,25 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!process.env.SENDGRID_API_KEY && !process.env.GMAIL_USER) {
-      console.warn('⚠️ Aucun service d\'email configuré (SendGrid ou Gmail)');
+    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+      console.warn('⚠️ SendGrid non configuré');
       return res.status(500).json({ 
         success: false,
         error: 'Configuration email manquante',
-        message: 'Veuillez configurer SendGrid ou Gmail dans les variables d\'environnement Vercel'
+        message: 'Veuillez configurer SENDGRID_API_KEY et SENDGRID_FROM_EMAIL dans les variables d\'environnement Vercel'
       });
     }
+
+    // Initialiser SendGrid
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    console.log('✅ SendGrid initialisé');
+
+    // Initialiser Supabase
+    const supabase = createClient(
+      process.env.VITE_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY
+    );
+    console.log('✅ Supabase initialisé');
 
     const { invoiceId, companySettings, services, customEmailData } = req.body;
     console.log('📨 Données reçues:', { invoiceId, hasServices: !!services });
@@ -211,55 +189,29 @@ export default async function handler(req, res) {
     try {
       console.log('📧 Tentative d\'envoi via SendGrid...');
       console.log('📧 De:', fromEmail, 'Vers:', invoice.client.email);
+      console.log('📧 Sujet:', emailSubject);
+      
       await sgMail.send(msg);
+      
       console.log('✅ Email envoyé avec succès via SendGrid');
-      return res.json({ success: true, message: 'Facture envoyée avec succès' });
+      return res.json({ 
+        success: true, 
+        message: 'Facture envoyée avec succès',
+        emailStatus: 'sent'
+      });
     } catch (emailError) {
       console.error('❌ Erreur SendGrid:', emailError.message);
-      console.error('SendGrid error details:', emailError.response?.body);
+      console.error('❌ Code:', emailError.code);
+      console.error('❌ Response body:', JSON.stringify(emailError.response?.body));
       
-      // Essayer Gmail comme solution de secours
-      if (gmailTransporter) {
-        try {
-          console.log('📧 Tentative d\'envoi via Gmail (fallback)...');
-          const gmailMsg = {
-            from: {
-              address: fromEmail,
-              name: fromName
-            },
-            to: invoice.client.email,
-            subject: emailSubject,
-            text: emailMessage,
-            html: htmlContent,
-            attachments: [
-              {
-                filename: `facture-${invoice.invoice_number}.pdf`,
-                content: Buffer.from(pdfContent, 'base64'),
-                contentType: 'application/pdf'
-              }
-            ]
-          };
-          
-          await gmailTransporter.sendMail(gmailMsg);
-          console.log('✅ Email envoyé avec succès via Gmail');
-          return res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
-        } catch (gmailError) {
-          console.error('❌ Erreur Gmail:', gmailError.message);
-          return res.status(500).json({ 
-            success: false, 
-            message: 'Email non envoyé (SendGrid et Gmail ont échoué)', 
-            error: `SendGrid: ${emailError.message}, Gmail: ${gmailError.message}`
-          });
-        }
-      } else {
-        console.error('❌ Gmail non configuré, impossible de fallback');
-        return res.status(500).json({ 
-          success: false, 
-          message: 'Email non envoyé (SendGrid échoué, Gmail non configuré)', 
-          error: emailError.message,
-          hint: 'Veuillez configurer SENDGRID_API_KEY ou GMAIL_USER/GMAIL_APP_PASSWORD dans les variables d\'environnement'
-        });
-      }
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Erreur lors de l\'envoi de l\'email', 
+        error: emailError.message,
+        code: emailError.code,
+        details: emailError.response?.body?.errors || [],
+        hint: 'Vérifiez que SENDGRID_API_KEY est valide et que SENDGRID_FROM_EMAIL est vérifié sur SendGrid'
+      });
     }
 
   } catch (err) {
@@ -622,6 +574,6 @@ function generateEmailHTML(invoice, companyData, message) {
 </body>
 </html>`;
 
-  // Inline CSS (sécurisant même si beaucoup de styles sont déjà inline)
-  return juice(html, { removeStyleTags: false, preserveImportant: true, applyStyleTags: true });
+  // Retourner le HTML (les styles sont déjà inline)
+  return html;
 }
