@@ -1,7 +1,7 @@
 // Solution de secours : Génération PDF avec jsPDF si Puppeteer échoue
 // Ce générateur fonctionne à 100% sur Vercel mais avec un rendu légèrement différent
 
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
 /**
