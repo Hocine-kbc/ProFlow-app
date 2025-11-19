@@ -16,12 +16,27 @@ export async function generatePDFWithPuppeteer(htmlContent) {
   try {
     console.log('🚀 Lancement de Puppeteer pour Vercel...');
     
+    // Arguments supplémentaires pour éviter les problèmes de bibliothèques manquantes
+    const chromeArgs = [
+      ...chromium.args,
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--single-process',
+      '--no-zygote',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-software-rasterizer',
+      '--disable-extensions',
+    ];
+    
+    console.log('📦 Chemin Chromium:', await chromium.executablePath());
+    
     // Lancer Puppeteer avec Chrome optimisé pour AWS Lambda/Vercel
     browser = await puppeteerCore.launch({
-      args: chromium.args,
+      args: chromeArgs,
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
+      headless: 'new',  // Utiliser le nouveau mode headless
       ignoreHTTPSErrors: true,
     });
     
@@ -57,11 +72,24 @@ export async function generatePDFWithPuppeteer(htmlContent) {
     
   } catch (error) {
     console.error('❌ Erreur lors de la génération du PDF:', error);
-    throw new Error(`Erreur génération PDF: ${error.message}`);
+    console.error('❌ Stack trace:', error.stack);
+    
+    // Message d'erreur plus détaillé
+    let errorMessage = `Erreur génération PDF: ${error.message}`;
+    
+    if (error.message.includes('Failed to launch')) {
+      errorMessage += '\n\n💡 Conseil: Vérifiez que @sparticuz/chromium est bien installé et à jour.';
+    }
+    
+    throw new Error(errorMessage);
   } finally {
     if (browser) {
-      await browser.close();
-      console.log('✅ Browser fermé');
+      try {
+        await browser.close();
+        console.log('✅ Browser fermé');
+      } catch (closeError) {
+        console.error('⚠️ Erreur lors de la fermeture du browser:', closeError.message);
+      }
     }
   }
 }

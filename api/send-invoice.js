@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import sgMail from '@sendgrid/mail';
 import { generatePDFWithPuppeteer } from './pdf-generator-vercel.js';
 import { generateSharedInvoiceHTML } from './invoice-template.js';
+import { generatePDFWithJsPDF } from './pdf-generator-fallback.js';
 
 // Fonction principale pour Vercel
 export default async function handler(req, res) {
@@ -142,10 +143,15 @@ export default async function handler(req, res) {
       showFixedFee: companySettings?.showFixedFee !== false
     };
 
-    // Générer le PDF avec Puppeteer (MÊME RENDU qu'en local !)
-    console.log('📄 Génération du PDF avec Puppeteer...');
+    // Générer le PDF (essai avec Puppeteer, fallback sur jsPDF si échec)
+    console.log('📄 Génération du PDF...');
     let pdfBuffer;
+    let pdfMethod = 'puppeteer';
+    
     try {
+      // TENTATIVE 1 : Puppeteer (MÊME RENDU qu'en local !)
+      console.log('🎯 Tentative avec Puppeteer...');
+      
       // Générer le HTML avec le template exact utilisé en local
       const htmlContent = generateSharedInvoiceHTML(
         invoice,
@@ -156,14 +162,34 @@ export default async function handler(req, res) {
       
       // Générer le PDF avec Puppeteer
       pdfBuffer = await generatePDFWithPuppeteer(htmlContent);
-      console.log('✅ PDF généré avec succès (taille:', pdfBuffer.length, 'octets)');
-    } catch (pdfError) {
-      console.error('❌ Erreur lors de la génération du PDF:', pdfError);
-      return res.status(500).json({ 
-        success: false,
-        error: 'Erreur lors de la génération du PDF',
-        message: pdfError.message
-      });
+      console.log('✅ PDF généré avec Puppeteer (taille:', pdfBuffer.length, 'octets)');
+      
+    } catch (puppeteerError) {
+      console.warn('⚠️ Puppeteer a échoué:', puppeteerError.message);
+      console.log('🔄 Utilisation de la solution de secours (jsPDF)...');
+      
+      // TENTATIVE 2 : jsPDF (solution de secours)
+      try {
+        pdfBuffer = generatePDFWithJsPDF(
+          invoice,
+          invoice.client,
+          invoice.services,
+          companyData
+        );
+        pdfMethod = 'jspdf';
+        console.log('✅ PDF généré avec jsPDF (fallback) (taille:', pdfBuffer.length, 'octets)');
+      } catch (jsPdfError) {
+        console.error('❌ jsPDF a également échoué:', jsPdfError);
+        return res.status(500).json({ 
+          success: false,
+          error: 'Erreur lors de la génération du PDF',
+          message: 'Impossible de générer le PDF avec Puppeteer et jsPDF',
+          details: {
+            puppeteer: puppeteerError.message,
+            jspdf: jsPdfError.message
+          }
+        });
+      }
     }
 
     // Données email
@@ -203,6 +229,7 @@ export default async function handler(req, res) {
     console.log('✅ Message préparé');
     console.log('📧 Expéditeur (From):', fromEmail);
     console.log('📧 Répondre à (ReplyTo):', userEmail || 'Non configuré');
+    console.log('📄 Méthode PDF utilisée:', pdfMethod === 'puppeteer' ? 'Puppeteer (rendu exact)' : 'jsPDF (fallback)');
 
     try {
       console.log('📧 Tentative d\'envoi via SendGrid...');
@@ -215,7 +242,9 @@ export default async function handler(req, res) {
       return res.json({ 
         success: true, 
         message: 'Facture envoyée avec succès',
-        emailStatus: 'sent'
+        emailStatus: 'sent',
+        pdfMethod: pdfMethod,  // Indiquer quelle méthode a été utilisée
+        info: pdfMethod === 'jspdf' ? 'PDF généré avec solution de secours (rendu légèrement différent)' : 'PDF généré avec le template exact'
       });
     } catch (emailError) {
       console.error('❌ Erreur SendGrid:', emailError.message);
