@@ -40,6 +40,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -51,7 +52,36 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('🚀 Début de l\'envoi de facture...');
+    console.log('📦 Variables d\'environnement présentes:', {
+      VITE_SUPABASE_URL: !!process.env.VITE_SUPABASE_URL,
+      VITE_SUPABASE_ANON_KEY: !!process.env.VITE_SUPABASE_ANON_KEY,
+      SUPABASE_SERVICE_KEY: !!process.env.SUPABASE_SERVICE_KEY,
+      SENDGRID_API_KEY: !!process.env.SENDGRID_API_KEY,
+      GMAIL_USER: !!process.env.GMAIL_USER,
+    });
+
+    // Vérifier les variables d'environnement critiques
+    if (!process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_ANON_KEY) {
+      console.error('❌ Variables Supabase manquantes');
+      return res.status(500).json({ 
+        success: false,
+        error: 'Configuration serveur manquante (Supabase)',
+        message: 'Les variables d\'environnement Supabase ne sont pas configurées sur Vercel'
+      });
+    }
+
+    if (!process.env.SENDGRID_API_KEY && !process.env.GMAIL_USER) {
+      console.warn('⚠️ Aucun service d\'email configuré (SendGrid ou Gmail)');
+      return res.status(500).json({ 
+        success: false,
+        error: 'Configuration email manquante',
+        message: 'Veuillez configurer SendGrid ou Gmail dans les variables d\'environnement Vercel'
+      });
+    }
+
     const { invoiceId, companySettings, services, customEmailData } = req.body;
+    console.log('📨 Données reçues:', { invoiceId, hasServices: !!services });
     
     if (!invoiceId) {
       return res.status(400).json({ error: 'ID requis' });
@@ -133,8 +163,19 @@ export default async function handler(req, res) {
     };
 
     // Pour Vercel, on génère un PDF simple (sans Puppeteer)
-    // Vous pouvez utiliser une bibliothèque comme jsPDF ou générer un HTML simple
-    const pdfContent = generateSimplePDF(invoice, companyData);
+    console.log('📄 Génération du PDF...');
+    let pdfContent;
+    try {
+      pdfContent = generateSimplePDF(invoice, companyData);
+      console.log('✅ PDF généré avec succès');
+    } catch (pdfError) {
+      console.error('❌ Erreur lors de la génération du PDF:', pdfError);
+      return res.status(500).json({ 
+        success: false,
+        error: 'Erreur lors de la génération du PDF',
+        message: pdfError.message
+      });
+    }
 
     // Données email
   const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question ou précision, je reste à votre disposition.\n\nCordialement,\n${companyData.name || 'ProFlow'}`;
@@ -145,7 +186,8 @@ export default async function handler(req, res) {
     // Template HTML simple
     const htmlContent = generateEmailHTML(invoice, companyData, emailMessage);
 
-    // Envoyer email
+    // Préparer le message email
+    console.log('📧 Préparation du message email...');
     const msg = {
       to: invoice.client.email,
       from: {
@@ -158,20 +200,28 @@ export default async function handler(req, res) {
       attachments: [
         {
           content: pdfContent,
-          filename: `facture-${invoice.invoice_number}.pdf`,
-          type: 'application/pdf',
+          filename: `facture-${invoice.invoice_number}.html`,  // HTML au lieu de PDF pour Vercel
+          type: 'text/html',
           disposition: 'attachment'
         }
       ]
     };
+    console.log('✅ Message préparé');
 
     try {
+      console.log('📧 Tentative d\'envoi via SendGrid...');
+      console.log('📧 De:', fromEmail, 'Vers:', invoice.client.email);
       await sgMail.send(msg);
-      res.json({ success: true, message: 'Facture envoyée avec succès' });
+      console.log('✅ Email envoyé avec succès via SendGrid');
+      return res.json({ success: true, message: 'Facture envoyée avec succès' });
     } catch (emailError) {
+      console.error('❌ Erreur SendGrid:', emailError.message);
+      console.error('SendGrid error details:', emailError.response?.body);
+      
       // Essayer Gmail comme solution de secours
       if (gmailTransporter) {
         try {
+          console.log('📧 Tentative d\'envoi via Gmail (fallback)...');
           const gmailMsg = {
             from: {
               address: fromEmail,
@@ -184,61 +234,141 @@ export default async function handler(req, res) {
             attachments: [
               {
                 filename: `facture-${invoice.invoice_number}.pdf`,
-                content: pdfContent,
+                content: Buffer.from(pdfContent, 'base64'),
                 contentType: 'application/pdf'
               }
             ]
           };
           
           await gmailTransporter.sendMail(gmailMsg);
-          res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
+          console.log('✅ Email envoyé avec succès via Gmail');
+          return res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
         } catch (gmailError) {
-          res.json({ 
+          console.error('❌ Erreur Gmail:', gmailError.message);
+          return res.status(500).json({ 
             success: false, 
             message: 'Email non envoyé (SendGrid et Gmail ont échoué)', 
             error: `SendGrid: ${emailError.message}, Gmail: ${gmailError.message}`
           });
         }
       } else {
-        res.json({ 
+        console.error('❌ Gmail non configuré, impossible de fallback');
+        return res.status(500).json({ 
           success: false, 
           message: 'Email non envoyé (SendGrid échoué, Gmail non configuré)', 
-          error: emailError.message 
+          error: emailError.message,
+          hint: 'Veuillez configurer SENDGRID_API_KEY ou GMAIL_USER/GMAIL_APP_PASSWORD dans les variables d\'environnement'
         });
       }
     }
 
   } catch (err) {
-    console.error('❌ Erreur:', err);
-    res.status(500).json({ error: err.message });
+    console.error('❌ Erreur globale:', err);
+    console.error('Stack trace:', err.stack);
+    
+    // S'assurer de toujours retourner du JSON
+    return res.status(500).json({ 
+      success: false,
+      error: err.message || 'Une erreur serveur est survenue',
+      message: 'Erreur lors de l\'envoi de la facture',
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 }
 
 // Fonction pour générer un PDF simple (sans Puppeteer)
 function generateSimplePDF(invoice, companyData) {
-  // Pour Vercel, on génère un PDF basique
-  // Vous pouvez utiliser jsPDF ou une autre bibliothèque compatible
-  const pdfContent = `
-    Facture ${invoice.invoice_number}
+  try {
+    // Pour Vercel, on génère un PDF basique en HTML
+    // SendGrid peut utiliser du HTML simple qui sera converti en PDF
+    const servicesHTML = invoice.services && invoice.services.length > 0 
+      ? invoice.services.map(service => {
+          const hours = service.hours || service.quantity || 1;
+          const rate = service.hourly_rate || service.unit_price || 0;
+          const total = hours * rate;
+          return `<tr>
+            <td style="border: 1px solid #ddd; padding: 8px;">${service.description || 'Service'}</td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${hours}h</td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${rate.toFixed(2)}€</td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${total.toFixed(2)}€</td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="4" style="border: 1px solid #ddd; padding: 8px;">Aucun service</td></tr>';
     
-    Client: ${invoice.client.name}
-    Email: ${invoice.client.email}
-    
-    Services:
-    ${invoice.services.map(service => 
-      `${service.description} - ${service.hours}h - ${service.hourly_rate}€/h`
-    ).join('\n')}
-    
-    Total: ${invoice.subtotal}€
-    
-    ${companyData.name}
-    ${companyData.address}
-    ${companyData.email}
-    ${companyData.phone}
-  `;
+    const pdfHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .header { background: #1e3c72; color: white; padding: 20px; margin-bottom: 20px; }
+    .section { margin: 20px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th { background: #1e3c72; color: white; padding: 10px; text-align: left; }
+    td { padding: 8px; border: 1px solid #ddd; }
+    .total { font-size: 18px; font-weight: bold; text-align: right; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>FACTURE</h1>
+    <p>N° ${invoice.invoice_number || 'N/A'}</p>
+    <p>Date: ${invoice.date || new Date().toLocaleDateString('fr-FR')}</p>
+  </div>
   
-  // Convertir en base64 pour l'attachement
-  return Buffer.from(pdfContent).toString('base64');
+  <div class="section">
+    <h3>Entreprise</h3>
+    <p><strong>${companyData.name || 'ProFlow'}</strong></p>
+    <p>${companyData.address || ''}</p>
+    <p>${companyData.email || ''}</p>
+    <p>${companyData.phone || ''}</p>
+    ${companyData.siret ? `<p>SIRET: ${companyData.siret}</p>` : ''}
+  </div>
+  
+  <div class="section">
+    <h3>Client</h3>
+    <p><strong>${invoice.client?.name || 'Client'}</strong></p>
+    <p>${invoice.client?.email || ''}</p>
+    <p>${invoice.client?.address || ''}</p>
+  </div>
+  
+  <div class="section">
+    <h3>Prestations</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th style="text-align: right;">Quantité</th>
+          <th style="text-align: right;">Prix unitaire</th>
+          <th style="text-align: right;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${servicesHTML}
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="total">
+    <p>Total HT: ${(invoice.subtotal || 0).toFixed(2)}€</p>
+    <p>TVA (0%): 0.00€</p>
+    <p>Total TTC: ${(invoice.subtotal || 0).toFixed(2)}€</p>
+  </div>
+  
+  <div class="section" style="margin-top: 40px; font-size: 12px; color: #666;">
+    <p>Échéance: ${invoice.due_date || 'À réception'}</p>
+    <p>Conditions de paiement: ${companyData.paymentTerms || 'Net 30 jours'}</p>
+  </div>
+</body>
+</html>`;
+    
+    // Convertir le HTML en base64 pour l'attachement
+    return Buffer.from(pdfHTML).toString('base64');
+  } catch (error) {
+    console.error('❌ Erreur dans generateSimplePDF:', error);
+    throw new Error(`Erreur génération PDF: ${error.message}`);
+  }
 }
 
 // Fonction pour générer le HTML de l'email (ultra compatible)
