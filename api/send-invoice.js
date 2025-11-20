@@ -3,7 +3,7 @@ import sgMail from '@sendgrid/mail';
 import nodemailer from 'nodemailer';
 import { generatePDFWithPuppeteer } from './pdf-generator-vercel.js';
 import { generateSharedInvoiceHTML } from './invoice-template.js';
-import { generatePDFWithHtmlPdfNode } from './pdf-generator-fallback.js';
+import { generatePDFWithJsPDF } from './pdf-generator-fallback.js';
 
 // Fonction principale pour Vercel
 export default async function handler(req, res) {
@@ -188,28 +188,28 @@ export default async function handler(req, res) {
       
     } catch (puppeteerError) {
       console.warn('⚠️ Puppeteer a échoué:', puppeteerError.message);
-      console.log('🔄 Utilisation de la solution de secours (html-pdf-node)...');
-      console.log('✨ Le MÊME TEMPLATE sera utilisé !');
+      console.log('🔄 Utilisation de la solution de secours (jsPDF)...');
+      console.log('📄 Design optimisé pour Vercel');
       
-      // TENTATIVE 2 : html-pdf-node (solution de secours avec MÊME TEMPLATE)
+      // TENTATIVE 2 : jsPDF (solution de secours fiable à 100%)
       try {
-        pdfBuffer = await generatePDFWithHtmlPdfNode(
+        pdfBuffer = generatePDFWithJsPDF(
           invoice,
           invoice.client,
           invoice.services,
           companyData
         );
-        pdfMethod = 'html-pdf-node';
-        console.log('✅ PDF généré avec html-pdf-node (fallback) (taille:', pdfBuffer.length, 'octets)');
-      } catch (htmlPdfError) {
-        console.error('❌ html-pdf-node a également échoué:', htmlPdfError);
+        pdfMethod = 'jspdf';
+        console.log('✅ PDF généré avec jsPDF (fallback) (taille:', pdfBuffer.length, 'octets)');
+      } catch (jsPdfError) {
+        console.error('❌ jsPDF a également échoué:', jsPdfError);
         return res.status(500).json({ 
           success: false,
           error: 'Erreur lors de la génération du PDF',
-          message: 'Impossible de générer le PDF avec Puppeteer et html-pdf-node',
+          message: 'Impossible de générer le PDF',
           details: {
             puppeteer: puppeteerError.message,
-            htmlPdfNode: htmlPdfError.message
+            jspdf: jsPdfError.message
           }
         });
       }
@@ -242,7 +242,7 @@ export default async function handler(req, res) {
     console.log('📧 Expéditeur (From):', fromEmail);
     console.log('📧 Destinataire (To):', invoice.client.email);
     console.log('📧 Sujet:', emailSubject);
-    console.log('📄 Méthode PDF:', pdfMethod === 'puppeteer' ? 'Puppeteer (rendu exact)' : 'html-pdf-node (fallback avec MÊME TEMPLATE)');
+    console.log('📄 Méthode PDF:', pdfMethod === 'puppeteer' ? 'Puppeteer (template exact)' : 'jsPDF (design optimisé pour Vercel)');
 
     try {
       if (emailService === 'gmail') {
@@ -273,7 +273,7 @@ export default async function handler(req, res) {
           emailStatus: 'sent',
           emailService: 'gmail',
           pdfMethod: pdfMethod,
-          info: pdfMethod === 'html-pdf-node' ? 'PDF généré avec solution de secours (MÊME TEMPLATE que Puppeteer !)' : 'PDF généré avec Puppeteer (template exact)'
+          info: pdfMethod === 'jspdf' ? 'PDF généré avec jsPDF (design optimisé pour Vercel)' : 'PDF généré avec Puppeteer (template exact)'
         });
         
       } else {
@@ -309,7 +309,7 @@ export default async function handler(req, res) {
           emailStatus: 'sent',
           emailService: 'sendgrid',
           pdfMethod: pdfMethod,
-          info: pdfMethod === 'html-pdf-node' ? 'PDF généré avec solution de secours (MÊME TEMPLATE que Puppeteer !)' : 'PDF généré avec Puppeteer (template exact)'
+          info: pdfMethod === 'jspdf' ? 'PDF généré avec jsPDF (design optimisé pour Vercel)' : 'PDF généré avec Puppeteer (template exact)'
         });
       }
       
