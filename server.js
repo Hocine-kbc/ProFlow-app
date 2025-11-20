@@ -241,12 +241,15 @@ app.post('/api/send-invoice', async (req, res) => {
     console.log('📧 Message email utilisé:', emailMessage);
     console.log('📧 Sujet email utilisé:', emailSubject);
     
-    // Utiliser l'email de l'utilisateur connecté comme expéditeur
-    const fromEmail = userEmail || process.env.SENDGRID_FROM_EMAIL;
+    // Utiliser une adresse fixe vérifiée comme expéditeur
+    // L'email de l'utilisateur sera en Reply-To pour que les clients puissent répondre
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL || userEmail;
     const fromName = companyData.name || 'ProFlow';
+    const replyToEmail = userEmail; // Email de l'utilisateur pour les réponses
     
     console.log('📧 Email expéditeur utilisé:', fromEmail);
     console.log('📧 Nom expéditeur utilisé:', fromName);
+    console.log('📧 Reply-To (réponses vers):', replyToEmail);
     
     // Fonction pour convertir date YYYY-MM-DD en DD-MM-YYYY
     const formatDateFR = (dateString) => {
@@ -572,6 +575,10 @@ app.post('/api/send-invoice', async (req, res) => {
         email: fromEmail,
         name: fromName
       },
+      replyTo: {
+        email: replyToEmail,
+        name: fromName
+      },
       subject: emailSubject,
       text: emailMessage,
       html: inlinedHtml,
@@ -605,6 +612,10 @@ app.post('/api/send-invoice', async (req, res) => {
             address: fromEmail,
             name: fromName
           },
+          replyTo: {
+            address: replyToEmail,
+            name: fromName
+          },
           to: invoice.client.email,
           subject: emailSubject,
           text: emailMessage,
@@ -634,6 +645,10 @@ app.post('/api/send-invoice', async (req, res) => {
           const gmailMsg = {
             from: {
               address: fromEmail,
+              name: fromName
+            },
+            replyTo: {
+              address: replyToEmail,
               name: fromName
             },
             to: invoice.client.email,
