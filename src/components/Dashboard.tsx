@@ -424,7 +424,8 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-full transition-all duration-200 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md active:scale-95 flex-1"
             >
               <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="whitespace-nowrap">+ Client</span>
+              <span className="whitespace-nowrap sm:hidden">+ Client</span>
+              <span className="whitespace-nowrap hidden sm:inline">Nouveau client</span>
             </button>
             <button
               type="button"
@@ -432,7 +433,8 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-full transition-all duration-200 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md active:scale-95 flex-1"
             >
               <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="whitespace-nowrap">+ Prestation</span>
+              <span className="whitespace-nowrap sm:hidden">+ Prestation</span>
+              <span className="whitespace-nowrap hidden sm:inline">Nouvelle prestation</span>
             </button>
             <button
               type="button"
@@ -440,7 +442,8 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
               className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-full transition-all duration-200 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md active:scale-95 flex-1"
             >
               <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="whitespace-nowrap">+ Facture</span>
+              <span className="whitespace-nowrap sm:hidden">+ Facture</span>
+              <span className="whitespace-nowrap hidden sm:inline">Nouvelle facture</span>
             </button>
           </div>
         </div>
