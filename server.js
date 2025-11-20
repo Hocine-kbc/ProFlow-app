@@ -592,9 +592,8 @@ app.post('/api/send-invoice', async (req, res) => {
       ]
     };
 
-    // Utiliser SendGrid en priorité (plus fiable pour multi-utilisateurs)
-    // Gmail sera utilisé uniquement en fallback si SendGrid échoue
-    const useGmailFirst = false; // Désactivé : Gmail ne supporte pas le multi-utilisateurs
+    // Utiliser Gmail en priorité si configuré, sinon SendGrid
+    const useGmailFirst = !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
     
     if (useGmailFirst && gmailTransporter) {
       // PRIORITÉ 1 : Gmail
