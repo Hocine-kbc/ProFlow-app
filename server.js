@@ -592,8 +592,9 @@ app.post('/api/send-invoice', async (req, res) => {
       ]
     };
 
-    // Utiliser Gmail en priorité si configuré, sinon SendGrid
-    const useGmailFirst = !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
+    // Utiliser SendGrid en priorité - Gmail timeout depuis Railway
+    // Gmail ne fonctionne pas de manière fiable depuis les serveurs cloud
+    const useGmailFirst = false;
     
     if (useGmailFirst && gmailTransporter) {
       // PRIORITÉ 1 : Gmail
