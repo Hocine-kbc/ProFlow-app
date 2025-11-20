@@ -594,36 +594,34 @@ app.post('/api/send-invoice', async (req, res) => {
       await sgMail.send(msg);
       console.log('✅ Email envoyé avec succès (SendGrid) à:', invoice.client.email);
       
-      // Toujours essayer Gmail en backup car SendGrid peut rejeter certains emails
-      console.log('📤 Tentative backup Gmail pour:', invoice.client.email);
-      if (gmailTransporter) {
-        try {
-          const gmailMsg = {
-            from: {
-              address: fromEmail,
-              name: fromName
-            },
-            to: invoice.client.email,
-            subject: emailSubject,
-            text: emailMessage,
-            html: inlinedHtml,
-            attachments: [
-              {
-                filename: pdfData.fileName,
-                content: pdfData.buffer,
-                contentType: 'application/pdf'
-              }
-            ]
-          };
-          
-          await gmailTransporter.sendMail(gmailMsg);
-          console.log('✅ Email backup envoyé avec succès (Gmail) à:', invoice.client.email);
-        } catch (gmailError) {
-          console.error('⚠️ Erreur Gmail backup (non bloquant):', gmailError.message);
-        }
-      }
-      
+      // Répondre immédiatement au client
       res.json({ success: true, message: 'Facture envoyée avec succès' });
+      
+      // Essayer Gmail en backup de manière asynchrone (ne bloque pas la réponse)
+      if (gmailTransporter) {
+        console.log('📤 Tentative backup Gmail en arrière-plan pour:', invoice.client.email);
+        gmailTransporter.sendMail({
+          from: {
+            address: fromEmail,
+            name: fromName
+          },
+          to: invoice.client.email,
+          subject: emailSubject,
+          text: emailMessage,
+          html: inlinedHtml,
+          attachments: [
+            {
+              filename: pdfData.fileName,
+              content: pdfData.buffer,
+              contentType: 'application/pdf'
+            }
+          ]
+        }).then(() => {
+          console.log('✅ Email backup envoyé avec succès (Gmail) à:', invoice.client.email);
+        }).catch((gmailError) => {
+          console.error('⚠️ Erreur Gmail backup (non bloquant):', gmailError.message);
+        });
+      }
     } catch (emailError) {
       console.error('❌ Erreur SendGrid:', emailError.message);
       console.error('❌ Détails complets:', JSON.stringify(emailError.response?.body, null, 2));
