@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 import { generatePDFWithPuppeteer } from './pdf-generator-vercel.js';
 import { generateSharedInvoiceHTML } from './invoice-template.js';
 import { generatePDFWithJsPDF } from './pdf-generator-fallback.js';
@@ -41,18 +42,39 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
-      console.warn('⚠️ SendGrid non configuré');
+    // Détecter quel service d'email est configuré
+    const hasGmail = process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD;
+    const hasSendGrid = process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL;
+    
+    if (!hasGmail && !hasSendGrid) {
+      console.error('❌ Aucun service d\'email configuré');
       return res.status(500).json({ 
         success: false,
         error: 'Configuration email manquante',
-        message: 'Veuillez configurer SENDGRID_API_KEY et SENDGRID_FROM_EMAIL dans les variables d\'environnement Vercel'
+        message: 'Veuillez configurer Gmail (GMAIL_USER + GMAIL_APP_PASSWORD) ou SendGrid (SENDGRID_API_KEY + SENDGRID_FROM_EMAIL)'
       });
     }
 
-    // Initialiser SendGrid
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    console.log('✅ SendGrid initialisé');
+    // Initialiser le service d'email
+    let emailService = null;
+    let gmailTransporter = null;
+    
+    if (hasGmail) {
+      // Priorité à Gmail si configuré
+      gmailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD
+        }
+      });
+      emailService = 'gmail';
+      console.log('✅ Gmail initialisé (Nodemailer)');
+    } else if (hasSendGrid) {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      emailService = 'sendgrid';
+      console.log('✅ SendGrid initialisé');
+    }
 
     // Initialiser Supabase
     const supabase = createClient(
@@ -193,71 +215,115 @@ export default async function handler(req, res) {
     }
 
     // Données email
-  const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question ou précision, je reste à votre disposition.\n\nCordialement,\n${companyData.name || 'ProFlow'}`;
+    const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question ou précision, je reste à votre disposition.\n\nCordialement,\n${companyData.name || 'ProFlow'}`;
     const emailSubject = customEmailData?.subject || `Facture N° ${invoice.invoice_number} - ${new Date().toLocaleDateString('fr-FR')}`;
     
-    // 🔑 SOLUTION AU PROBLÈME 1 : Email expéditeur
-    // Utiliser un email FIXE vérifié sur SendGrid comme expéditeur
-    // L'email de l'utilisateur sera en "replyTo" pour que le client puisse répondre directement
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL; // ✅ Email fixe vérifié
-    const fromName = companyData.name || 'ProFlow';
+    // Configurer l'expéditeur selon le service
+    let fromEmail, fromName;
+    
+    if (emailService === 'gmail') {
+      // Avec Gmail : Utiliser l'email de l'utilisateur (ou GMAIL_USER par défaut)
+      fromEmail = userEmail || process.env.GMAIL_USER;
+      fromName = companyData.name || 'ProFlow';
+      console.log('📧 Service email: Gmail (expéditeur = utilisateur)');
+    } else {
+      // Avec SendGrid : Email fixe vérifié + replyTo
+      fromEmail = process.env.SENDGRID_FROM_EMAIL;
+      fromName = companyData.name || 'ProFlow';
+      console.log('📧 Service email: SendGrid (expéditeur fixe + replyTo)');
+    }
 
     // Template HTML simple
     const htmlContent = generateEmailHTML(invoice, companyData, emailMessage);
 
-    // Préparer le message email
+    // Envoi de l'email selon le service configuré
     console.log('📧 Préparation du message email...');
-    const msg = {
-      to: invoice.client.email,
-      from: {
-        email: fromEmail,  // ✅ Email fixe vérifié sur SendGrid
-        name: fromName
-      },
-      replyTo: userEmail,  // ✅ Le client peut répondre directement à l'utilisateur
-      subject: emailSubject,
-      text: emailMessage,
-      html: htmlContent,
-      attachments: [
-        {
-          content: pdfBuffer.toString('base64'),  // ✅ PDF en base64
-          filename: `facture-${invoice.invoice_number}.pdf`,  // ✅ Vrai fichier PDF
-          type: 'application/pdf',  // ✅ Type MIME PDF
-          disposition: 'attachment'
-        }
-      ]
-    };
-    console.log('✅ Message préparé');
     console.log('📧 Expéditeur (From):', fromEmail);
-    console.log('📧 Répondre à (ReplyTo):', userEmail || 'Non configuré');
-    console.log('📄 Méthode PDF utilisée:', pdfMethod === 'puppeteer' ? 'Puppeteer (rendu exact)' : 'jsPDF (fallback)');
+    console.log('📧 Destinataire (To):', invoice.client.email);
+    console.log('📧 Sujet:', emailSubject);
+    console.log('📄 Méthode PDF:', pdfMethod === 'puppeteer' ? 'Puppeteer (rendu exact)' : 'jsPDF (fallback)');
 
     try {
-      console.log('📧 Tentative d\'envoi via SendGrid...');
-      console.log('📧 De:', fromEmail, 'Vers:', invoice.client.email);
-      console.log('📧 Sujet:', emailSubject);
+      if (emailService === 'gmail') {
+        // ===== ENVOI VIA GMAIL (NODEMAILER) =====
+        console.log('📧 Tentative d\'envoi via Gmail (Nodemailer)...');
+        
+        const mailOptions = {
+          from: `"${fromName}" <${fromEmail}>`,
+          to: invoice.client.email,
+          subject: emailSubject,
+          text: emailMessage,
+          html: htmlContent,
+          attachments: [
+            {
+              filename: `facture-${invoice.invoice_number}.pdf`,
+              content: pdfBuffer,
+              contentType: 'application/pdf'
+            }
+          ]
+        };
+
+        await gmailTransporter.sendMail(mailOptions);
+        console.log('✅ Email envoyé avec succès via Gmail');
+        
+        return res.json({ 
+          success: true, 
+          message: 'Facture envoyée avec succès',
+          emailStatus: 'sent',
+          emailService: 'gmail',
+          pdfMethod: pdfMethod,
+          info: pdfMethod === 'jspdf' ? 'PDF généré avec solution de secours (rendu légèrement différent)' : 'PDF généré avec le template exact'
+        });
+        
+      } else {
+        // ===== ENVOI VIA SENDGRID =====
+        console.log('📧 Tentative d\'envoi via SendGrid...');
+        
+        const msg = {
+          to: invoice.client.email,
+          from: {
+            email: fromEmail,
+            name: fromName
+          },
+          replyTo: userEmail,  // Le client peut répondre à l'utilisateur
+          subject: emailSubject,
+          text: emailMessage,
+          html: htmlContent,
+          attachments: [
+            {
+              content: pdfBuffer.toString('base64'),
+              filename: `facture-${invoice.invoice_number}.pdf`,
+              type: 'application/pdf',
+              disposition: 'attachment'
+            }
+          ]
+        };
+
+        await sgMail.send(msg);
+        console.log('✅ Email envoyé avec succès via SendGrid');
+        
+        return res.json({ 
+          success: true, 
+          message: 'Facture envoyée avec succès',
+          emailStatus: 'sent',
+          emailService: 'sendgrid',
+          pdfMethod: pdfMethod,
+          info: pdfMethod === 'jspdf' ? 'PDF généré avec solution de secours (rendu légèrement différent)' : 'PDF généré avec le template exact'
+        });
+      }
       
-      await sgMail.send(msg);
-      
-      console.log('✅ Email envoyé avec succès via SendGrid');
-      return res.json({ 
-        success: true, 
-        message: 'Facture envoyée avec succès',
-        emailStatus: 'sent',
-        pdfMethod: pdfMethod,  // Indiquer quelle méthode a été utilisée
-        info: pdfMethod === 'jspdf' ? 'PDF généré avec solution de secours (rendu légèrement différent)' : 'PDF généré avec le template exact'
-      });
     } catch (emailError) {
-      console.error('❌ Erreur SendGrid:', emailError.message);
-      console.error('❌ Code:', emailError.code);
-      console.error('❌ Response body:', JSON.stringify(emailError.response?.body));
+      console.error(`❌ Erreur ${emailService}:`, emailError.message);
+      console.error('❌ Stack:', emailError.stack);
       
       return res.status(500).json({ 
         success: false, 
-        message: 'Erreur lors de l\'envoi de l\'email', 
+        message: `Erreur lors de l'envoi de l'email via ${emailService}`, 
         error: emailError.message,
-        code: emailError.code,
-        details: emailError.response?.body?.errors || [],
-        hint: 'Vérifiez que SENDGRID_API_KEY est valide et que SENDGRID_FROM_EMAIL est vérifié sur SendGrid'
+        emailService: emailService,
+        hint: emailService === 'gmail' 
+          ? 'Vérifiez GMAIL_USER et GMAIL_APP_PASSWORD (utilisez un mot de passe d\'application, pas votre mot de passe normal)'
+          : 'Vérifiez que SENDGRID_API_KEY est valide et que SENDGRID_FROM_EMAIL est vérifié sur SendGrid'
       });
     }
 
