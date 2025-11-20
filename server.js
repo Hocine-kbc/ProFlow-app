@@ -592,28 +592,20 @@ app.post('/api/send-invoice', async (req, res) => {
       ]
     };
 
-    try {
-      console.log('📤 Tentative d\'envoi SendGrid à:', invoice.client.email);
-      console.log('📤 Expéditeur:', fromEmail);
-      console.log('📤 Destinataire:', invoice.client.email);
-      console.log('📤 Taille PDF:', pdfData.buffer.length, 'octets');
-      
-      await sgMail.send(msg);
-      console.log('✅ Email envoyé avec succès (SendGrid) à:', invoice.client.email);
-      
-      // Répondre immédiatement au client
-      res.json({ success: true, message: 'Facture envoyée avec succès' });
-      
-      // Essayer Gmail en backup de manière asynchrone (ne bloque pas la réponse)
-      if (gmailTransporter) {
-        console.log('📤 Tentative backup Gmail en arrière-plan pour:', invoice.client.email);
-        gmailTransporter.sendMail({
+    // Utiliser Gmail en priorité si configuré, sinon SendGrid
+    const useGmailFirst = !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
+    
+    if (useGmailFirst && gmailTransporter) {
+      // PRIORITÉ 1 : Gmail
+      try {
+        console.log('📤 Tentative d\'envoi Gmail à:', invoice.client.email);
+        console.log('📤 Expéditeur:', replyToEmail); // Avec Gmail, on envoie depuis l'email de l'utilisateur
+        console.log('📤 Destinataire:', invoice.client.email);
+        console.log('📤 Taille PDF:', pdfData.buffer.length, 'octets');
+        
+        const gmailMsg = {
           from: {
-            address: fromEmail,
-            name: fromName
-          },
-          replyTo: {
-            address: replyToEmail,
+            address: replyToEmail, // Envoyer depuis l'email de l'utilisateur
             name: fromName
           },
           to: invoice.client.email,
@@ -627,72 +619,107 @@ app.post('/api/send-invoice', async (req, res) => {
               contentType: 'application/pdf'
             }
           ]
-        }).then(() => {
-          console.log('✅ Email backup envoyé avec succès (Gmail) à:', invoice.client.email);
-        }).catch((gmailError) => {
-          console.error('⚠️ Erreur Gmail backup (non bloquant):', gmailError.message);
-        });
-      }
-    } catch (emailError) {
-      console.error('❌ Erreur SendGrid:', emailError.message);
-      console.error('❌ Détails complets:', JSON.stringify(emailError.response?.body, null, 2));
-      
-      // Essayer Gmail comme solution de secours
-      if (gmailTransporter) {
-        try {
-          console.log('🔄 Tentative d\'envoi avec Gmail...');
-          
-          const gmailMsg = {
-            from: {
-              address: fromEmail,
-              name: fromName
-            },
-            replyTo: {
-              address: replyToEmail,
-              name: fromName
-            },
-            to: invoice.client.email,
-            subject: emailSubject,
-            text: emailMessage,
-            html: inlinedHtml,
-            attachments: [
-              {
-                filename: pdfData.fileName,
-                content: pdfData.buffer,
-                contentType: 'application/pdf'
-              }
-            ]
-          };
-          
-          await gmailTransporter.sendMail(gmailMsg);
-          console.log('✅ Email envoyé avec succès (Gmail) à:', invoice.client.email);
-          res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
-        } catch (gmailError) {
-          console.error('❌ Erreur Gmail:', gmailError.message);
+        };
+        
+        await gmailTransporter.sendMail(gmailMsg);
+        console.log('✅ Email envoyé avec succès (Gmail) à:', invoice.client.email);
+        res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
+      } catch (gmailError) {
+        console.error('❌ Erreur Gmail:', gmailError.message);
+        
+        // FALLBACK : Essayer SendGrid
+        if (process.env.SENDGRID_API_KEY) {
+          try {
+            console.log('🔄 Tentative d\'envoi avec SendGrid (fallback)...');
+            await sgMail.send(msg);
+            console.log('✅ Email envoyé avec succès (SendGrid fallback) à:', invoice.client.email);
+            res.json({ success: true, message: 'Facture envoyée avec succès (SendGrid)' });
+          } catch (sendgridError) {
+            console.error('❌ Erreur SendGrid:', sendgridError.message);
+            res.json({ 
+              success: false, 
+              message: 'PDF généré mais email non envoyé (Gmail et SendGrid ont échoué)', 
+              pdfPath: pdfData.filePath,
+              error: `Gmail: ${gmailError.message}, SendGrid: ${sendgridError.message}`
+            });
+          }
+        } else {
           res.json({ 
             success: false, 
-            message: 'PDF généré mais email non envoyé (SendGrid et Gmail ont échoué)', 
+            message: 'PDF généré mais email non envoyé (Gmail échoué, SendGrid non configuré)', 
             pdfPath: pdfData.filePath,
-            error: `SendGrid: ${emailError.message}, Gmail: ${gmailError.message}`
+            error: gmailError.message 
           });
         }
-      } else {
-        // Logs détaillés pour déboguer SendGrid
-        if (emailError.response && emailError.response.body && emailError.response.body.errors) {
-          console.log('🚨 Détails de l\'erreur SendGrid:');
-          emailError.response.body.errors.forEach((err, index) => {
-            console.log(`   Erreur ${index + 1}: ${err.message}`);
-            if (err.field) console.log(`   Champ: ${err.field}`);
-            if (err.help) console.log(`   Aide: ${err.help}`);
-          });
-        }
+      }
+    } else {
+      // PRIORITÉ 1 : SendGrid (si Gmail n'est pas configuré)
+      try {
+        console.log('📤 Tentative d\'envoi SendGrid à:', invoice.client.email);
+        console.log('📤 Expéditeur:', fromEmail);
+        console.log('📤 Destinataire:', invoice.client.email);
+        console.log('📤 Taille PDF:', pdfData.buffer.length, 'octets');
         
-        res.json({ 
-          success: false, 
-          message: 'PDF généré mais email non envoyé (SendGrid échoué, Gmail non configuré)', 
-          pdfPath: pdfData.filePath,
-          error: emailError.message 
-        });
+        await sgMail.send(msg);
+        console.log('✅ Email envoyé avec succès (SendGrid) à:', invoice.client.email);
+        res.json({ success: true, message: 'Facture envoyée avec succès (SendGrid)' });
+      } catch (emailError) {
+        console.error('❌ Erreur SendGrid:', emailError.message);
+        console.error('❌ Détails complets:', JSON.stringify(emailError.response?.body, null, 2));
+        
+        // FALLBACK : Essayer Gmail
+        if (gmailTransporter) {
+          try {
+            console.log('🔄 Tentative d\'envoi avec Gmail (fallback)...');
+            
+            const gmailMsg = {
+              from: {
+                address: replyToEmail,
+                name: fromName
+              },
+              to: invoice.client.email,
+              subject: emailSubject,
+              text: emailMessage,
+              html: inlinedHtml,
+              attachments: [
+                {
+                  filename: pdfData.fileName,
+                  content: pdfData.buffer,
+                  contentType: 'application/pdf'
+                }
+              ]
+            };
+            
+            await gmailTransporter.sendMail(gmailMsg);
+            console.log('✅ Email envoyé avec succès (Gmail fallback) à:', invoice.client.email);
+            res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
+          } catch (gmailError) {
+            console.error('❌ Erreur Gmail:', gmailError.message);
+            res.json({ 
+              success: false, 
+              message: 'PDF généré mais email non envoyé (SendGrid et Gmail ont échoué)', 
+              pdfPath: pdfData.filePath,
+              error: `SendGrid: ${emailError.message}, Gmail: ${gmailError.message}`
+            });
+          }
+        } else {
+          // Logs détaillés pour déboguer SendGrid
+          if (emailError.response && emailError.response.body && emailError.response.body.errors) {
+            console.log('🚨 Détails de l\'erreur SendGrid:');
+            emailError.response.body.errors.forEach((err, index) => {
+              console.log(`   Erreur ${index + 1}: ${err.message}`);
+              if (err.field) console.log(`   Champ: ${err.field}`);
+              if (err.help) console.log(`   Aide: ${err.help}`);
+            });
+          }
+          
+          res.json({ 
+            success: false, 
+            message: 'PDF généré mais email non envoyé (SendGrid échoué, Gmail non configuré)', 
+            pdfPath: pdfData.filePath,
+            error: emailError.message 
+          });
+        }
       }
     }
 
