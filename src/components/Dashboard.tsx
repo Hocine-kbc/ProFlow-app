@@ -412,35 +412,35 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
 
       {/* Actions rapides */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
           <div>
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1">Actions rapides</h2>
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Créez rapidement vos documents</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => onNavigate?.('clients')}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-full transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-full transition-all duration-200 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md active:scale-95 flex-1"
             >
-              <Users className="w-4 h-4" />
-              <span>Nouveau client</span>
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">+ Client</span>
             </button>
             <button
               type="button"
               onClick={() => onNavigate?.('services')}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-full transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-full transition-all duration-200 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md active:scale-95 flex-1"
             >
-              <Clock className="w-4 h-4" />
-              <span>Nouvelle prestation</span>
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">+ Prestation</span>
             </button>
             <button
               type="button"
               onClick={() => onNavigate?.('invoices')}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-full transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-full transition-all duration-200 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md active:scale-95 flex-1"
             >
-              <FileText className="w-4 h-4" />
-              <span>Nouvelle facture</span>
+              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">+ Facture</span>
             </button>
           </div>
         </div>

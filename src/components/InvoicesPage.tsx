@@ -1971,10 +1971,10 @@ export default function InvoicesPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200" style={{ padding: '0.5rem' }}>
-          <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-2xl shadow-2xl w-full sm:max-w-lg lg:max-w-2xl max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 p-2.5 sm:p-4 lg:p-6 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden flex-shrink-0">
               {/* Decorative lines - consistent with other page headers */}
               <div className="absolute inset-0 opacity-20">
                 {/* Traits horizontaux qui traversent */}
@@ -2023,10 +2023,10 @@ export default function InvoicesPage() {
             </div>
             
             {/* Scrollable content */}
-            <div className="overflow-y-auto max-h-[calc(95vh-150px)] sm:max-h-[calc(95vh-200px)]">
-              <form onSubmit={handleSubmit} className="p-2.5 sm:p-4 lg:p-6 space-y-3 sm:space-y-6 lg:space-y-8">
+            <div className="overflow-y-auto flex-1">
+              <form onSubmit={handleSubmit} className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-6 lg:space-y-8">
                 {/* Client and Invoice Number Section */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-2.5 sm:p-4 lg:p-6">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
                   <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4 flex items-center">
                       <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
                         <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2035,7 +2035,7 @@ export default function InvoicesPage() {
                     </div>
                     Informations générales
                   </h4>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5 sm:gap-4 lg:gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
                     <div>
                       <CustomSelect
                         label="Client"
@@ -2125,7 +2125,7 @@ export default function InvoicesPage() {
                 </div>
               
                 {/* Dates and Payment Section */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-2.5 sm:p-4 lg:p-6">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
                   <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4 flex items-center">
                     <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
                       <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2134,7 +2134,7 @@ export default function InvoicesPage() {
                     </div>
                     Dates et paiement
                   </h4>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-4 lg:gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                     <div>
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">
                         Date de facture *
@@ -2239,7 +2239,7 @@ export default function InvoicesPage() {
               
                 {/* Services selection */}
                 {(formData.client_id || editingInvoice) && (
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-2.5 sm:p-4 lg:p-6">
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-4">
                       <h4 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-2 sm:mb-0">
                         <div className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
@@ -2383,7 +2383,7 @@ export default function InvoicesPage() {
               
                 {/* Total preview */}
                 {selectedServices.length > 0 && (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg sm:rounded-xl p-2.5 sm:p-6 border border-blue-200 dark:border-blue-700">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg sm:rounded-xl p-3 sm:p-6 border border-blue-200 dark:border-blue-700">
                     <h4 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center">
                       <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
                         <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2409,7 +2409,7 @@ export default function InvoicesPage() {
             </div>
             
             {/* Footer with buttons */}
-            <div className="bg-gray-50 dark:bg-gray-700 px-2.5 sm:px-6 py-2.5 sm:py-4 border-t border-gray-200 dark:border-gray-600">
+            <div className="bg-gray-50 dark:bg-gray-700 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
                   type="button"
@@ -2435,8 +2435,8 @@ export default function InvoicesPage() {
 
       {/* Invoice Preview Modal */}
       {previewInvoice && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-xs sm:max-w-lg lg:max-w-2xl xl:max-w-4xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 p-4 sm:p-6 text-white relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}
@@ -2791,8 +2791,8 @@ export default function InvoicesPage() {
 
       {/* Email Modal */}
       {emailModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] animate-in zoom-in-95 duration-200 flex flex-col">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-2xl max-h-[70vh] sm:max-h-[90vh] animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 p-6 text-white rounded-t-2xl relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}

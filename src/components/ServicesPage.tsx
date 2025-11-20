@@ -2236,8 +2236,8 @@ export default function ServicesPage() {
       )}
 
       {showModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}
@@ -2275,7 +2275,7 @@ export default function ServicesPage() {
             </div>
             
             {/* Scrollable content area */}
-            <div className="overflow-y-auto max-h-[calc(95vh-120px)] scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-blue-600">
+            <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-blue-600">
               <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
               <CustomSelect
                 label="Client *"
@@ -2670,8 +2670,8 @@ export default function ServicesPage() {
 
       {/* Modal de création/édition d'article */}
       {showArticleModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
               <div className="absolute inset-0 opacity-20">
@@ -2890,8 +2890,8 @@ export default function ServicesPage() {
       )}
 
       {selectedDayServices.length > 0 && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm sm:max-w-lg lg:max-w-2xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
               <div className="absolute inset-0 opacity-20">
