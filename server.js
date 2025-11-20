@@ -305,9 +305,7 @@ app.post('/api/send-invoice', async (req, res) => {
                         <td valign="middle">
                           <table border="0" cellspacing="0" cellpadding="0">
                             <tr>
-                              <td align="center" valign="middle" style="padding-right:12px;">
-                                <img src="{{company_logo_url}}" alt="Logo" width="48" height="48" style="display:block; width:48px; height:48px; border-radius:48px; object-fit:cover;" />
-                              </td>
+                              {{LOGO_HTML}}
                               <td valign="middle">
                                 <div style="font-family: Arial, sans-serif; font-size:20px; font-weight:700; color:#1e3c72;">{{company_name}}</div>
                                 <div style="font-family: Arial, sans-serif; font-size:12px; color:#6b7280; padding-top:2px;">Votre partenaire de confiance</div>
@@ -546,8 +544,19 @@ app.post('/api/send-invoice', async (req, res) => {
       `;
     }
 
+    // Générer le HTML du logo seulement si l'URL existe
+    const logoHtml = companyData.logoUrl && companyData.logoUrl.trim() !== '' 
+      ? `<td align="center" valign="middle" style="padding-right:12px;">
+           <img src="${companyData.logoUrl}" alt="Logo" width="48" height="48" style="display:block; width:48px; height:48px; border-radius:48px; object-fit:cover;" />
+         </td>`
+      : '';
+    
+    console.log('🖼️ Logo URL:', companyData.logoUrl);
+    console.log('🖼️ Logo HTML généré:', logoHtml ? 'OUI' : 'NON (pas de logo)');
+
     // Remplacer les variables du template
     const htmlContent = htmlTemplate
+      .replace(/\{\{LOGO_HTML\}\}/g, logoHtml)
       .replace(/\{\{company_name\}\}/g, companyData.name || 'ProFlow')
       .replace(/\{\{client_name\}\}/g, invoice.client.name)
       .replace(/\{\{client_email\}\}/g, invoice.client.email || '')
@@ -562,7 +571,6 @@ app.post('/api/send-invoice', async (req, res) => {
       .replace(/\{\{company_email\}\}/g, companyData.email || '')
       .replace(/\{\{company_phone\}\}/g, companyData.phone || '')
       .replace(/\{\{company_siret\}\}/g, companyData.siret || '')
-      .replace(/\{\{company_logo_url\}\}/g, companyData.logoUrl || '')
       .replace(/\{\{download_url\}\}/g, downloadUrl)
       .replace(/\{\{intro_message\}\}/g, emailMessage || '');
 
