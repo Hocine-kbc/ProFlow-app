@@ -1,5 +1,5 @@
-# Utiliser Node.js 18 avec dépendances système complètes
-FROM node:18-bullseye
+# Utiliser Node.js 20 avec dépendances système complètes
+FROM node:20-bullseye
 
 # Installer les dépendances système pour Puppeteer
 RUN apt-get update && apt-get install -y \
