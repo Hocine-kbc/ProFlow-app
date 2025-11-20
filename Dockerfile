@@ -1,7 +1,7 @@
-# Utiliser Node.js 18 avec dépendances système complètes pour Puppeteer
+# Utiliser Node.js 18 avec dépendances système complètes
 FROM node:18-bullseye
 
-# Installer les dépendances système pour Puppeteer/Chromium
+# Installer les dépendances système pour Puppeteer
 RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
@@ -42,9 +42,8 @@ COPY . .
 # Build du frontend (Vite)
 RUN npm run build
 
-# Exposer le port (Railway l'assigne dynamiquement)
+# Exposer le port
 EXPOSE 3001
 
 # Démarrer le serveur
 CMD ["node", "server.js"]
-

@@ -1,47 +1,14 @@
-# Fichiers à ignorer lors du build Docker
-
-# Node
 node_modules
-npm-debug.log
-yarn-error.log
-
-# Git
 .git
-.gitignore
-
-# Environnement
 .env
 .env.local
-.env.production
-
-# Build
 dist
-build
-.vite
-
-# Vercel
-.vercel
-
-# Logs
 *.log
-logs
-
-# OS
 .DS_Store
-Thumbs.db
-
-# IDE
+.vercel
 .vscode
 .idea
-*.swp
-*.swo
-
-# Tests
-coverage
-.nyc_output
-
-# Temporaires
-tmp
-temp
-*.tmp
-
+*.md
+!README.md
+.github
+.gitignore
