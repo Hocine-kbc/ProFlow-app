@@ -58,6 +58,8 @@ app.use(express.json());
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
 
+let supabase = null;
+
 if (!supabaseUrl || !supabaseKey) {
   console.error('');
   console.error('❌❌❌ ERREUR CRITIQUE ❌❌❌');
@@ -71,11 +73,13 @@ if (!supabaseUrl || !supabaseKey) {
   console.error('  3. Onglet "Variables"');
   console.error('  4. Ajoutez VITE_SUPABASE_URL et SUPABASE_SERVICE_KEY');
   console.error('');
-  process.exit(1);
+  console.error('⚠️ Le serveur va quand même démarrer en mode dégradé pour le debugging...');
+  console.error('⚠️ Les fonctionnalités nécessitant Supabase ne fonctionneront pas.');
+  console.error('');
+} else {
+  supabase = createClient(supabaseUrl, supabaseKey);
+  console.log('✅ Supabase initialisé avec succès');
 }
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-console.log('✅ Supabase initialisé avec succès');
 
 // Fonction : Génération de facture PDF moderne avec Puppeteer
 // Cette fonction utilise maintenant Puppeteer au lieu de PDFKit pour un rendu HTML/CSS moderne
@@ -687,6 +691,32 @@ app.post('/api/send-invoice', async (req, res) => {
 
 // Test
 app.get('/api/test', (req, res) => res.json({ ok: true }));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    env: {
+      supabaseConfigured: !!(process.env.VITE_SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY),
+      gmailConfigured: !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD),
+      sendgridConfigured: !!process.env.SENDGRID_API_KEY
+    }
+  });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'ProFlow API is running',
+    endpoints: {
+      health: '/health',
+      test: '/api/test',
+      testConnection: '/api/test-connection'
+    }
+  });
+});
 
 // Test de connexion pour le frontend
 app.get('/api/test-connection', (req, res) => {
