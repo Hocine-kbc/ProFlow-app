@@ -3,9 +3,12 @@ import {
   fetchSettings,
 } from './api.ts';
 
-// Détecter l'environnement et utiliser l'URL appropriée
-const isProduction = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('proflow-biz');
-const BACKEND_URL = isProduction ? '/api' : 'http://localhost:3001/api';
+// URL du backend - utilise VITE_BACKEND_URL si définie, sinon localhost en dev
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL 
+  ? `${import.meta.env.VITE_BACKEND_URL}/api`
+  : 'http://localhost:3001/api';
+
+console.log('🔗 Backend URL configurée:', BACKEND_URL);
 
 export interface BackendResponse {
   success: boolean;

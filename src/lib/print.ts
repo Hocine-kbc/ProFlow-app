@@ -4,6 +4,7 @@ import { generateSharedInvoiceHTML } from './sharedInvoiceTemplate.ts';
 export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], services?: any[]) {
   // For PDF download, redirect to server endpoint
   const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+  console.log('🔗 Print - Backend URL:', baseUrl);
   const params = new URLSearchParams();
   let summaryDescriptionOverride = (invoice as Invoice).summary_description;
   if (!summaryDescriptionOverride) {
