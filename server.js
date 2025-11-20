@@ -16,6 +16,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Debug : Afficher les variables d'environnement détectées (sans les valeurs sensibles)
+console.log('🔍 Variables d\'environnement détectées:');
+console.log('   PORT:', process.env.PORT || '3001 (default)');
+console.log('   VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? '✅ Définie' : '❌ Manquante');
+console.log('   VITE_SUPABASE_ANON_KEY:', process.env.VITE_SUPABASE_ANON_KEY ? '✅ Définie' : '❌ Manquante');
+console.log('   SUPABASE_SERVICE_KEY:', process.env.SUPABASE_SERVICE_KEY ? '✅ Définie' : '❌ Manquante');
+console.log('   GMAIL_USER:', process.env.GMAIL_USER ? `✅ ${process.env.GMAIL_USER}` : '❌ Manquante');
+console.log('   GMAIL_APP_PASSWORD:', process.env.GMAIL_APP_PASSWORD ? '✅ Définie' : '❌ Manquante');
+console.log('   SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY ? '✅ Définie' : '❌ Manquante');
+
 // Configuration SendGrid
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || 'SG.test-key-not-configured';
 if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.test-key-not-configured') {
@@ -45,10 +55,27 @@ app.use(cors());
 app.use(express.json());
 
 // Supabase
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY
-);
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('');
+  console.error('❌❌❌ ERREUR CRITIQUE ❌❌❌');
+  console.error('Les variables Supabase sont OBLIGATOIRES :');
+  console.error('  - VITE_SUPABASE_URL (ou SUPABASE_URL)');
+  console.error('  - SUPABASE_SERVICE_KEY (ou VITE_SUPABASE_ANON_KEY)');
+  console.error('');
+  console.error('📋 Sur Railway.app :');
+  console.error('  1. Allez dans votre projet');
+  console.error('  2. Cliquez sur votre service');
+  console.error('  3. Onglet "Variables"');
+  console.error('  4. Ajoutez VITE_SUPABASE_URL et SUPABASE_SERVICE_KEY');
+  console.error('');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+console.log('✅ Supabase initialisé avec succès');
 
 // Fonction : Génération de facture PDF moderne avec Puppeteer
 // Cette fonction utilise maintenant Puppeteer au lieu de PDFKit pour un rendu HTML/CSS moderne
