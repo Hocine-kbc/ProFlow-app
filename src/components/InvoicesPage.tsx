@@ -2125,7 +2125,7 @@ export default function InvoicesPage() {
                 </div>
               
                 {/* Dates and Payment Section */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 lg:p-6">
                   <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4 flex items-center">
                     <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
                       <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2134,8 +2134,8 @@ export default function InvoicesPage() {
                     </div>
                     Dates et paiement
                   </h4>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-                    <div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+                    <div className="min-w-0">
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date de facture *
                       </label>
@@ -2166,11 +2166,11 @@ export default function InvoicesPage() {
                             setFormData(prev => ({ ...prev, date: newDate }));
                           }
                         }}
-                        className="w-full px-2 py-1.5 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full min-w-0 px-2 py-1.5 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
                     
-                    <div>
+                    <div className="min-w-0">
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date d'échéance *
                       </label>
@@ -2182,7 +2182,7 @@ export default function InvoicesPage() {
                           setFormData({ ...formData, due_date: e.target.value });
                           setDueDateManuallyModified(true);
                         }}
-                        className="w-full px-2 py-1.5 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full min-w-0 px-2 py-1.5 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Sélectionnez d'abord une date de facture"
                       />
                     </div>
