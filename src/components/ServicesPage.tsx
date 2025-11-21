@@ -3,6 +3,7 @@ import { CheckCircle, ChevronLeft, ChevronRight, Circle, Clock, Edit2, Filter, P
 import { useApp } from '../contexts/AppContext.tsx';
 import { useSettings } from '../hooks/useSettings.ts';
 import { createService, updateService as updateServiceApi, deleteService as deleteServiceApi } from '../lib/api.ts';
+import { fetchArticles, createArticle, updateArticle as updateArticleApi, deleteArticle as deleteArticleApi, migrateArticlesFromLocalStorage } from '../lib/articles-api.ts';
 import { Service, Article, ServicePricingType } from '../types/index.ts';
 import AlertModal from './AlertModal.tsx';
 import CustomSelect from './CustomSelect.tsx';
@@ -365,6 +366,18 @@ export default function ServicesPage() {
   // Charger les articles
   useEffect(() => {
     loadArticles();
+    // Migrer les articles de localStorage vers Supabase au premier chargement
+    const hasLocalArticles = localStorage.getItem('articles');
+    if (hasLocalArticles) {
+      migrateArticlesFromLocalStorage().then((result) => {
+        if (result.migrated > 0) {
+          showNotification('success', 'Migration réussie', `${result.migrated} article(s) migré(s) vers Supabase`);
+          loadArticles(); // Recharger après migration
+        }
+      }).catch(error => {
+        console.error('Erreur migration articles:', error);
+      });
+    }
   }, []);
 
   // Mettre à jour la position de l'indicateur de vue
@@ -419,23 +432,13 @@ export default function ServicesPage() {
     };
   }, [currentTab]);
 
-  const loadArticles = () => {
+  const loadArticles = async () => {
     try {
-      const savedArticles = localStorage.getItem('articles');
-      if (savedArticles) {
-        setArticles(JSON.parse(savedArticles));
-      }
+      const articlesData = await fetchArticles();
+      setArticles(articlesData);
     } catch (error) {
       console.error('Erreur lors du chargement des articles:', error);
-    }
-  };
-
-  const saveArticles = (newArticles: Article[]) => {
-    try {
-      localStorage.setItem('articles', JSON.stringify(newArticles));
-      setArticles(newArticles);
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde des articles:', error);
+      showNotification('error', 'Erreur', 'Impossible de charger les articles');
     }
   };
 
@@ -535,42 +538,44 @@ export default function ServicesPage() {
     setShowArticleModal(false);
   };
 
-  const handleArticleSubmit = (e: React.FormEvent) => {
+  const handleArticleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newArticle: Article = {
-      id: editingArticle?.id || Date.now().toString(),
-      name: articleFormData.name,
-      description: articleFormData.description,
-      hourly_rate: articleFormData.hourly_rate,
-      category: articleFormData.category || undefined,
-      pricing_type: articleFormData.pricing_type,
-      is_active: articleFormData.is_active,
-      created_at: editingArticle?.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    try {
+      const articleData: Omit<Article, 'id' | 'created_at' | 'updated_at'> = {
+        name: articleFormData.name,
+        description: articleFormData.description,
+        pricingType: articleFormData.pricing_type as ServicePricingType,
+        defaultRate: articleFormData.hourly_rate,
+        defaultQuantity: 1,
+        category: articleFormData.category || undefined,
+        isActive: articleFormData.is_active,
+      };
 
-    if (editingArticle) {
-      const updatedArticles = articles.map(article => 
-        article.id === editingArticle.id ? newArticle : article
-      );
-      saveArticles(updatedArticles);
-      showNotification('success', 'Article modifié', 'L\'article a été mis à jour avec succès');
-    } else {
-      saveArticles([...articles, newArticle]);
-      showNotification('success', 'Article créé', 'L\'article a été créé avec succès');
+      if (editingArticle) {
+        await updateArticleApi(editingArticle.id, articleData);
+        showNotification('success', 'Article modifié', 'L\'article a été mis à jour avec succès');
+      } else {
+        await createArticle(articleData);
+        showNotification('success', 'Article créé', 'L\'article a été créé avec succès');
+      }
+      
+      await loadArticles(); // Recharger la liste
+      resetArticleForm();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde de l\'article:', error);
+      showNotification('error', 'Erreur', 'Impossible de sauvegarder l\'article');
     }
-    
-    resetArticleForm();
   };
 
   const handleEditArticle = (article: Article) => {
     setArticleFormData({
       name: article.name,
-      description: article.description,
-      hourly_rate: article.hourly_rate,
+      description: article.description || '',
+      hourly_rate: article.defaultRate || article.hourly_rate || 0,
       category: article.category || '',
-      is_active: article.is_active
+      is_active: article.isActive !== undefined ? article.isActive : (article.is_active || true),
+      pricing_type: article.pricingType || article.pricing_type || 'hourly'
     });
     setEditingArticle(article);
     setShowArticleModal(true);
@@ -582,11 +587,16 @@ export default function ServicesPage() {
       title: 'Supprimer l\'article',
       message: `Êtes-vous sûr de vouloir supprimer cet article ? Cette action est irréversible.`,
       type: 'warning',
-      onConfirm: () => {
-        const updatedArticles = articles.filter(article => article.id !== id);
-        saveArticles(updatedArticles);
-        showNotification('success', 'Article supprimé', 'L\'article a été supprimé avec succès');
-        setAlertModal(prev => ({ ...prev, isOpen: false }));
+      onConfirm: async () => {
+        try {
+          await deleteArticleApi(id);
+          showNotification('success', 'Article supprimé', 'L\'article a été supprimé avec succès');
+          await loadArticles(); // Recharger la liste
+          setAlertModal(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error('Erreur lors de la suppression de l\'article:', error);
+          showNotification('error', 'Erreur', 'Impossible de supprimer l\'article');
+        }
       }
     });
   };

@@ -1,5 +1,5 @@
 import { supabase } from './supabase.ts';
-import { Service, Invoice, BusinessNotification, NotificationType, Message, Conversation, ServicePricingType } from '../types/index.ts';
+import { Service, Invoice, BusinessNotification, NotificationType, Message, Conversation, ServicePricingType, Article } from '../types/index.ts';
 
 // Define interfaces locally since they're not exported from types
 interface Client {
@@ -1091,6 +1091,27 @@ export async function createInvoice(payload: Omit<Invoice, 'id' | 'client' | 'cr
     } catch (e) {
       console.warn('Could not store services in localStorage:', e);
     }
+    
+    // Mettre à jour les services dans Supabase avec l'invoice_id
+    try {
+      const serviceIds = services.map((s: Service) => s.id);
+      if (serviceIds.length > 0) {
+        console.log(`🔗 Liaison de ${serviceIds.length} services à la facture ${insertedInvoice.id}...`);
+        const { error: updateError } = await supabase
+          .from('services')
+          .update({ invoice_id: insertedInvoice.id, status: 'invoiced' })
+          .in('id', serviceIds);
+        
+        if (updateError) {
+          console.error('❌ Erreur lors de la liaison des services à la facture:', updateError);
+          // Ne pas bloquer la création de la facture si la mise à jour échoue
+        } else {
+          console.log(`✅ Services liés avec succès à la facture ${insertedInvoice.id}`);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not update services with invoice_id in Supabase:', e);
+    }
   }
   
   return { ...insertedInvoice, services: services || [], invoice_type: invoiceType } as Invoice;
@@ -1324,6 +1345,26 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
       console.log(`💾 Services mis à jour pour la facture ${id}:`, services.length, 'services');
     } catch (e) {
       console.warn('Could not store services in localStorage:', e);
+    }
+    
+    // Mettre à jour les services dans Supabase avec l'invoice_id
+    try {
+      const serviceIds = services.map((s: Service) => s.id);
+      if (serviceIds.length > 0) {
+        console.log(`🔗 Mise à jour de ${serviceIds.length} services pour la facture ${id}...`);
+        const { error: updateError } = await supabase
+          .from('services')
+          .update({ invoice_id: id, status: 'invoiced' })
+          .in('id', serviceIds);
+        
+        if (updateError) {
+          console.error('❌ Erreur lors de la mise à jour des services:', updateError);
+        } else {
+          console.log(`✅ Services mis à jour avec succès pour la facture ${id}`);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not update services with invoice_id in Supabase:', e);
     }
   }
 

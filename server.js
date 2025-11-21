@@ -836,26 +836,29 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
       showFixedFee: invoice.show_fixed_fee ?? companySettings?.showFixedFee ?? true,
     };
 
-    const { data: services } = await supabase
+    // Récupérer d'abord les services liés directement à cette facture par invoice_id
+    let { data: invoiceServices } = await supabase
       .from('services')
       .select('*')
-      .eq('client_id', invoice.client_id);
+      .eq('invoice_id', invoice.id);
 
-    let invoiceServices = Array.isArray(invoice.services) ? invoice.services : [];
-
+    // Si aucun service trouvé avec invoice_id, fallback sur les services du client (ancien comportement)
     if (!invoiceServices || invoiceServices.length === 0) {
-      let filteredServices = services || [];
+      console.log('⚠️ Aucun service trouvé avec invoice_id, fallback sur client_id');
+      const { data: clientServices } = await supabase
+        .from('services')
+        .select('*')
+        .eq('client_id', invoice.client_id)
+        .eq('status', 'invoiced');
+      
+      invoiceServices = clientServices || [];
+    } else {
+      console.log(`✅ ${invoiceServices.length} service(s) trouvé(s) pour la facture ${invoice.id}`);
+    }
 
-      if (filteredServices.length > 0) {
-        const servicesForInvoiceId = filteredServices.filter((service) => service.invoice_id === invoice.id);
-        if (servicesForInvoiceId.length > 0) {
-          filteredServices = servicesForInvoiceId;
-        } else {
-          filteredServices = filteredServices.filter((service) => service.status === 'invoiced');
-        }
-      }
-
-      invoiceServices = filteredServices;
+    // Si invoice.services est défini (dans la colonne JSON), l'utiliser en priorité
+    if (Array.isArray(invoice.services) && invoice.services.length > 0) {
+      invoiceServices = invoice.services;
     }
 
     if (invoice.invoice_type === 'summary') {
