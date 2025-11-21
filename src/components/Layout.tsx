@@ -146,7 +146,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
   };
 
   return (
-    <div className="h-screen min-h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+    <div className="min-h-screen lg:h-screen bg-gray-50 dark:bg-gray-900 lg:overflow-hidden">
       {/* Mobile sidebar overlay */}
       <div 
         className={`fixed top-0 left-0 right-0 bottom-0 w-full h-full z-30 bg-black/50 lg:hidden transition-opacity duration-300 ease-out ${
@@ -399,9 +399,9 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       </div>
 
       {/* Main content */}
-      <div className={`pt-[64px] transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'} flex flex-col h-full overflow-hidden`}>
+      <div className={`pt-[64px] transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-72'} flex flex-col lg:h-full lg:overflow-hidden`}>
         {/* Page content */}
-        <main className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 lg:p-8 pb-4 md:pb-8 lg:pb-12">
+        <main className="flex-1 lg:min-h-0 lg:overflow-y-auto p-4 md:p-6 lg:p-8 pb-4 md:pb-8 lg:pb-12">
           {children}
         </main>
       </div>
