@@ -84,6 +84,9 @@ export function generateInvoiceHTML(invoiceData: InvoiceData, companyData: Compa
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Facture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -92,7 +95,7 @@ export function generateInvoiceHTML(invoiceData: InvoiceData, companyData: Compa
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
             padding: 0;
             background: #f5f5f5;
             margin: 0;
