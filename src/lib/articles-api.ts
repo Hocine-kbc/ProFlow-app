@@ -26,7 +26,6 @@ export async function fetchArticles(): Promise<Article[]> {
       .from('articles')
       .select('*')
       .eq('user_id', user.id)
-      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -42,6 +41,10 @@ export async function fetchArticles(): Promise<Article[]> {
       isActive: article.is_active,
       created_at: article.created_at,
       updated_at: article.updated_at,
+      // Propriétés legacy pour compatibilité avec le composant
+      hourly_rate: article.default_rate,
+      pricing_type: article.pricing_type as ServicePricingType,
+      is_active: article.is_active,
     }));
   } catch (error) {
     console.error('Error fetching articles:', error);
@@ -85,6 +88,10 @@ export async function createArticle(payload: Omit<Article, 'id' | 'created_at' |
       isActive: data.is_active,
       created_at: data.created_at,
       updated_at: data.updated_at,
+      // Propriétés legacy pour compatibilité avec le composant
+      hourly_rate: data.default_rate,
+      pricing_type: data.pricing_type as ServicePricingType,
+      is_active: data.is_active,
     };
   } catch (error) {
     console.error('Error creating article:', error);
@@ -129,6 +136,10 @@ export async function updateArticle(id: string, payload: Partial<Article>): Prom
       isActive: data.is_active,
       created_at: data.created_at,
       updated_at: data.updated_at,
+      // Propriétés legacy pour compatibilité avec le composant
+      hourly_rate: data.default_rate,
+      pricing_type: data.pricing_type as ServicePricingType,
+      is_active: data.is_active,
     };
   } catch (error) {
     console.error('Error updating article:', error);
