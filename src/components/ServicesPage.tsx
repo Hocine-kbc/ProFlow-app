@@ -2376,7 +2376,7 @@ export default function ServicesPage() {
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
                   <div className="relative">
                     {!formData.date && (
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none z-10">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none z-10 sm:hidden">
                         jj/mm/aaaa
                       </span>
                     )}
@@ -2398,7 +2398,7 @@ export default function ServicesPage() {
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
                       <div className="relative">
                         {!dailyEndDate && (
-                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none z-10">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none z-10 sm:hidden">
                             jj/mm/aaaa
                           </span>
                         )}

@@ -176,6 +176,33 @@ input[type="date"] {
     padding-left: 12px !important;
     padding-right: 45px !important; /* Espace pour l'icône calendrier */
     position: relative;
+    color: transparent !important; /* Masquer le texte natif sur mobile */
+  }
+  
+  /* Afficher le texte seulement quand une valeur est sélectionnée */
+  input[type="date"]:not(:invalid) {
+    color: inherit !important;
+  }
+  
+  /* Masquer le placeholder natif sur mobile */
+  input[type="date"]::placeholder {
+    color: transparent !important;
+    opacity: 0 !important;
+  }
+  
+  /* Masquer les parties du datetime edit sur mobile quand vide */
+  input[type="date"]:invalid::-webkit-datetime-edit {
+    color: transparent !important;
+  }
+  
+  input[type="date"]:invalid::-webkit-datetime-edit-text {
+    color: transparent !important;
+  }
+  
+  input[type="date"]:invalid::-webkit-datetime-edit-month-field,
+  input[type="date"]:invalid::-webkit-datetime-edit-day-field,
+  input[type="date"]:invalid::-webkit-datetime-edit-year-field {
+    color: transparent !important;
   }
   
   /* Forcer l'affichage de l'icône calendrier sur iOS et mobile */
