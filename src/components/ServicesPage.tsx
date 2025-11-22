@@ -2369,36 +2369,50 @@ export default function ServicesPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-                <div className="min-w-0 date-input-wrapper">
+                <div className="min-w-0 relative">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                     Date de début *
                   </label>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
-                  <input
-                    type="date"
-                    required
-                    value={formData.date || ''}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    placeholder="jj/mm/aaaa"
-                    title="Format: jj/mm/aaaa"
-                    className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
-                  />
+                  <div className="relative">
+                    {!formData.date && (
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none z-10">
+                        jj/mm/aaaa
+                      </span>
+                    )}
+                    <input
+                      type="date"
+                      required
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      placeholder="jj/mm/aaaa"
+                      className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                      style={{ paddingRight: '45px' }}
+                    />
+                  </div>
                 </div>
                 <div className="min-w-0">
                   {formData.pricing_type === 'daily' ? (
-                    <div className="date-input-wrapper">
+                    <div className="relative">
                       <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">Date de fin *</label>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
-                      <input
-                        type="date"
-                        required
-                        min={formData.date || undefined}
-                        value={dailyEndDate || ''}
-                        onChange={(e) => setDailyEndDate(e.target.value)}
-                        placeholder="jj/mm/aaaa"
-                        title="Format: jj/mm/aaaa"
-                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
-                      />
+                      <div className="relative">
+                        {!dailyEndDate && (
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none z-10">
+                            jj/mm/aaaa
+                          </span>
+                        )}
+                        <input
+                          type="date"
+                          required
+                          min={formData.date || undefined}
+                          value={dailyEndDate}
+                          onChange={(e) => setDailyEndDate(e.target.value)}
+                          placeholder="jj/mm/aaaa"
+                          className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                          style={{ paddingRight: '45px' }}
+                        />
+                      </div>
                     </div>
                   ) : (
                     <div className="hidden md:block" />

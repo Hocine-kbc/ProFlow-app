@@ -3704,20 +3704,27 @@ export default function ClientDetailView({
                     />
                   </div>
                   
-                  <div className="date-input-wrapper">
+                  <div className="relative">
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                       Date *
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
-                    <input
-                      type="date"
-                      required
-                      value={serviceFormData.date || ''}
-                      onChange={(e) => setServiceFormData({ ...serviceFormData, date: e.target.value })}
-                      placeholder="jj/mm/aaaa"
-                      title="Format: jj/mm/aaaa"
-                      className="w-full px-3 py-3 sm:px-3 sm:py-2 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
-                    />
+                    <div className="relative">
+                      {!serviceFormData.date && (
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none z-10">
+                          jj/mm/aaaa
+                        </span>
+                      )}
+                      <input
+                        type="date"
+                        required
+                        value={serviceFormData.date}
+                        onChange={(e) => setServiceFormData({ ...serviceFormData, date: e.target.value })}
+                        placeholder="jj/mm/aaaa"
+                        className="w-full px-3 py-3 sm:px-3 sm:py-2 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                        style={{ paddingRight: '45px' }}
+                      />
+                    </div>
                   </div>
                   
                   <div>
@@ -3910,43 +3917,57 @@ export default function ClientDetailView({
                     Dates
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="date-input-wrapper">
+                    <div className="relative">
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date de facture *
                       </label>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
-                      <input
-                        type="date"
-                        required
-                        value={invoiceFormData.date || ''}
-                        onChange={(e) => {
-                          const newDate = e.target.value;
-                          setInvoiceFormData({ 
-                            ...invoiceFormData, 
-                            date: newDate,
-                            due_date: newDate ? calculateDueDate(newDate) : ''
-                          });
-                        }}
-                        placeholder="jj/mm/aaaa"
-                        title="Format: jj/mm/aaaa"
-                        className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
-                      />
+                      <div className="relative">
+                        {!invoiceFormData.date && (
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none z-10">
+                            jj/mm/aaaa
+                          </span>
+                        )}
+                        <input
+                          type="date"
+                          required
+                          value={invoiceFormData.date}
+                          onChange={(e) => {
+                            const newDate = e.target.value;
+                            setInvoiceFormData({ 
+                              ...invoiceFormData, 
+                              date: newDate,
+                              due_date: newDate ? calculateDueDate(newDate) : ''
+                            });
+                          }}
+                          placeholder="jj/mm/aaaa"
+                          className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                          style={{ paddingRight: '45px' }}
+                        />
+                      </div>
                     </div>
                     
-                    <div className="date-input-wrapper">
+                    <div className="relative">
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date d'échéance *
                       </label>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
-                      <input
-                        type="date"
-                        required
-                        value={invoiceFormData.due_date || ''}
-                        onChange={(e) => setInvoiceFormData({ ...invoiceFormData, due_date: e.target.value })}
-                        placeholder="jj/mm/aaaa"
-                        title="Format: jj/mm/aaaa"
-                        className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
-                      />
+                      <div className="relative">
+                        {!invoiceFormData.due_date && (
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base pointer-events-none z-10">
+                            jj/mm/aaaa
+                          </span>
+                        )}
+                        <input
+                          type="date"
+                          required
+                          value={invoiceFormData.due_date}
+                          onChange={(e) => setInvoiceFormData({ ...invoiceFormData, due_date: e.target.value })}
+                          placeholder="jj/mm/aaaa"
+                          className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                          style={{ paddingRight: '45px' }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

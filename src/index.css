@@ -173,80 +173,35 @@ input[type="date"] {
 @media (max-width: 640px) {
   input[type="date"] {
     font-size: 16px !important; /* Prevent zoom on iOS */
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-  }
-  
-  /* Afficher un placeholder visible pour les champs date vides sur mobile */
-  input[type="date"]:invalid::-webkit-datetime-edit {
-    color: #9ca3af !important;
-  }
-  
-  input[type="date"]:invalid::-webkit-datetime-edit-text {
-    color: #9ca3af !important;
-  }
-  
-  input[type="date"]:invalid::-webkit-datetime-edit-month-field,
-  input[type="date"]:invalid::-webkit-datetime-edit-day-field,
-  input[type="date"]:invalid::-webkit-datetime-edit-year-field {
-    color: #9ca3af !important;
-  }
-  
-  /* Style pour afficher un texte d'exemple dans le champ date vide */
-  .date-input-wrapper {
+    padding-left: 12px !important;
+    padding-right: 45px !important; /* Espace pour l'icône calendrier */
     position: relative;
   }
   
-  .date-input-wrapper::after {
-    content: "jj/mm/aaaa";
+  /* Forcer l'affichage de l'icône calendrier sur iOS et mobile */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    display: block !important;
+    opacity: 1 !important;
     position: absolute;
-    left: 12px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #9ca3af;
-    pointer-events: none;
-    font-size: 16px;
+    width: 24px !important;
+    height: 24px !important;
+    cursor: pointer;
+    background: transparent;
     z-index: 1;
-    transition: opacity 0.2s;
   }
   
-  /* Afficher le placeholder seulement quand le champ est vide (invalid) */
-  .date-input-wrapper input[type="date"]:invalid ~ *,
-  .date-input-wrapper input[type="date"]:invalid::after {
-    /* Le placeholder sera visible */
+  /* Style pour iOS - s'assurer que l'icône est visible */
+  input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 0.8 !important;
   }
   
-  /* Cacher le placeholder quand le champ a une valeur */
-  .date-input-wrapper input[type="date"]:not(:invalid) ~ *,
-  .date-input-wrapper input[type="date"]:not(:invalid)::after {
-    opacity: 0;
-  }
-  
-  /* Utiliser :has() si supporté, sinon fallback */
-  @supports selector(:has(*)) {
-    .date-input-wrapper:has(input[type="date"]:not(:invalid))::after {
-      opacity: 0;
-    }
-    
-    .date-input-wrapper:has(input[type="date"]:invalid)::after {
-      opacity: 1;
-    }
-  }
-  
-  /* Fallback pour les navigateurs sans support :has() */
-  @supports not selector(:has(*)) {
-    .date-input-wrapper::after {
-      opacity: 1;
-    }
-    
-    .date-input-wrapper input[type="date"]:not(:invalid) {
-      color: inherit;
-    }
-  }
-  
-  /* Dark mode */
-  .dark .date-input-wrapper::after {
-    color: #6b7280;
+  /* Dark mode - icône calendrier visible */
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: brightness(0) invert(1);
+    opacity: 1 !important;
   }
 }
 
