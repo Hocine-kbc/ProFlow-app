@@ -1325,7 +1325,8 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                       value={scheduledDate}
                       onChange={(e) => setScheduledDate(e.target.value)}
                       min={format(new Date(), 'yyyy-MM-dd')}
-                      className="w-full px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-3 text-sm border-2 border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all"
+                      placeholder="jj/mm/aaaa"
+                      className="w-full px-2 py-2.5 sm:px-3 sm:py-2 md:px-4 md:py-3 text-sm border-2 border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all"
                     />
                   </div>
                   <div>

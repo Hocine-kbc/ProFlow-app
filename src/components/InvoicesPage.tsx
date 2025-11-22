@@ -1972,7 +1972,7 @@ export default function InvoicesPage() {
       {/* Modal */}
       {showModal && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden flex-shrink-0">
               {/* Decorative lines - consistent with other page headers */}
@@ -2166,7 +2166,8 @@ export default function InvoicesPage() {
                             setFormData(prev => ({ ...prev, date: newDate }));
                           }
                         }}
-                        className="w-full min-w-0 px-2 py-1.5 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="jj/mm/aaaa"
+                        className="w-full min-w-0 px-2 py-2.5 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
                     
@@ -2182,8 +2183,8 @@ export default function InvoicesPage() {
                           setFormData({ ...formData, due_date: e.target.value });
                           setDueDateManuallyModified(true);
                         }}
-                        className="w-full min-w-0 px-2 py-1.5 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        placeholder="Sélectionnez d'abord une date de facture"
+                        placeholder="jj/mm/aaaa"
+                        className="w-full min-w-0 px-2 py-2.5 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
                     
@@ -2436,7 +2437,7 @@ export default function InvoicesPage() {
       {/* Invoice Preview Modal */}
       {previewInvoice && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-300 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 px-3 py-3 sm:p-4 md:p-6 text-white relative overflow-hidden flex-shrink-0">
               {/* Decorative lines - consistent with other page headers */}
@@ -2792,7 +2793,7 @@ export default function InvoicesPage() {
       {/* Email Modal */}
       {emailModal && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-2xl max-h-[70vh] sm:max-h-[90vh] animate-in zoom-in-95 duration-200 flex flex-col">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 px-3 py-3 sm:p-4 md:p-6 text-white rounded-t-xl sm:rounded-t-2xl relative overflow-hidden flex-shrink-0">
               {/* Decorative lines - consistent with other page headers */}

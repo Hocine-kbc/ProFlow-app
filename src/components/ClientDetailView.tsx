@@ -2917,7 +2917,7 @@ export default function ClientDetailView({
       {/* Invoice Preview Modal */}
       {previewInvoice && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-300 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-4 sm:p-6 text-white relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}
@@ -3644,7 +3644,7 @@ export default function ClientDetailView({
       {/* Service Creation Modal */}
       {showServiceModal && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-4 sm:p-6 text-white relative overflow-hidden">
               {/* Decorative lines */}
@@ -3713,7 +3713,8 @@ export default function ClientDetailView({
                       required
                       value={serviceFormData.date}
                       onChange={(e) => setServiceFormData({ ...serviceFormData, date: e.target.value })}
-                      className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="jj/mm/aaaa"
+                      className="w-full px-2 py-2.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   
@@ -3814,7 +3815,7 @@ export default function ClientDetailView({
       {/* Invoice Edit Modal */}
       {showInvoiceEditModal && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 sm:p-6 text-white relative overflow-hidden">
               <div className="absolute inset-0 opacity-20">
@@ -3923,7 +3924,8 @@ export default function ClientDetailView({
                             due_date: newDate ? calculateDueDate(newDate) : ''
                           });
                         }}
-                        className="w-full px-2 py-1.5 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="jj/mm/aaaa"
+                        className="w-full px-2 py-2.5 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
                     
@@ -3936,7 +3938,8 @@ export default function ClientDetailView({
                         required
                         value={invoiceFormData.due_date}
                         onChange={(e) => setInvoiceFormData({ ...invoiceFormData, due_date: e.target.value })}
-                        className="w-full px-2 py-1.5 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="jj/mm/aaaa"
+                        className="w-full px-2 py-2.5 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
                   </div>
