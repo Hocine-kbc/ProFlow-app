@@ -2139,6 +2139,7 @@ export default function InvoicesPage() {
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date de facture *
                       </label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
                       <input
                         type="date"
                         required
@@ -2167,7 +2168,7 @@ export default function InvoicesPage() {
                           }
                         }}
                         placeholder="jj/mm/aaaa"
-                        className="w-full min-w-0 px-2 py-2.5 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0"
                       />
                     </div>
                     
@@ -2175,6 +2176,7 @@ export default function InvoicesPage() {
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date d'échéance *
                       </label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
                       <input
                         type="date"
                         required
@@ -2184,7 +2186,7 @@ export default function InvoicesPage() {
                           setDueDateManuallyModified(true);
                         }}
                         placeholder="jj/mm/aaaa"
-                        className="w-full min-w-0 px-2 py-2.5 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0"
                       />
                     </div>
                     

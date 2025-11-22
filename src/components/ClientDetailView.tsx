@@ -3708,13 +3708,14 @@ export default function ClientDetailView({
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                       Date *
                     </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
                     <input
                       type="date"
                       required
                       value={serviceFormData.date}
                       onChange={(e) => setServiceFormData({ ...serviceFormData, date: e.target.value })}
                       placeholder="jj/mm/aaaa"
-                      className="w-full px-2 py-2.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-3 sm:px-3 sm:py-2 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0"
                     />
                   </div>
                   
@@ -3912,6 +3913,7 @@ export default function ClientDetailView({
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date de facture *
                       </label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
                       <input
                         type="date"
                         required
@@ -3925,7 +3927,7 @@ export default function ClientDetailView({
                           });
                         }}
                         placeholder="jj/mm/aaaa"
-                        className="w-full px-2 py-2.5 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0"
                       />
                     </div>
                     
@@ -3933,13 +3935,14 @@ export default function ClientDetailView({
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date d'échéance *
                       </label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 sm:hidden">Format: jj/mm/aaaa</p>
                       <input
                         type="date"
                         required
                         value={invoiceFormData.due_date}
                         onChange={(e) => setInvoiceFormData({ ...invoiceFormData, due_date: e.target.value })}
                         placeholder="jj/mm/aaaa"
-                        className="w-full px-2 py-2.5 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0"
                       />
                     </div>
                   </div>
