@@ -3704,7 +3704,7 @@ export default function ClientDetailView({
                     />
                   </div>
                   
-                  <div>
+                  <div className="date-input-wrapper">
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                       Date *
                     </label>
@@ -3712,10 +3712,11 @@ export default function ClientDetailView({
                     <input
                       type="date"
                       required
-                      value={serviceFormData.date}
+                      value={serviceFormData.date || ''}
                       onChange={(e) => setServiceFormData({ ...serviceFormData, date: e.target.value })}
                       placeholder="jj/mm/aaaa"
-                      className="w-full px-3 py-3 sm:px-3 sm:py-2 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0"
+                      title="Format: jj/mm/aaaa"
+                      className="w-full px-3 py-3 sm:px-3 sm:py-2 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                     />
                   </div>
                   
@@ -3909,7 +3910,7 @@ export default function ClientDetailView({
                     Dates
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div>
+                    <div className="date-input-wrapper">
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date de facture *
                       </label>
@@ -3917,7 +3918,7 @@ export default function ClientDetailView({
                       <input
                         type="date"
                         required
-                        value={invoiceFormData.date}
+                        value={invoiceFormData.date || ''}
                         onChange={(e) => {
                           const newDate = e.target.value;
                           setInvoiceFormData({ 
@@ -3927,11 +3928,12 @@ export default function ClientDetailView({
                           });
                         }}
                         placeholder="jj/mm/aaaa"
-                        className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0"
+                        title="Format: jj/mm/aaaa"
+                        className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                       />
                     </div>
                     
-                    <div>
+                    <div className="date-input-wrapper">
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date d'échéance *
                       </label>
@@ -3939,10 +3941,11 @@ export default function ClientDetailView({
                       <input
                         type="date"
                         required
-                        value={invoiceFormData.due_date}
+                        value={invoiceFormData.due_date || ''}
                         onChange={(e) => setInvoiceFormData({ ...invoiceFormData, due_date: e.target.value })}
                         placeholder="jj/mm/aaaa"
-                        className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0"
+                        title="Format: jj/mm/aaaa"
+                        className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                       />
                     </div>
                   </div>

@@ -2135,7 +2135,7 @@ export default function InvoicesPage() {
                     Dates et paiement
                   </h4>
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-                    <div className="min-w-0">
+                    <div className="min-w-0 date-input-wrapper">
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date de facture *
                       </label>
@@ -2143,7 +2143,7 @@ export default function InvoicesPage() {
                       <input
                         type="date"
                         required
-                        value={formData.date}
+                        value={formData.date || ''}
                         onChange={(e) => {
                           const newDate = e.target.value;
                           setFormData({ ...formData, date: newDate });
@@ -2168,11 +2168,12 @@ export default function InvoicesPage() {
                           }
                         }}
                         placeholder="jj/mm/aaaa"
-                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0"
+                        title="Format: jj/mm/aaaa"
+                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                       />
                     </div>
                     
-                    <div className="min-w-0">
+                    <div className="min-w-0 date-input-wrapper">
                       <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                         Date d'échéance *
                       </label>
@@ -2180,13 +2181,14 @@ export default function InvoicesPage() {
                       <input
                         type="date"
                         required
-                        value={formData.due_date}
+                        value={formData.due_date || ''}
                         onChange={(e) => {
                           setFormData({ ...formData, due_date: e.target.value });
                           setDueDateManuallyModified(true);
                         }}
                         placeholder="jj/mm/aaaa"
-                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0"
+                        title="Format: jj/mm/aaaa"
+                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                       />
                     </div>
                     

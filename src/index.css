@@ -176,6 +176,78 @@ input[type="date"] {
     padding-left: 8px !important;
     padding-right: 8px !important;
   }
+  
+  /* Afficher un placeholder visible pour les champs date vides sur mobile */
+  input[type="date"]:invalid::-webkit-datetime-edit {
+    color: #9ca3af !important;
+  }
+  
+  input[type="date"]:invalid::-webkit-datetime-edit-text {
+    color: #9ca3af !important;
+  }
+  
+  input[type="date"]:invalid::-webkit-datetime-edit-month-field,
+  input[type="date"]:invalid::-webkit-datetime-edit-day-field,
+  input[type="date"]:invalid::-webkit-datetime-edit-year-field {
+    color: #9ca3af !important;
+  }
+  
+  /* Style pour afficher un texte d'exemple dans le champ date vide */
+  .date-input-wrapper {
+    position: relative;
+  }
+  
+  .date-input-wrapper::after {
+    content: "jj/mm/aaaa";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    pointer-events: none;
+    font-size: 16px;
+    z-index: 1;
+    transition: opacity 0.2s;
+  }
+  
+  /* Afficher le placeholder seulement quand le champ est vide (invalid) */
+  .date-input-wrapper input[type="date"]:invalid ~ *,
+  .date-input-wrapper input[type="date"]:invalid::after {
+    /* Le placeholder sera visible */
+  }
+  
+  /* Cacher le placeholder quand le champ a une valeur */
+  .date-input-wrapper input[type="date"]:not(:invalid) ~ *,
+  .date-input-wrapper input[type="date"]:not(:invalid)::after {
+    opacity: 0;
+  }
+  
+  /* Utiliser :has() si supporté, sinon fallback */
+  @supports selector(:has(*)) {
+    .date-input-wrapper:has(input[type="date"]:not(:invalid))::after {
+      opacity: 0;
+    }
+    
+    .date-input-wrapper:has(input[type="date"]:invalid)::after {
+      opacity: 1;
+    }
+  }
+  
+  /* Fallback pour les navigateurs sans support :has() */
+  @supports not selector(:has(*)) {
+    .date-input-wrapper::after {
+      opacity: 1;
+    }
+    
+    .date-input-wrapper input[type="date"]:not(:invalid) {
+      color: inherit;
+    }
+  }
+  
+  /* Dark mode */
+  .dark .date-input-wrapper::after {
+    color: #6b7280;
+  }
 }
 
 /* Dark mode styles for date inputs */
