@@ -3722,7 +3722,6 @@ export default function ClientDetailView({
                         onChange={(e) => setServiceFormData({ ...serviceFormData, date: e.target.value })}
                         placeholder="jj/mm/aaaa"
                         className="w-full px-3 py-3 sm:px-3 sm:py-2 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
-                        style={{ paddingRight: '45px' }}
                       />
                     </div>
                   </div>
@@ -3942,7 +3941,6 @@ export default function ClientDetailView({
                           }}
                           placeholder="jj/mm/aaaa"
                           className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
-                          style={{ paddingRight: '45px' }}
                         />
                       </div>
                     </div>
@@ -3965,7 +3963,6 @@ export default function ClientDetailView({
                           onChange={(e) => setInvoiceFormData({ ...invoiceFormData, due_date: e.target.value })}
                           placeholder="jj/mm/aaaa"
                           className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
-                          style={{ paddingRight: '45px' }}
                         />
                       </div>
                     </div>

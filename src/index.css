@@ -167,6 +167,31 @@ input[type="date"] {
   -webkit-appearance: none;
   -moz-appearance: textfield;
   min-width: 0 !important;
+  position: relative;
+}
+
+/* Icône calendrier sur desktop - positionnée à droite */
+@media (min-width: 640px) {
+  input[type="date"] {
+    padding-right: 40px !important; /* Espace pour l'icône calendrier */
+  }
+  
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px !important;
+    height: 20px !important;
+    cursor: pointer;
+    opacity: 1 !important;
+  }
+  
+  /* Dark mode desktop */
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: brightness(0) invert(1);
+    opacity: 1 !important;
+  }
 }
 
 /* Force date input to respect parent container on mobile */
