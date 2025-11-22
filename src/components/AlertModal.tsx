@@ -86,7 +86,7 @@ export default function AlertModal({
   const colors = getColors();
 
   return (
-    <div className="modal-overlay bg-black bg-opacity-50 flex items-start sm:items-center justify-center pt-4 pb-4 sm:p-4 sm:p-6 px-4 z-50 overflow-y-auto">
+    <div className="modal-overlay bg-black bg-opacity-50 flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 overflow-y-auto">
       <div className={`${colors.bg} ${colors.border} border-2 rounded-2xl shadow-2xl max-w-[92vw] sm:max-w-md w-full transform transition-all duration-300 scale-100`}>
         {/* Header */}
         <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200">

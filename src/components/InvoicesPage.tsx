@@ -1971,7 +1971,7 @@ export default function InvoicesPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-4 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden flex-shrink-0">
@@ -2435,7 +2435,7 @@ export default function InvoicesPage() {
 
       {/* Invoice Preview Modal */}
       {previewInvoice && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-2 pb-2 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-300 overflow-y-auto">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-300 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 px-3 py-3 sm:p-4 md:p-6 text-white relative overflow-hidden flex-shrink-0">
@@ -2791,7 +2791,7 @@ export default function InvoicesPage() {
 
       {/* Email Modal */}
       {emailModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-2 pb-2 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-200 overflow-y-auto">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-2xl max-h-[70vh] sm:max-h-[90vh] animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 px-3 py-3 sm:p-4 md:p-6 text-white rounded-t-xl sm:rounded-t-2xl relative overflow-hidden flex-shrink-0">

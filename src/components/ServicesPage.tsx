@@ -2246,7 +2246,7 @@ export default function ServicesPage() {
       )}
 
       {showModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-2 pb-2 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-200 overflow-y-auto">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 px-3 py-3 sm:p-4 md:p-6 text-white relative overflow-hidden flex-shrink-0">
@@ -2378,8 +2378,7 @@ export default function ServicesPage() {
                     required
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    placeholder="jj/mm/aaaa"
-                    className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 text-base sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full min-w-0 px-2 py-2.5 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
                 <div className="min-w-0">
@@ -2392,8 +2391,7 @@ export default function ServicesPage() {
                         min={formData.date || undefined}
                         value={dailyEndDate}
                         onChange={(e) => setDailyEndDate(e.target.value)}
-                        placeholder="jj/mm/aaaa"
-                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 text-base sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full min-w-0 px-2 py-2.5 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
                   ) : (
@@ -2682,7 +2680,7 @@ export default function ServicesPage() {
 
       {/* Modal de création/édition d'article */}
       {showArticleModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-4 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
@@ -2902,7 +2900,7 @@ export default function ServicesPage() {
       )}
 
       {selectedDayServices.length > 0 && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-4 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
