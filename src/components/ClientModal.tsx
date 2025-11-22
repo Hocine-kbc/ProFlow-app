@@ -45,7 +45,7 @@ export default function ClientModal({
   const isProfessional = formData.clientType === 'professionnel';
 
   return (
-    <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-50 animate-in fade-in duration-200 fixed inset-0">
+    <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-4 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 fixed inset-0 overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-[92vw] sm:max-w-lg lg:max-w-2xl w-full max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
         {/* Header with gradient */}
         <div className="bg-gradient-to-r from-green-600 via-green-600 to-green-700 dark:from-green-700 dark:via-green-700 dark:to-green-800 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden flex-shrink-0">
