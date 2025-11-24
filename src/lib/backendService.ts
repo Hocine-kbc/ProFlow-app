@@ -16,6 +16,9 @@ export interface BackendResponse {
   emailStatus?: string;
   invoiceId?: string;
   pdfGenerated?: boolean;
+  error?: string;
+  hint?: string;
+  emailService?: string;
 }
 
 // Envoyer une facture via le backend
@@ -74,16 +77,29 @@ export const sendInvoiceViaBackend = async (invoiceId: string, invoiceData?: unk
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Erreur lors de l\'envoi de la facture');
+      // Retourner les détails de l'erreur du backend
+      return {
+        success: false,
+        message: data.message || 'Erreur lors de l\'envoi de la facture',
+        error: data.error || data.message,
+        hint: data.hint
+      };
     }
 
     console.log('✅ Facture envoyée avec succès:', data);
     return data;
   } catch (error) {
     console.error('❌ Erreur lors de l\'envoi de la facture:', error);
+    
+    // Détecter les erreurs de connexion réseau
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+    const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('Failed to fetch');
+    
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Erreur inconnue'
+      message: isNetworkError ? 'Impossible de se connecter au backend' : 'Erreur lors de l\'envoi de la facture',
+      error: errorMessage,
+      hint: isNetworkError ? 'Vérifiez que le backend est démarré et que VITE_BACKEND_URL est correctement configuré.' : undefined
     };
   }
 };

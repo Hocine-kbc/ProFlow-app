@@ -44,12 +44,19 @@ const EmailTest: React.FC = () => {
       company_email: 'test@company.com',
     };
     
-    const isSent = await sendInvoiceEmail(emailData);
+    const emailResult = await sendInvoiceEmail(emailData);
     
-    if (isSent) {
-      setSendStatus('✅ Facture envoyée avec succès ! (Vérifiez les logs du backend)');
+    if (emailResult.success) {
+      setSendStatus(`✅ ${emailResult.message || 'Facture envoyée avec succès !'} (Vérifiez les logs du backend)`);
     } else {
-      setSendStatus('❌ Échec de l\'envoi de la facture. (Vérifiez les logs du backend)');
+      let errorMessage = `❌ ${emailResult.message || 'Échec de l\'envoi de la facture'}`;
+      if (emailResult.hint) {
+        errorMessage += `\n\n💡 ${emailResult.hint}`;
+      }
+      if (emailResult.error && emailResult.error !== emailResult.message) {
+        errorMessage += `\n\nDétails: ${emailResult.error}`;
+      }
+      setSendStatus(errorMessage);
     }
     
     setIsLoading(false);

@@ -723,18 +723,33 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                               </button>
                               <button
                                 type="button"
-                                onClick={() => sendInvoiceEmail({
-                                  to_email: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.email as string || '' : '',
-                                  to_name: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.name as string || '' : '',
-                                  subject: `Facture ${item.invoice_number as string}`,
-                                  message: 'Veuillez trouver ci-joint votre facture.',
-                                  invoice_number: item.invoice_number as string,
-                                  invoice_date: item.date as string,
-                                  invoice_due_date: item.due_date as string,
-                                  invoice_amount: String((item.subtotal as number) || (item.net_amount as number) || 0),
-                                  company_name: 'Votre Entreprise',
-                                  company_email: 'contact@votreentreprise.com'
-                                })}
+                                onClick={async () => {
+                                  const emailResult = await sendInvoiceEmail({
+                                    to_email: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.email as string || '' : '',
+                                    to_name: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.name as string || '' : '',
+                                    subject: `Facture ${item.invoice_number as string}`,
+                                    message: 'Veuillez trouver ci-joint votre facture.',
+                                    invoice_number: item.invoice_number as string,
+                                    invoice_date: item.date as string,
+                                    invoice_due_date: item.due_date as string,
+                                    invoice_amount: String((item.subtotal as number) || (item.net_amount as number) || 0),
+                                    company_name: 'Votre Entreprise',
+                                    company_email: 'contact@votreentreprise.com'
+                                  }, item.id as string);
+                                  
+                                  if (emailResult.success) {
+                                    showNotification('success', 'Email envoyé', emailResult.message || 'La facture a été envoyée avec succès !');
+                                  } else {
+                                    let errorMessage = emailResult.message || 'Erreur lors de l\'envoi de l\'email';
+                                    if (emailResult.hint) {
+                                      errorMessage += `\n\n💡 ${emailResult.hint}`;
+                                    }
+                                    if (emailResult.error && emailResult.error !== emailResult.message) {
+                                      errorMessage += `\n\nDétails: ${emailResult.error}`;
+                                    }
+                                    showNotification('error', 'Erreur d\'envoi', errorMessage);
+                                  }
+                                }}
                                 className="p-1 sm:p-1.5 text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors"
                                 title="Envoyer par email"
                               >
@@ -1101,18 +1116,33 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                         </button>
                         <button
                           type="button"
-                          onClick={() => sendInvoiceEmail({
-                            to_email: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.email as string || '' : '',
-                            to_name: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.name as string || '' : '',
-                            subject: `Facture ${item.invoice_number as string}`,
-                            message: 'Veuillez trouver ci-joint votre facture.',
-                            invoice_number: item.invoice_number as string,
-                            invoice_date: item.date as string,
-                            invoice_due_date: item.due_date as string,
-                            invoice_amount: String((item.subtotal as number) || (item.net_amount as number) || 0),
-                            company_name: 'Votre Entreprise',
-                            company_email: 'contact@votreentreprise.com'
-                          })}
+                          onClick={async () => {
+                            const emailResult = await sendInvoiceEmail({
+                              to_email: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.email as string || '' : '',
+                              to_name: activeTab === 'invoices' ? (item.client as Record<string, unknown>)?.name as string || '' : '',
+                              subject: `Facture ${item.invoice_number as string}`,
+                              message: 'Veuillez trouver ci-joint votre facture.',
+                              invoice_number: item.invoice_number as string,
+                              invoice_date: item.date as string,
+                              invoice_due_date: item.due_date as string,
+                              invoice_amount: String((item.subtotal as number) || (item.net_amount as number) || 0),
+                              company_name: 'Votre Entreprise',
+                              company_email: 'contact@votreentreprise.com'
+                            }, item.id as string);
+                            
+                            if (emailResult.success) {
+                              showNotification('success', 'Email envoyé', emailResult.message || 'La facture a été envoyée avec succès !');
+                            } else {
+                              let errorMessage = emailResult.message || 'Erreur lors de l\'envoi de l\'email';
+                              if (emailResult.hint) {
+                                errorMessage += `\n\n💡 ${emailResult.hint}`;
+                              }
+                              if (emailResult.error && emailResult.error !== emailResult.message) {
+                                errorMessage += `\n\nDétails: ${emailResult.error}`;
+                              }
+                              showNotification('error', 'Erreur d\'envoi', errorMessage);
+                            }
+                          }}
                           className="p-1 sm:p-1.5 text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors"
                           title="Envoyer par email"
                         >

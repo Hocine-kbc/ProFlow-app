@@ -317,14 +317,54 @@ export default async function handler(req, res) {
       console.error(`❌ Erreur ${emailService}:`, emailError.message);
       console.error('❌ Stack:', emailError.stack);
       
+      // Analyser l'erreur pour donner des conseils spécifiques
+      let hint = '';
+      const errorMsg = emailError.message?.toLowerCase() || '';
+      
+      if (emailService === 'sendgrid') {
+        // Détecter les erreurs spécifiques de SendGrid
+        if (emailError.response && emailError.response.body && emailError.response.body.errors) {
+          emailError.response.body.errors.forEach((err) => {
+            const errMsg = err.message?.toLowerCase() || '';
+            if (errMsg.includes('verified') || errMsg.includes('sender-identity')) {
+              hint = 'L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée dans SendGrid. Allez dans SendGrid > Settings > Sender Authentication pour vérifier votre email.';
+            } else if (errMsg.includes('api key') || errMsg.includes('unauthorized') || errMsg.includes('forbidden')) {
+              hint = 'La clé API SENDGRID_API_KEY est invalide ou expirée. Vérifiez-la dans SendGrid > Settings > API Keys.';
+            } else if (errMsg.includes('from') && errMsg.includes('email')) {
+              hint = 'L\'adresse email expéditrice n\'est pas autorisée. Vérifiez que SENDGRID_FROM_EMAIL correspond à une adresse vérifiée dans SendGrid.';
+            }
+          });
+        }
+        
+        // Si aucun hint spécifique, analyser le message d'erreur général
+        if (!hint) {
+          if (errorMsg.includes('verified') || errorMsg.includes('sender-identity')) {
+            hint = 'L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée. Vérifiez-la dans votre compte SendGrid.';
+          } else if (errorMsg.includes('api key') || errorMsg.includes('unauthorized') || errorMsg.includes('forbidden')) {
+            hint = 'La clé API SENDGRID_API_KEY est invalide. Vérifiez-la dans votre compte SendGrid.';
+          } else {
+            hint = 'Vérifiez que SENDGRID_API_KEY est valide et que SENDGRID_FROM_EMAIL est vérifié sur SendGrid.';
+          }
+        }
+      } else if (emailService === 'gmail') {
+        // Détecter les erreurs spécifiques de Gmail
+        if (errorMsg.includes('invalid login') || errorMsg.includes('authentication') || errorMsg.includes('invalid credentials')) {
+          hint = 'Les identifiants GMAIL_USER ou GMAIL_APP_PASSWORD sont incorrects. Utilisez un mot de passe d\'application (pas votre mot de passe Gmail normal). Créez-en un sur https://myaccount.google.com/apppasswords';
+        } else if (errorMsg.includes('less secure') || errorMsg.includes('app password')) {
+          hint = 'Vous devez utiliser un mot de passe d\'application Gmail. Créez-en un sur https://myaccount.google.com/apppasswords';
+        } else {
+          hint = 'Vérifiez GMAIL_USER et GMAIL_APP_PASSWORD (utilisez un mot de passe d\'application, pas votre mot de passe normal)';
+        }
+      }
+      
       return res.status(500).json({ 
         success: false, 
         message: `Erreur lors de l'envoi de l'email via ${emailService}`, 
         error: emailError.message,
         emailService: emailService,
-        hint: emailService === 'gmail' 
+        hint: hint || (emailService === 'gmail' 
           ? 'Vérifiez GMAIL_USER et GMAIL_APP_PASSWORD (utilisez un mot de passe d\'application, pas votre mot de passe normal)'
-          : 'Vérifiez que SENDGRID_API_KEY est valide et que SENDGRID_FROM_EMAIL est vérifié sur SendGrid'
+          : 'Vérifiez que SENDGRID_API_KEY est valide et que SENDGRID_FROM_EMAIL est vérifié sur SendGrid')
       });
     }
 

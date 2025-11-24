@@ -704,29 +704,70 @@ app.post('/api/send-invoice', async (req, res) => {
             res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
           } catch (gmailError) {
             console.error('❌ Erreur Gmail:', gmailError.message);
+            
+            // Analyser les erreurs pour donner des conseils
+            let hint = '';
+            const sendgridErrorMsg = emailError.message?.toLowerCase() || '';
+            const gmailErrorMsg = gmailError.message?.toLowerCase() || '';
+            
+            if (sendgridErrorMsg.includes('verified') || sendgridErrorMsg.includes('sender-identity')) {
+              hint = 'SendGrid: L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée. Vérifiez-la dans votre compte SendGrid.';
+            } else if (sendgridErrorMsg.includes('api key') || sendgridErrorMsg.includes('unauthorized')) {
+              hint = 'SendGrid: La clé API SENDGRID_API_KEY est invalide ou expirée. Vérifiez-la dans votre compte SendGrid.';
+            } else if (gmailErrorMsg.includes('invalid login') || gmailErrorMsg.includes('authentication')) {
+              hint = 'Gmail: Les identifiants GMAIL_USER ou GMAIL_APP_PASSWORD sont incorrects. Utilisez un mot de passe d\'application, pas votre mot de passe Gmail normal.';
+            } else {
+              hint = 'Vérifiez la configuration de SendGrid (SENDGRID_API_KEY + SENDGRID_FROM_EMAIL) et/ou Gmail (GMAIL_USER + GMAIL_APP_PASSWORD) sur votre plateforme de déploiement.';
+            }
+            
             res.json({ 
               success: false, 
               message: 'PDF généré mais email non envoyé (SendGrid et Gmail ont échoué)', 
               pdfPath: pdfData.filePath,
-              error: `SendGrid: ${emailError.message}, Gmail: ${gmailError.message}`
+              error: `SendGrid: ${emailError.message}, Gmail: ${gmailError.message}`,
+              hint
             });
           }
         } else {
           // Logs détaillés pour déboguer SendGrid
+          let hint = '';
           if (emailError.response && emailError.response.body && emailError.response.body.errors) {
             console.log('🚨 Détails de l\'erreur SendGrid:');
             emailError.response.body.errors.forEach((err, index) => {
               console.log(`   Erreur ${index + 1}: ${err.message}`);
               if (err.field) console.log(`   Champ: ${err.field}`);
               if (err.help) console.log(`   Aide: ${err.help}`);
+              
+              // Détecter les erreurs spécifiques
+              const errorMsg = err.message?.toLowerCase() || '';
+              if (errorMsg.includes('verified') || errorMsg.includes('sender-identity')) {
+                hint = 'L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée dans SendGrid. Allez dans SendGrid > Settings > Sender Authentication pour vérifier votre email.';
+              } else if (errorMsg.includes('api key') || errorMsg.includes('unauthorized')) {
+                hint = 'La clé API SENDGRID_API_KEY est invalide ou expirée. Vérifiez-la dans SendGrid > Settings > API Keys.';
+              } else if (errorMsg.includes('from') && errorMsg.includes('email')) {
+                hint = 'L\'adresse email expéditrice n\'est pas autorisée. Vérifiez SENDGRID_FROM_EMAIL dans votre configuration.';
+              }
             });
+          }
+          
+          // Si aucun hint spécifique n'a été trouvé, donner un conseil générique
+          if (!hint) {
+            const errorMsg = emailError.message?.toLowerCase() || '';
+            if (errorMsg.includes('verified') || errorMsg.includes('sender-identity')) {
+              hint = 'L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée. Vérifiez-la dans votre compte SendGrid.';
+            } else if (errorMsg.includes('api key') || errorMsg.includes('unauthorized')) {
+              hint = 'La clé API SENDGRID_API_KEY est invalide. Vérifiez-la dans votre compte SendGrid.';
+            } else {
+              hint = 'Vérifiez que SENDGRID_API_KEY est valide et que SENDGRID_FROM_EMAIL est vérifié dans SendGrid. Si Gmail est configuré, vérifiez GMAIL_USER et GMAIL_APP_PASSWORD.';
+            }
           }
           
           res.json({ 
             success: false, 
             message: 'PDF généré mais email non envoyé (SendGrid échoué, Gmail non configuré)', 
             pdfPath: pdfData.filePath,
-            error: emailError.message 
+            error: emailError.message,
+            hint
           });
         }
       }

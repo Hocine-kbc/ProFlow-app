@@ -1017,9 +1017,9 @@ export default function InvoicesPage() {
       console.log('📧 Données email préparées:', emailDataToSend);
 
       // Send email via Backend (nouveau système)
-      const emailSent = await sendInvoiceEmail(emailDataToSend, emailModal.id);
+      const emailResult = await sendInvoiceEmail(emailDataToSend, emailModal.id);
       
-      if (emailSent) {
+      if (emailResult.success) {
         // Update invoice status to 'sent'
         try {
           await updateInvoiceApi(emailModal.id, { ...emailModal, status: 'sent' });
@@ -1028,11 +1028,19 @@ export default function InvoicesPage() {
           console.error('Error updating invoice status:', error);
         }
 
-        showNotification('success', 'Email envoyé', 'La facture a été envoyée avec succès !');
+        showNotification('success', 'Email envoyé', emailResult.message || 'La facture a été envoyée avec succès !');
         setEmailModal(null);
         setEmailData({ to: '', subject: '', message: '' });
       } else {
-        showNotification('error', 'Erreur d\'envoi', 'Erreur lors de l\'envoi de l\'email. Vérifiez que le backend est démarré.');
+        // Afficher un message d'erreur détaillé avec des conseils
+        let errorMessage = emailResult.message || 'Erreur lors de l\'envoi de l\'email';
+        if (emailResult.hint) {
+          errorMessage += `\n\n💡 ${emailResult.hint}`;
+        }
+        if (emailResult.error && emailResult.error !== emailResult.message) {
+          errorMessage += `\n\nDétails: ${emailResult.error}`;
+        }
+        showNotification('error', 'Erreur d\'envoi', errorMessage);
       }
     } catch (error) {
       console.error('Error sending email:', error);
