@@ -105,20 +105,6 @@ interface DisplayServiceRow {
   pricingType?: ServicePricingType;
 }
 
-const calculateServiceAggregates = (servicesList: Service[]) => {
-  return servicesList.reduce(
-    (acc, service) => {
-      const hours = Number(service.hours) || 0;
-      const rate = Number(service.hourly_rate) || 0;
-      return {
-        hours: acc.hours + hours,
-        amount: acc.amount + hours * rate,
-      };
-    },
-    { hours: 0, amount: 0 }
-  );
-};
-
 const groupServicesForSummary = (servicesList: Service[]) => {
   const normalizeDescription = (description?: string) => {
     const trimmed = (description || '').trim();
