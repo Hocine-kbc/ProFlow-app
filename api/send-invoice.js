@@ -23,18 +23,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('🚀 Début de l\'envoi de facture...');
-    console.log('📦 Variables d\'environnement présentes:', {
-      VITE_SUPABASE_URL: !!process.env.VITE_SUPABASE_URL,
-      VITE_SUPABASE_ANON_KEY: !!process.env.VITE_SUPABASE_ANON_KEY,
-      SUPABASE_SERVICE_KEY: !!process.env.SUPABASE_SERVICE_KEY,
-      SENDGRID_API_KEY: !!process.env.SENDGRID_API_KEY,
-      SENDGRID_FROM_EMAIL: !!process.env.SENDGRID_FROM_EMAIL,
-    });
-
     // Vérifier les variables d'environnement critiques
     if (!process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_ANON_KEY) {
-      console.error('❌ Variables Supabase manquantes');
       return res.status(500).json({ 
         success: false,
         error: 'Configuration serveur manquante (Supabase)',
@@ -47,7 +37,6 @@ export default async function handler(req, res) {
     const hasSendGrid = process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL;
     
     if (!hasGmail && !hasSendGrid) {
-      console.error('❌ Aucun service d\'email configuré');
       return res.status(500).json({ 
         success: false,
         error: 'Configuration email manquante',
@@ -69,11 +58,9 @@ export default async function handler(req, res) {
         }
       });
       emailService = 'gmail';
-      console.log('✅ Gmail initialisé (Nodemailer)');
     } else if (hasSendGrid) {
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       emailService = 'sendgrid';
-      console.log('✅ SendGrid initialisé');
     }
 
     // Initialiser Supabase
@@ -81,11 +68,7 @@ export default async function handler(req, res) {
       process.env.VITE_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY
     );
-    console.log('✅ Supabase initialisé');
-
     const { invoiceId, companySettings, services, customEmailData } = req.body;
-    console.log('📨 Données reçues:', { invoiceId, hasServices: !!services });
-    
     if (!invoiceId) {
       return res.status(400).json({ error: 'ID requis' });
     }
@@ -166,14 +149,11 @@ export default async function handler(req, res) {
     };
 
     // Générer le PDF (essai avec Puppeteer, fallback sur jsPDF si échec)
-    console.log('📄 Génération du PDF...');
     let pdfBuffer;
     let pdfMethod = 'puppeteer';
     
     try {
       // TENTATIVE 1 : Puppeteer (MÊME RENDU qu'en local !)
-      console.log('🎯 Tentative avec Puppeteer...');
-      
       // Générer le HTML avec le template exact utilisé en local
       const htmlContent = generateSharedInvoiceHTML(
         invoice,
@@ -184,13 +164,7 @@ export default async function handler(req, res) {
       
       // Générer le PDF avec Puppeteer
       pdfBuffer = await generatePDFWithPuppeteer(htmlContent);
-      console.log('✅ PDF généré avec Puppeteer (taille:', pdfBuffer.length, 'octets)');
-      
     } catch (puppeteerError) {
-      console.warn('⚠️ Puppeteer a échoué:', puppeteerError.message);
-      console.log('🔄 Utilisation de la solution de secours (jsPDF)...');
-      console.log('📄 Design optimisé pour Vercel');
-      
       // TENTATIVE 2 : jsPDF (solution de secours fiable à 100%)
       try {
         pdfBuffer = generatePDFWithJsPDF(
@@ -200,9 +174,7 @@ export default async function handler(req, res) {
           companyData
         );
         pdfMethod = 'jspdf';
-        console.log('✅ PDF généré avec jsPDF (fallback) (taille:', pdfBuffer.length, 'octets)');
       } catch (jsPdfError) {
-        console.error('❌ jsPDF a également échoué:', jsPdfError);
         return res.status(500).json({ 
           success: false,
           error: 'Erreur lors de la génération du PDF',
@@ -226,29 +198,19 @@ export default async function handler(req, res) {
       // Avec Gmail : Utiliser l'email de l'utilisateur (ou GMAIL_USER par défaut)
       fromEmail = userEmail || process.env.GMAIL_USER;
       fromName = companyData.name || 'ProFlow';
-      console.log('📧 Service email: Gmail (expéditeur = utilisateur)');
     } else {
       // Avec SendGrid : Email fixe vérifié + replyTo
       fromEmail = process.env.SENDGRID_FROM_EMAIL;
       fromName = companyData.name || 'ProFlow';
-      console.log('📧 Service email: SendGrid (expéditeur fixe + replyTo)');
     }
 
     // Template HTML simple
     const htmlContent = generateEmailHTML(invoice, companyData, emailMessage);
 
     // Envoi de l'email selon le service configuré
-    console.log('📧 Préparation du message email...');
-    console.log('📧 Expéditeur (From):', fromEmail);
-    console.log('📧 Destinataire (To):', invoice.client.email);
-    console.log('📧 Sujet:', emailSubject);
-    console.log('📄 Méthode PDF:', pdfMethod === 'puppeteer' ? 'Puppeteer (template exact)' : 'jsPDF (design optimisé pour Vercel)');
-
     try {
       if (emailService === 'gmail') {
         // ===== ENVOI VIA GMAIL (NODEMAILER) =====
-        console.log('📧 Tentative d\'envoi via Gmail (Nodemailer)...');
-        
         const mailOptions = {
           from: `"${fromName}" <${fromEmail}>`,
           to: invoice.client.email,
@@ -265,8 +227,6 @@ export default async function handler(req, res) {
         };
 
         await gmailTransporter.sendMail(mailOptions);
-        console.log('✅ Email envoyé avec succès via Gmail');
-        
         return res.json({ 
           success: true, 
           message: 'Facture envoyée avec succès',
@@ -278,8 +238,6 @@ export default async function handler(req, res) {
         
       } else {
         // ===== ENVOI VIA SENDGRID =====
-        console.log('📧 Tentative d\'envoi via SendGrid...');
-        
         const msg = {
           to: invoice.client.email,
           from: {
@@ -301,8 +259,6 @@ export default async function handler(req, res) {
         };
 
         await sgMail.send(msg);
-        console.log('✅ Email envoyé avec succès via SendGrid');
-        
         return res.json({ 
           success: true, 
           message: 'Facture envoyée avec succès',
@@ -314,9 +270,6 @@ export default async function handler(req, res) {
       }
       
     } catch (emailError) {
-      console.error(`❌ Erreur ${emailService}:`, emailError.message);
-      console.error('❌ Stack:', emailError.stack);
-      
       // Analyser l'erreur pour donner des conseils spécifiques
       let hint = '';
       const errorMsg = emailError.message?.toLowerCase() || '';
@@ -326,7 +279,9 @@ export default async function handler(req, res) {
         if (emailError.response && emailError.response.body && emailError.response.body.errors) {
           emailError.response.body.errors.forEach((err) => {
             const errMsg = err.message?.toLowerCase() || '';
-            if (errMsg.includes('verified') || errMsg.includes('sender-identity')) {
+            if (errMsg.includes('maximum credits exceeded') || errMsg.includes('credits exceeded') || errMsg.includes('quota')) {
+              hint = 'Votre compte SendGrid a atteint sa limite de crédits mensuels. Options : 1) Attendre le renouvellement mensuel, 2) Passer à un plan payant SendGrid, 3) Utiliser Gmail (configurez GMAIL_USER et GMAIL_APP_PASSWORD).';
+            } else if (errMsg.includes('verified') || errMsg.includes('sender-identity')) {
               hint = 'L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée dans SendGrid. Allez dans SendGrid > Settings > Sender Authentication pour vérifier votre email.';
             } else if (errMsg.includes('api key') || errMsg.includes('unauthorized') || errMsg.includes('forbidden')) {
               hint = 'La clé API SENDGRID_API_KEY est invalide ou expirée. Vérifiez-la dans SendGrid > Settings > API Keys.';
@@ -338,7 +293,9 @@ export default async function handler(req, res) {
         
         // Si aucun hint spécifique, analyser le message d'erreur général
         if (!hint) {
-          if (errorMsg.includes('verified') || errorMsg.includes('sender-identity')) {
+          if (errorMsg.includes('maximum credits exceeded') || errorMsg.includes('credits exceeded') || errorMsg.includes('quota')) {
+            hint = 'Votre compte SendGrid a atteint sa limite de crédits mensuels. Configurez Gmail (GMAIL_USER + GMAIL_APP_PASSWORD) pour continuer à envoyer des emails.';
+          } else if (errorMsg.includes('verified') || errorMsg.includes('sender-identity')) {
             hint = 'L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée. Vérifiez-la dans votre compte SendGrid.';
           } else if (errorMsg.includes('api key') || errorMsg.includes('unauthorized') || errorMsg.includes('forbidden')) {
             hint = 'La clé API SENDGRID_API_KEY est invalide. Vérifiez-la dans votre compte SendGrid.';
@@ -369,9 +326,6 @@ export default async function handler(req, res) {
     }
 
   } catch (err) {
-    console.error('❌ Erreur globale:', err);
-    console.error('Stack trace:', err.stack);
-    
     // S'assurer de toujours retourner du JSON
     return res.status(500).json({ 
       success: false,

@@ -16,23 +16,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Debug : Afficher les variables d'environnement détectées (sans les valeurs sensibles)
-console.log('🔍 Variables d\'environnement détectées:');
-console.log('   PORT:', process.env.PORT || '3001 (default)');
-console.log('   VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? '✅ Définie' : '❌ Manquante');
-console.log('   VITE_SUPABASE_ANON_KEY:', process.env.VITE_SUPABASE_ANON_KEY ? '✅ Définie' : '❌ Manquante');
-console.log('   SUPABASE_SERVICE_KEY:', process.env.SUPABASE_SERVICE_KEY ? '✅ Définie' : '❌ Manquante');
-console.log('   GMAIL_USER:', process.env.GMAIL_USER ? `✅ ${process.env.GMAIL_USER}` : '❌ Manquante');
-console.log('   GMAIL_APP_PASSWORD:', process.env.GMAIL_APP_PASSWORD ? '✅ Définie' : '❌ Manquante');
-console.log('   SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY ? '✅ Définie' : '❌ Manquante');
 
 // Configuration SendGrid
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || 'SG.test-key-not-configured';
 if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.test-key-not-configured') {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log('✅ SendGrid configuré');
-} else {
-  console.log('⚠️ SENDGRID_API_KEY non configurée. SendGrid ne sera pas utilisé.');
 }
 
 // Configuration Gmail (solution de secours)
@@ -45,9 +33,6 @@ if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       pass: process.env.GMAIL_APP_PASSWORD
     }
   });
-  console.log('✅ Gmail configuré comme solution de secours');
-} else {
-  console.log('⚠️ Gmail non configuré. Variables GMAIL_USER et GMAIL_APP_PASSWORD manquantes.');
 }
 
 // Middleware
@@ -61,24 +46,9 @@ const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABAS
 let supabase = null;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('');
-  console.error('❌❌❌ ERREUR CRITIQUE ❌❌❌');
-  console.error('Les variables Supabase sont OBLIGATOIRES :');
-  console.error('  - VITE_SUPABASE_URL (ou SUPABASE_URL)');
-  console.error('  - SUPABASE_SERVICE_KEY (ou VITE_SUPABASE_ANON_KEY)');
-  console.error('');
-  console.error('📋 Sur Railway.app :');
-  console.error('  1. Allez dans votre projet');
-  console.error('  2. Cliquez sur votre service');
-  console.error('  3. Onglet "Variables"');
-  console.error('  4. Ajoutez VITE_SUPABASE_URL et SUPABASE_SERVICE_KEY');
-  console.error('');
-  console.error('⚠️ Le serveur va quand même démarrer en mode dégradé pour le debugging...');
-  console.error('⚠️ Les fonctionnalités nécessitant Supabase ne fonctionneront pas.');
-  console.error('');
+  // Variables Supabase manquantes - le serveur démarrera en mode dégradé
 } else {
   supabase = createClient(supabaseUrl, supabaseKey);
-  console.log('✅ Supabase initialisé avec succès');
 }
 
 // Fonction : Génération de facture PDF moderne avec Puppeteer
@@ -91,7 +61,6 @@ app.post('/api/send-invoice', async (req, res) => {
     if (!invoiceId) return res.status(400).json({ error: 'ID requis' });
 
     // Récupérer l'utilisateur connecté via l'ID de la facture
-    console.log(`🔍 Récupération facture ID: ${invoiceId}`);
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
       .select('*, user_id')
@@ -99,32 +68,18 @@ app.post('/api/send-invoice', async (req, res) => {
       .single();
 
     if (invoiceError) {
-      console.error('❌ Erreur récupération facture:', invoiceError);
       return res.status(404).json({ error: 'Facture non trouvée' });
     }
 
     // Récupérer l'utilisateur connecté
-    console.log(`🔍 Récupération utilisateur ID: ${invoice.user_id}`);
     const { data: user, error: userError } = await supabase.auth.admin.getUserById(invoice.user_id);
     
     if (userError) {
-      console.error('❌ Erreur récupération utilisateur:', userError);
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
 
     const userEmail = user.user?.email;
-    console.log('✅ Utilisateur récupéré:', { email: userEmail });
-
-    console.log('✅ Facture récupérée:', {
-      id: invoice.id,
-      invoice_number: invoice.invoice_number,
-      client_id: invoice.client_id,
-      subtotal: invoice.subtotal,
-      net_amount: invoice.net_amount
-    });
-
     // Récup client
-    console.log(`🔍 Récupération client ID: ${invoice.client_id}`);
     const { data: client, error: clientError } = await supabase
       .from('clients')
       .select('*')
@@ -132,31 +87,16 @@ app.post('/api/send-invoice', async (req, res) => {
       .single();
 
     if (clientError) {
-      console.error('❌ Erreur récupération client:', clientError);
       return res.status(404).json({ error: 'Client non trouvé' });
     }
-
-    console.log('✅ Client récupéré:', {
-      id: client.id,
-      name: client.name,
-      email: client.email
-    });
-
     // Récupérer les services spécifiques à cette facture depuis les données envoyées par le frontend
     const { services: invoiceServices, invoiceData } = req.body;
-    
-    console.log(`🔍 Données complètes reçues du frontend:`, req.body);
-    console.log(`🔍 Services reçus du frontend pour la facture ${invoiceId}:`, invoiceServices ? invoiceServices.length : 0);
-    console.log(`🔍 Détails des services reçus:`, invoiceServices);
-    
     let services = [];
     
     // Utiliser les services envoyés par le frontend s'ils existent
     if (invoiceServices && invoiceServices.length > 0) {
-      console.log('✅ Utilisation des services spécifiques à la facture envoyés par le frontend');
       services = invoiceServices;
     } else {
-      console.log('⚠️ Aucun service spécifique reçu, récupération de tous les services du client');
       // Fallback : récupérer tous les services du client (ancien comportement)
       const { data: allServices, error: servicesError } = await supabase
         .from('services')
@@ -164,41 +104,23 @@ app.post('/api/send-invoice', async (req, res) => {
         .eq('client_id', invoice.client_id);
 
       if (servicesError) {
-        console.error('❌ Erreur récupération services:', servicesError);
         return res.status(404).json({ error: 'Services non trouvés' });
       }
       
       services = allServices || [];
     }
-
-    console.log(`✅ Services à utiliser: ${services.length} service(s)`, 
-      services.map(s => ({ description: s.description, hours: s.hours, rate: s.hourly_rate }))
-    );
-
     // Fusionner données
     invoice.client = client;
     
     // Vérifier si des services existent
     if (!services || services.length === 0) {
-      console.warn('⚠️ Aucun service trouvé pour cette facture !');
       return res.status(400).json({ 
         error: 'Aucun service trouvé pour cette facture. Veuillez d\'abord ajouter des services.' 
       });
     }
     
     invoice.services = services;
-    
-    console.log('📋 Données finales de la facture:', {
-      invoice_number: invoice.invoice_number,
-      client_name: invoice.client.name,
-      services_count: invoice.services.length,
-      subtotal: invoice.subtotal,
-      net_amount: invoice.net_amount
-    });
-
     // Debug: Log des données d'entreprise reçues
-    console.log('🏢 Données d\'entreprise reçues:', companySettings);
-    
     // Utiliser les paramètres stockés dans la facture en priorité, sinon les paramètres globaux
     const companyData = {
       // Utiliser les données sauvegardées dans la facture en priorité, sinon les paramètres globaux
@@ -219,38 +141,18 @@ app.post('/api/send-invoice', async (req, res) => {
       showLegalRate: companySettings?.showLegalRate !== false,
       showFixedFee: companySettings?.showFixedFee !== false
     };
-    
-    console.log('🏢 Données d\'entreprise utilisées:', companyData);
-
     // Générer le PDF avec Puppeteer
     const pdfData = await generateInvoicePDFWithPuppeteer(invoice, companyData);
-    
-    console.log('📊 PDF généré:');
-    console.log('   Taille:', (pdfData.buffer.length / 1024).toFixed(1) + ' KB');
-    console.log('   Nom:', pdfData.fileName);
-    console.log('   Chemin:', pdfData.filePath);
-
     // Récupérer les données personnalisées du frontend
     const { customEmailData } = req.body;
-    console.log('📧 Données email personnalisées reçues:', customEmailData);
-    
     // Utiliser le message personnalisé ou le message par défaut
     const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question ou précision, je reste à votre disposition.\n\nCordialement,\n${companyData.name}`;
     const emailSubject = customEmailData?.subject || `Facture ${invoice.invoice_number}`;
-    
-    console.log('📧 Message email utilisé:', emailMessage);
-    console.log('📧 Sujet email utilisé:', emailSubject);
-    
     // Utiliser une adresse fixe vérifiée comme expéditeur
     // L'email de l'utilisateur sera en Reply-To pour que les clients puissent répondre
     const fromEmail = process.env.SENDGRID_FROM_EMAIL || userEmail;
     const fromName = companyData.name || 'ProFlow';
     const replyToEmail = userEmail; // Email de l'utilisateur pour les réponses
-    
-    console.log('📧 Email expéditeur utilisé:', fromEmail);
-    console.log('📧 Nom expéditeur utilisé:', fromName);
-    console.log('📧 Reply-To (réponses vers):', replyToEmail);
-    
     // Fonction pour convertir date YYYY-MM-DD en DD-MM-YYYY
     const formatDateFR = (dateString) => {
       if (!dateString) return '';
@@ -550,10 +452,6 @@ app.post('/api/send-invoice', async (req, res) => {
            <img src="${companyData.logoUrl}" alt="Logo" width="48" height="48" style="display:block; width:48px; height:48px; border-radius:48px; object-fit:cover;" />
          </td>`
       : '';
-    
-    console.log('🖼️ Logo URL:', companyData.logoUrl);
-    console.log('🖼️ Logo HTML généré:', logoHtml ? 'OUI' : 'NON (pas de logo)');
-
     // Remplacer les variables du template
     const htmlContent = htmlTemplate
       .replace(/\{\{LOGO_HTML\}\}/g, logoHtml)
@@ -607,11 +505,7 @@ app.post('/api/send-invoice', async (req, res) => {
     if (useGmailFirst && gmailTransporter) {
       // PRIORITÉ 1 : Gmail
       try {
-        console.log('📤 Tentative d\'envoi Gmail à:', invoice.client.email);
-        console.log('📤 Expéditeur:', replyToEmail); // Avec Gmail, on envoie depuis l'email de l'utilisateur
-        console.log('📤 Destinataire:', invoice.client.email);
-        console.log('📤 Taille PDF:', pdfData.buffer.length, 'octets');
-        
+        // Avec Gmail, on envoie depuis l'email de l'utilisateur
         const gmailMsg = {
           from: {
             address: replyToEmail, // Envoyer depuis l'email de l'utilisateur
@@ -631,20 +525,14 @@ app.post('/api/send-invoice', async (req, res) => {
         };
         
         await gmailTransporter.sendMail(gmailMsg);
-        console.log('✅ Email envoyé avec succès (Gmail) à:', invoice.client.email);
         res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
       } catch (gmailError) {
-        console.error('❌ Erreur Gmail:', gmailError.message);
-        
         // FALLBACK : Essayer SendGrid
         if (process.env.SENDGRID_API_KEY) {
           try {
-            console.log('🔄 Tentative d\'envoi avec SendGrid (fallback)...');
             await sgMail.send(msg);
-            console.log('✅ Email envoyé avec succès (SendGrid fallback) à:', invoice.client.email);
             res.json({ success: true, message: 'Facture envoyée avec succès (SendGrid)' });
           } catch (sendgridError) {
-            console.error('❌ Erreur SendGrid:', sendgridError.message);
             res.json({ 
               success: false, 
               message: 'PDF généré mais email non envoyé (Gmail et SendGrid ont échoué)', 
@@ -664,23 +552,12 @@ app.post('/api/send-invoice', async (req, res) => {
     } else {
       // PRIORITÉ 1 : SendGrid (si Gmail n'est pas configuré)
       try {
-        console.log('📤 Tentative d\'envoi SendGrid à:', invoice.client.email);
-        console.log('📤 Expéditeur:', fromEmail);
-        console.log('📤 Destinataire:', invoice.client.email);
-        console.log('📤 Taille PDF:', pdfData.buffer.length, 'octets');
-        
         await sgMail.send(msg);
-        console.log('✅ Email envoyé avec succès (SendGrid) à:', invoice.client.email);
         res.json({ success: true, message: 'Facture envoyée avec succès (SendGrid)' });
       } catch (emailError) {
-        console.error('❌ Erreur SendGrid:', emailError.message);
-        console.error('❌ Détails complets:', JSON.stringify(emailError.response?.body, null, 2));
-        
         // FALLBACK : Essayer Gmail
         if (gmailTransporter) {
           try {
-            console.log('🔄 Tentative d\'envoi avec Gmail (fallback)...');
-            
             const gmailMsg = {
               from: {
                 address: replyToEmail,
@@ -700,24 +577,39 @@ app.post('/api/send-invoice', async (req, res) => {
             };
             
             await gmailTransporter.sendMail(gmailMsg);
-            console.log('✅ Email envoyé avec succès (Gmail fallback) à:', invoice.client.email);
             res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
           } catch (gmailError) {
-            console.error('❌ Erreur Gmail:', gmailError.message);
-            
             // Analyser les erreurs pour donner des conseils
             let hint = '';
             const sendgridErrorMsg = emailError.message?.toLowerCase() || '';
             const gmailErrorMsg = gmailError.message?.toLowerCase() || '';
             
-            if (sendgridErrorMsg.includes('verified') || sendgridErrorMsg.includes('sender-identity')) {
-              hint = 'SendGrid: L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée. Vérifiez-la dans votre compte SendGrid.';
-            } else if (sendgridErrorMsg.includes('api key') || sendgridErrorMsg.includes('unauthorized')) {
-              hint = 'SendGrid: La clé API SENDGRID_API_KEY est invalide ou expirée. Vérifiez-la dans votre compte SendGrid.';
-            } else if (gmailErrorMsg.includes('invalid login') || gmailErrorMsg.includes('authentication')) {
-              hint = 'Gmail: Les identifiants GMAIL_USER ou GMAIL_APP_PASSWORD sont incorrects. Utilisez un mot de passe d\'application, pas votre mot de passe Gmail normal.';
-            } else {
-              hint = 'Vérifiez la configuration de SendGrid (SENDGRID_API_KEY + SENDGRID_FROM_EMAIL) et/ou Gmail (GMAIL_USER + GMAIL_APP_PASSWORD) sur votre plateforme de déploiement.';
+            // Vérifier les erreurs dans la réponse SendGrid
+            if (emailError.response && emailError.response.body && emailError.response.body.errors) {
+              emailError.response.body.errors.forEach((err) => {
+                const errMsg = err.message?.toLowerCase() || '';
+                if (errMsg.includes('maximum credits exceeded') || errMsg.includes('credits exceeded') || errMsg.includes('quota')) {
+                  hint = 'SendGrid: Votre compte a atteint sa limite de crédits mensuels. Gmail: ' + (gmailErrorMsg.includes('invalid login') || gmailErrorMsg.includes('authentication') 
+                    ? 'Les identifiants GMAIL_USER ou GMAIL_APP_PASSWORD sont incorrects. Utilisez un mot de passe d\'application.'
+                    : 'Vérifiez GMAIL_USER et GMAIL_APP_PASSWORD.');
+                }
+              });
+            }
+            
+            if (!hint) {
+              if (sendgridErrorMsg.includes('maximum credits exceeded') || sendgridErrorMsg.includes('credits exceeded') || sendgridErrorMsg.includes('quota')) {
+                hint = 'SendGrid: Votre compte a atteint sa limite de crédits mensuels. Gmail: ' + (gmailErrorMsg.includes('invalid login') || gmailErrorMsg.includes('authentication') 
+                  ? 'Les identifiants sont incorrects. Utilisez un mot de passe d\'application.'
+                  : 'Vérifiez GMAIL_USER et GMAIL_APP_PASSWORD.');
+              } else if (sendgridErrorMsg.includes('verified') || sendgridErrorMsg.includes('sender-identity')) {
+                hint = 'SendGrid: L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée. Vérifiez-la dans votre compte SendGrid.';
+              } else if (sendgridErrorMsg.includes('api key') || sendgridErrorMsg.includes('unauthorized')) {
+                hint = 'SendGrid: La clé API SENDGRID_API_KEY est invalide ou expirée. Vérifiez-la dans votre compte SendGrid.';
+              } else if (gmailErrorMsg.includes('invalid login') || gmailErrorMsg.includes('authentication')) {
+                hint = 'Gmail: Les identifiants GMAIL_USER ou GMAIL_APP_PASSWORD sont incorrects. Utilisez un mot de passe d\'application, pas votre mot de passe Gmail normal.';
+              } else {
+                hint = 'Vérifiez la configuration de SendGrid (SENDGRID_API_KEY + SENDGRID_FROM_EMAIL) et/ou Gmail (GMAIL_USER + GMAIL_APP_PASSWORD) sur votre plateforme de déploiement.';
+              }
             }
             
             res.json({ 
@@ -732,15 +624,13 @@ app.post('/api/send-invoice', async (req, res) => {
           // Logs détaillés pour déboguer SendGrid
           let hint = '';
           if (emailError.response && emailError.response.body && emailError.response.body.errors) {
-            console.log('🚨 Détails de l\'erreur SendGrid:');
             emailError.response.body.errors.forEach((err, index) => {
-              console.log(`   Erreur ${index + 1}: ${err.message}`);
-              if (err.field) console.log(`   Champ: ${err.field}`);
-              if (err.help) console.log(`   Aide: ${err.help}`);
               
               // Détecter les erreurs spécifiques
               const errorMsg = err.message?.toLowerCase() || '';
-              if (errorMsg.includes('verified') || errorMsg.includes('sender-identity')) {
+              if (errorMsg.includes('maximum credits exceeded') || errorMsg.includes('credits exceeded') || errorMsg.includes('quota')) {
+                hint = 'Votre compte SendGrid a atteint sa limite de crédits mensuels. Vous pouvez : 1) Attendre le renouvellement mensuel, 2) Passer à un plan payant, 3) Utiliser Gmail en attendant. Le système essaie automatiquement Gmail en secours.';
+              } else if (errorMsg.includes('verified') || errorMsg.includes('sender-identity')) {
                 hint = 'L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée dans SendGrid. Allez dans SendGrid > Settings > Sender Authentication pour vérifier votre email.';
               } else if (errorMsg.includes('api key') || errorMsg.includes('unauthorized')) {
                 hint = 'La clé API SENDGRID_API_KEY est invalide ou expirée. Vérifiez-la dans SendGrid > Settings > API Keys.';
@@ -753,7 +643,9 @@ app.post('/api/send-invoice', async (req, res) => {
           // Si aucun hint spécifique n'a été trouvé, donner un conseil générique
           if (!hint) {
             const errorMsg = emailError.message?.toLowerCase() || '';
-            if (errorMsg.includes('verified') || errorMsg.includes('sender-identity')) {
+            if (errorMsg.includes('maximum credits exceeded') || errorMsg.includes('credits exceeded') || errorMsg.includes('quota')) {
+              hint = 'Votre compte SendGrid a atteint sa limite de crédits mensuels. Le système essaie automatiquement Gmail en secours.';
+            } else if (errorMsg.includes('verified') || errorMsg.includes('sender-identity')) {
               hint = 'L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée. Vérifiez-la dans votre compte SendGrid.';
             } else if (errorMsg.includes('api key') || errorMsg.includes('unauthorized')) {
               hint = 'La clé API SENDGRID_API_KEY est invalide. Vérifiez-la dans votre compte SendGrid.';
@@ -774,7 +666,6 @@ app.post('/api/send-invoice', async (req, res) => {
     }
 
   } catch (err) {
-    console.error('❌ Erreur:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -824,9 +715,6 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
     const summaryDescriptionOverride = typeof req.query.summaryDescription === 'string' && req.query.summaryDescription.trim() !== ''
       ? req.query.summaryDescription.trim()
       : null;
-    
-    console.log(`📥 Demande de téléchargement PDF pour facture ${invoiceId}`);
-    
     // Récupérer la facture
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
@@ -835,7 +723,6 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
       .single();
 
     if (invoiceError || !invoice) {
-      console.error('❌ Facture non trouvée:', invoiceError);
       return res.status(404).json({ error: 'Facture non trouvée' });
     }
 
@@ -885,7 +772,6 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
 
     // Si aucun service trouvé avec invoice_id, fallback sur les services du client (ancien comportement)
     if (!invoiceServices || invoiceServices.length === 0) {
-      console.log('⚠️ Aucun service trouvé avec invoice_id, fallback sur client_id');
       const { data: clientServices } = await supabase
         .from('services')
         .select('*')
@@ -894,7 +780,6 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
       
       invoiceServices = clientServices || [];
     } else {
-      console.log(`✅ ${invoiceServices.length} service(s) trouvé(s) pour la facture ${invoice.id}`);
     }
 
     // Si invoice.services est défini (dans la colonne JSON), l'utiliser en priorité
@@ -996,11 +881,7 @@ app.get('/api/download-invoice/:invoiceId', async (req, res) => {
     
     // Envoyer le PDF
     res.end(Buffer.from(pdfData.buffer));
-
-    console.log(`✅ PDF envoyé pour facture ${invoiceId}`);
-
   } catch (error) {
-    console.error('❌ Erreur téléchargement PDF:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1016,7 +897,6 @@ async function checkAndProcessScheduledMessages() {
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
-      console.error('⚠️ Supabase non configuré. Variables d\'environnement manquantes.');
       return;
     }
     
@@ -1042,11 +922,9 @@ async function checkAndProcessScheduledMessages() {
         const lastErrorLog = checkAndProcessScheduledMessages.lastErrorLog || 0;
         const currentTime = Date.now();
         if (currentTime - lastErrorLog > 600000) { // 10 minutes
-          console.error('⚠️ Erreur de connexion Supabase (réseau/timeout). Vérifiez votre connexion internet et les variables d\'environnement.');
           checkAndProcessScheduledMessages.lastErrorLog = currentTime;
         }
       } else {
-        console.error('❌ Erreur récupération messages programmés:', error);
       }
       return;
     }
@@ -1054,9 +932,6 @@ async function checkAndProcessScheduledMessages() {
     if (!scheduledMessages || scheduledMessages.length === 0) {
       return;
     }
-    
-    console.log(`📬 ${scheduledMessages.length} message(s) programmé(s) à envoyer`);
-    
     // Importer dynamiquement le router messages pour accéder aux fonctions
     const messagesModule = await import('./api/messages.js');
     const sendExternalEmail = messagesModule.sendExternalEmail;
@@ -1079,7 +954,6 @@ async function checkAndProcessScheduledMessages() {
               }
             }
           } catch (userError) {
-            console.error('Erreur recherche utilisateur:', userError);
           }
         }
         
@@ -1101,8 +975,6 @@ async function checkAndProcessScheduledMessages() {
         
         // Envoyer les emails externes si nécessaire
         if (externalEmails.length > 0 && sendExternalEmail) {
-          console.log(`📧 Envoi d'emails externes pour le message ${message.id}:`, externalEmails);
-          
           for (const externalEmail of externalEmails) {
             try {
               await sendExternalEmail(
@@ -1111,9 +983,7 @@ async function checkAndProcessScheduledMessages() {
                 message.content,
                 message.attachments || []
               );
-              console.log(`✅ Email externe envoyé à ${externalEmail}`);
             } catch (extError) {
-              console.error(`❌ Erreur envoi email externe à ${externalEmail}:`, extError);
             }
           }
         }
@@ -1148,7 +1018,6 @@ async function checkAndProcessScheduledMessages() {
             .insert(recipientMessage);
           
           if (sendError) {
-            console.error(`❌ Erreur création message destinataire:`, sendError);
             continue;
           }
         }
@@ -1164,12 +1033,9 @@ async function checkAndProcessScheduledMessages() {
           .eq('id', message.id);
         
         if (updateError) {
-          console.error(`❌ Erreur mise à jour message:`, updateError);
         } else {
-          console.log(`✅ Message programmé ${message.id} envoyé avec succès`);
         }
       } catch (msgError) {
-        console.error(`❌ Erreur traitement message ${message.id}:`, msgError);
       }
     }
   } catch (error) {
@@ -1184,22 +1050,16 @@ async function checkAndProcessScheduledMessages() {
       const lastErrorLog = checkAndProcessScheduledMessages.lastErrorLog || 0;
       const currentTime = Date.now();
       if (currentTime - lastErrorLog > 600000) { // 10 minutes
-        console.error('⚠️ Erreur de connexion Supabase (réseau/timeout). Vérifiez votre connexion internet et les variables d\'environnement.');
         checkAndProcessScheduledMessages.lastErrorLog = currentTime;
       }
     } else {
-      console.error('❌ Erreur lors du traitement des messages programmés:', error);
     }
   }
 }
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Serveur démarré sur le port ${PORT}`);
-  
   // Vérifier les messages programmés toutes les minutes
   setInterval(checkAndProcessScheduledMessages, 60000); // 60000ms = 1 minute
-  console.log('⏰ Vérification des messages programmés activée (toutes les minutes)');
-  
   // Vérifier immédiatement au démarrage
   setTimeout(checkAndProcessScheduledMessages, 5000); // Attendre 5 secondes après le démarrage
 });

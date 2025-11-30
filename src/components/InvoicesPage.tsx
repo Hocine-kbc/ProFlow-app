@@ -504,9 +504,7 @@ export default function InvoicesPage() {
 
   // Get available services for invoicing (completed but not invoiced) - recalculé automatiquement
   const availableServices = useMemo(() => {
-    console.log('🔄 Recalcul des availableServices, services:', services.length);
     const filtered = services.filter(s => s.status === 'completed');
-    console.log('🔄 Services terminés disponibles:', filtered.length);
     return filtered;
   }, [services]);
   
@@ -2281,8 +2279,6 @@ export default function InvoicesPage() {
                     <div className="border border-gray-200 dark:border-gray-600 rounded-lg sm:rounded-xl bg-white dark:bg-gray-800 max-h-60 sm:max-h-80 overflow-y-auto">
                       {(() => {
                         const clientServices = selectableServices.filter(s => s.client_id === formData.client_id);
-                        console.log('🔄 Services pour le client', formData.client_id, ':', clientServices.length);
-                        console.log('🔄 Tous les selectableServices:', selectableServices.length);
                         return clientServices.length === 0;
                       })() ? (
                         <div className="p-4 sm:p-6 lg:p-8 text-center">
@@ -2300,7 +2296,33 @@ export default function InvoicesPage() {
                           <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
                             <div className="flex flex-col space-y-3">
                               {/* Boutons en pillule sur mobile, horizontaux sur desktop */}
-                              <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const now = new Date();
+                                    const currentMonth = now.getMonth();
+                                    const currentYear = now.getFullYear();
+                                    
+                                    const clientServices = selectableServices.filter(s => {
+                                      if (s.client_id !== formData.client_id) return false;
+                                      
+                                      // Filtrer par mois en cours
+                                      if (s.date) {
+                                        const serviceDate = new Date(s.date);
+                                        return serviceDate.getMonth() === currentMonth && 
+                                               serviceDate.getFullYear() === currentYear;
+                                      }
+                                      return false;
+                                    });
+                                    
+                                    const allServiceIds = clientServices.map(s => s.id);
+                                    setSelectedServices(allServiceIds);
+                                  }}
+                                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-700 dark:to-purple-800 dark:hover:from-purple-800 dark:hover:to-purple-900 text-white rounded-full border border-purple-500 dark:border-purple-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
+                                >
+                                  Mois en cours
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -2308,16 +2330,17 @@ export default function InvoicesPage() {
                                     const allServiceIds = clientServices.map(s => s.id);
                                     setSelectedServices(allServiceIds);
                                   }}
-                                  className="w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors border border-blue-200 dark:border-blue-800"
+                                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-700 dark:to-purple-800 dark:hover:from-purple-800 dark:hover:to-purple-900 text-white rounded-full border border-purple-500 dark:border-purple-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
+                                  title="Sélectionner toutes les prestations (tous les mois)"
                                 >
-                                  ✓ Tout sélectionner
+                                  Tout sélectionner
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setSelectedServices([])}
-                                  className="w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 rounded-full hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors border border-gray-300 dark:border-gray-500"
+                                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium text-sm sm:text-base"
                                 >
-                                  ✕ Tout désélectionner
+                                  Tout désélectionner
                                 </button>
                               </div>
                               

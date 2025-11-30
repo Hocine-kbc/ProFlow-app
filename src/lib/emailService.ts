@@ -28,8 +28,6 @@ export interface EmailSendResult {
 // Fonction pour envoyer une facture par email via le backend
 export const sendInvoiceEmail = async (emailData: EmailData, invoiceId?: string, invoiceData?: any): Promise<EmailSendResult> => {
   try {
-    console.log('📧 Envoi de facture via le backend...', emailData);
-    
     // Utiliser l'ID UUID si fourni, sinon utiliser le numéro de facture
     const idToSend = invoiceId || emailData.invoice_number;
     
@@ -48,19 +46,18 @@ export const sendInvoiceEmail = async (emailData: EmailData, invoiceId?: string,
     const result = await sendInvoiceViaBackend(idToSend, invoiceData, customEmailData);
     
     if (result.success) {
-      console.log('✅ Facture envoyée avec succès:', result);
       return {
         success: true,
         message: result.message || 'Facture envoyée avec succès'
       };
     } else {
-      console.error('❌ Erreur lors de l\'envoi:', result.message);
-      
       // Analyser le message d'erreur pour donner des conseils
       let hint = '';
       const errorMsg = result.message?.toLowerCase() || '';
       
-      if (errorMsg.includes('sendgrid') && errorMsg.includes('verified')) {
+      if (errorMsg.includes('maximum credits exceeded') || errorMsg.includes('credits exceeded') || errorMsg.includes('quota')) {
+        hint = 'Votre compte SendGrid a atteint sa limite de crédits mensuels. Options : 1) Attendre le renouvellement, 2) Passer à un plan payant, 3) Configurer Gmail (GMAIL_USER + GMAIL_APP_PASSWORD) pour continuer.';
+      } else if (errorMsg.includes('sendgrid') && errorMsg.includes('verified')) {
         hint = 'Vérifiez que SENDGRID_FROM_EMAIL est vérifié dans votre compte SendGrid.';
       } else if (errorMsg.includes('sendgrid') && errorMsg.includes('api key')) {
         hint = 'Vérifiez que SENDGRID_API_KEY est correctement configuré sur votre plateforme de déploiement.';
@@ -78,7 +75,6 @@ export const sendInvoiceEmail = async (emailData: EmailData, invoiceId?: string,
       };
     }
   } catch (error) {
-    console.error('❌ Erreur lors de l\'envoi de la facture:', error);
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
     
     return {
@@ -93,19 +89,14 @@ export const sendInvoiceEmail = async (emailData: EmailData, invoiceId?: string,
 // Fonction de test pour vérifier la configuration
 export const testEmailConfiguration = async (): Promise<boolean> => {
   try {
-    console.log('🧪 Test de configuration email...');
-    
     const backendConnected = await testBackendConnection();
     
     if (backendConnected) {
-      console.log('✅ Configuration email OK');
       return true;
     } else {
-      console.error('❌ Backend non connecté');
       return false;
     }
   } catch (error) {
-    console.error('❌ Test de configuration échoué:', error);
     return false;
   }
 };

@@ -32,6 +32,25 @@ Cette erreur signifie que le PDF de la facture a été généré avec succès, m
 5. Attendez la confirmation par email
 6. Redéployez votre application
 
+#### Erreur SendGrid : "Maximum credits exceeded" (Limite de crédits atteinte)
+
+**Symptôme** : L'erreur mentionne "Maximum credits exceeded", "credits exceeded" ou "quota"
+
+**Solution** :
+1. **Option 1 - Attendre le renouvellement** :
+   - Les crédits SendGrid se renouvellent chaque mois
+   - Attendez le début du mois suivant pour que vos crédits soient renouvelés
+
+2. **Option 2 - Passer à un plan payant** :
+   - Connectez-vous à votre compte SendGrid
+   - Allez dans **Settings > Billing**
+   - Passez à un plan payant pour obtenir plus de crédits
+
+3. **Option 3 - Utiliser Gmail en attendant** :
+   - Configurez Gmail comme solution de secours
+   - Le système utilisera automatiquement Gmail si SendGrid échoue
+   - Voir la section "Erreur Gmail" ci-dessous pour la configuration
+
 #### Erreur SendGrid : "API Key invalide"
 
 **Symptôme** : L'erreur mentionne "unauthorized", "forbidden" ou "invalid API key"
