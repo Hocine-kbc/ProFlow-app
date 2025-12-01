@@ -32,8 +32,12 @@ export async function generateInvoicePDFWithPuppeteer(invoiceData, companyData) 
     
     const tempDir = facturesDir;
 
-    // Générer le nom de fichier
-    const fileName = `facture_${invoiceData.invoice_number}_${Date.now()}.pdf`;
+    // Générer le nom de fichier (inclure le nom du client si disponible)
+    const clientName = (invoiceData.client && invoiceData.client.name) || '';
+    const safeClientName = clientName
+      ? `_${clientName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]/g, '_')
+      : '';
+    const fileName = `facture_${invoiceData.invoice_number}${safeClientName}.pdf`;
     const filePath = path.join(tempDir, fileName);
 
     // Préparer les données pour le template partagé
@@ -135,7 +139,11 @@ export async function generateInvoicePDFWithPuppeteerAdvanced(invoiceData, compa
     
     const tempDir = facturesDir;
 
-    const fileName = `facture_${invoiceData.invoice_number}_${Date.now()}.pdf`;
+    const clientName = (invoiceData.client && invoiceData.client.name) || '';
+    const safeClientName = clientName
+      ? `_${clientName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]/g, '_')
+      : '';
+    const fileName = `facture_${invoiceData.invoice_number}${safeClientName}.pdf`;
     const filePath = path.join(tempDir, fileName);
 
     // Préparer les données pour le template partagé

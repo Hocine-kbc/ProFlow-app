@@ -660,11 +660,7 @@ export function generateSharedInvoiceHTML(invoice, client, invoiceServices, sett
                 <div class="logo" style="background: transparent;">
                     <img src="${invoice.company_logo_url || settings?.logoUrl}" alt="Logo" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;" />
                 </div>
-                ` : `
-                <div class="logo">
-                    <div class="logo-img"></div>
-                </div>
-                `}
+                ` : ``}
                 <div class="entreprise-info">
                     <h1>${invoice.company_name || settings?.companyName || 'ProFlow'}</h1>
                     <div class="subtitle">${invoice.company_owner || settings?.ownerName || ''}</div>

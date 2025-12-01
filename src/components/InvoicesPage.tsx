@@ -2137,7 +2137,7 @@ export default function InvoicesPage() {
                             jj/mm/aaaa
                           </span>
                         )}
-                        <input
+                      <input
                         type="date"
                         required
                         value={formData.date}
@@ -2180,17 +2180,17 @@ export default function InvoicesPage() {
                             jj/mm/aaaa
                           </span>
                         )}
-                        <input
-                          type="date"
-                          required
-                          value={formData.due_date}
-                          onChange={(e) => {
-                            setFormData({ ...formData, due_date: e.target.value });
-                            setDueDateManuallyModified(true);
-                          }}
+                      <input
+                        type="date"
+                        required
+                        value={formData.due_date}
+                        onChange={(e) => {
+                          setFormData({ ...formData, due_date: e.target.value });
+                          setDueDateManuallyModified(true);
+                        }}
                           placeholder="jj/mm/aaaa"
                           className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
-                        />
+                      />
                       </div>
                     </div>
                     
