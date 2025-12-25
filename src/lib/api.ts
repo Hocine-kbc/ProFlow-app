@@ -1,5 +1,5 @@
 import { supabase } from './supabase.ts';
-import { Service, Invoice, BusinessNotification, NotificationType, Message, Conversation, ServicePricingType, Article } from '../types/index.ts';
+import { Service, Invoice, BusinessNotification, NotificationType, Message, Conversation, ServicePricingType } from '../types/index.ts';
 
 // Define interfaces locally since they're not exported from types
 interface Client {
@@ -2061,7 +2061,7 @@ export async function fetchConversations(): Promise<Conversation[]> {
     // Pour chaque utilisateur, récupérer son email depuis auth.users
     // Note: On ne peut pas directement interroger auth.users, donc on utilise l'email du user actuel
     // et pour les autres, on essaie de trouver l'email dans les messages existants ou on utilise un placeholder
-    for (const userId of Array.from(userIds)) {
+    for (const userId of userIdsArray) {
       try {
         // Si c'est l'utilisateur actuel, on récupère son email
         if (userId === user.id) {
@@ -2072,19 +2072,11 @@ export async function fetchConversations(): Promise<Conversation[]> {
           }
         }
         
-        // Pour les autres utilisateurs, on cherche leur email dans les messages existants
-        // ou on utilise un placeholder
+        // Pour les autres utilisateurs, on utilise un identifiant basé sur l'ID
         // Note: Dans un vrai système, il faudrait une table de profils ou utiliser l'API Admin
-        let foundEmail = false;
-        if (messages) {
-          for (const msg of messages as any[]) {
-            // Si on trouve un message où cet utilisateur est impliqué et qu'on a son email quelque part
-            // On va plutôt utiliser un identifiant basé sur l'ID pour l'instant
-            // et améliorer plus tard avec une vraie table de profils
-          }
-        }
+        // pour récupérer les emails des autres utilisateurs depuis les messages existants
         
-        // Si pas trouvé, utiliser un identifiant basé sur l'ID
+        // Utiliser un identifiant basé sur l'ID
         userEmailsMap.set(userId, `user-${userId.substring(0, 8)}`);
       } catch {
         userEmailsMap.set(userId, `user-${userId.substring(0, 8)}`);
@@ -2310,7 +2302,7 @@ export async function uploadMessageAttachment(file: File): Promise<{ name: strin
     const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
     
     // Upload vers Supabase Storage
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('message-attachments')
       .upload(fileName, file, {
         cacheControl: '3600',
@@ -2431,8 +2423,6 @@ export async function deleteMessage(messageId: string): Promise<void> {
     throw error;
   }
 }
-
-const conversationCache = new Map<string, Conversation>();
 
 const SERVICE_PRICING_STORAGE_KEY = 'service-pricing-types';
 const SERVICE_PRICING_VALUES: ServicePricingType[] = ['hourly', 'daily', 'project'];
