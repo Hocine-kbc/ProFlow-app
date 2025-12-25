@@ -400,7 +400,7 @@ export async function fetchServices(): Promise<Service[]> {
       continue;
     }
 
-    servicesData = (data || []) as DatabaseService[];
+    servicesData = (data || []) as unknown as DatabaseService[];
     lastError = null;
     break;
   }
@@ -424,8 +424,9 @@ export async function fetchServices(): Promise<Service[]> {
       persistServicePricingType(service.id, pricingType);
     }
     return {
-      ...(service as Service),
+      ...(service as unknown as Service),
       pricing_type: pricingType,
+      status: (service as any).status ?? 'pending',
     } as Service;
   });
  
@@ -552,8 +553,9 @@ export async function createService(payload: Omit<Service, 'id' | 'client' | 'cr
   persistServicePricingType(insertedService.id, resolvedPricingType);
 
   return {
-    ...(insertedService as Service),
+    ...(insertedService as unknown as Service),
     pricing_type: resolvedPricingType,
+    status: (payload as Service).status ?? 'pending',
   } as Service;
 }
 
@@ -614,8 +616,9 @@ export async function updateService(id: string, payload: Partial<Service>): Prom
   persistServicePricingType(updatedService.id, resolvedPricingType);
 
   return {
-    ...(updatedService as Service),
+    ...(updatedService as unknown as Service),
     pricing_type: resolvedPricingType,
+    status: payload.status ?? (updatedService as any).status ?? 'pending',
   } as Service;
 }
 
