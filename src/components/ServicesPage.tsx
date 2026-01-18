@@ -503,8 +503,8 @@ export default function ServicesPage() {
         setFormData(prev => ({
           ...prev,
           article_id: articleId,
-          description: article.description,
-          hourly_rate: article.hourly_rate,
+          description: article.description || '',
+          hourly_rate: article.hourly_rate || prev.hourly_rate,
           pricing_type: article.pricing_type || DEFAULT_SERVICE_PRICING_TYPE,
         }));
         if ((article.pricing_type || DEFAULT_SERVICE_PRICING_TYPE) === 'daily') {
@@ -680,7 +680,6 @@ export default function ServicesPage() {
   const monthlyTotal = calculateMonthlyTotal();
 
   const currentServicePricingConfig = getPricingConfig(formData.pricing_type);
-  const serviceQuantityStep = formData.pricing_type === 'project' ? 1 : 0.5;
   const serviceQuantityMin = formData.pricing_type === 'project' ? 1 : 0;
   const serviceRateStep = formData.pricing_type === 'project' ? 1 : 0.5;
   const showServicePreview = formData.hours > 0 && formData.hourly_rate > 0;
@@ -2351,7 +2350,7 @@ export default function ServicesPage() {
                   .filter((article) => article.is_active)
                   .map((article) => ({
                     value: article.id,
-                    label: `${article.name} — ${formatRateWithSuffix(article.hourly_rate, article.pricing_type)}`,
+                    label: `${article.name} — ${formatRateWithSuffix(article.hourly_rate || 0, article.pricing_type || DEFAULT_SERVICE_PRICING_TYPE)}`,
                   }))}
               />
 
