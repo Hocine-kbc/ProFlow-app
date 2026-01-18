@@ -2442,10 +2442,12 @@ export default function ServicesPage() {
                     type="number"
                     step={formData.pricing_type === 'project' ? 1 : 'any'}
                     min={serviceQuantityMin}
+                    inputMode="decimal"
                     required
                     value={formData.hours ?? ''}
                     onChange={(e) => {
-                      const rawValue = e.target.value;
+                      // Remplacer la virgule par un point pour la compatibilité
+                      const rawValue = e.target.value.replace(',', '.');
                       const parsedValue = parseFloat(rawValue);
                       setFormData({
                         ...formData,
@@ -2473,10 +2475,12 @@ export default function ServicesPage() {
                     type="number"
                     min="0"
                     step={serviceRateStep}
+                    inputMode="decimal"
                     required
                     value={formData.hourly_rate ?? ''}
                     onChange={(e) => {
-                      const rawValue = e.target.value;
+                      // Remplacer la virgule par un point pour la compatibilité
+                      const rawValue = e.target.value.replace(',', '.');
                       const parsedValue = parseFloat(rawValue);
                       setFormData({
                         ...formData,
