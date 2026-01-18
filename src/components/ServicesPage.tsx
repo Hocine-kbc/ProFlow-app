@@ -2440,7 +2440,7 @@ export default function ServicesPage() {
                   </label>
                   <input
                     type="number"
-                    step={serviceQuantityStep}
+                    step={formData.pricing_type === 'project' ? 1 : 'any'}
                     min={serviceQuantityMin}
                     required
                     value={formData.hours ?? ''}
