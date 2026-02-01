@@ -66,6 +66,15 @@ html, body {
   overflow-x: hidden;
 }
 
+/* Éviter le zoom automatique sur mobile au focus des champs (iOS Safari) */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* Subtle scrollbar with theme colors */
 * {
   scrollbar-width: thin;

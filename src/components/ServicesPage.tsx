@@ -338,6 +338,21 @@ export default function ServicesPage() {
     pricing_type: DEFAULT_SERVICE_PRICING_TYPE as ServicePricingType,
   });
   const [dailyEndDate, setDailyEndDate] = useState<string>('');
+  const [hoursInputValue, setHoursInputValue] = useState<string>('');
+  const prevShowModalRef = useRef(false);
+
+  // Synchroniser l'affichage du champ heures à l'ouverture du modal (permet virgule sur mobile)
+  useEffect(() => {
+    if (!showModal) {
+      prevShowModalRef.current = false;
+      return;
+    }
+    if (!prevShowModalRef.current) {
+      const h = formData.hours;
+      setHoursInputValue(h === 0 ? '' : String(h).replace('.', ','));
+      prevShowModalRef.current = true;
+    }
+  }, [showModal, formData.hours]);
 
   // Détecter le client pré-sélectionné depuis la vue détaillée client
   useEffect(() => {
@@ -2438,26 +2453,23 @@ export default function ServicesPage() {
                     {currentServicePricingConfig.quantityLabel} *
                   </label>
                   <input
-                    type="number"
-                    step={formData.pricing_type === 'project' ? 1 : 'any'}
-                    min={serviceQuantityMin}
+                    type="text"
                     inputMode="decimal"
+                    autoComplete="off"
                     required
-                    value={formData.hours ?? ''}
+                    value={hoursInputValue}
                     onChange={(e) => {
-                      // Remplacer la virgule par un point pour la compatibilité
-                      const rawValue = e.target.value.replace(',', '.');
-                      const parsedValue = parseFloat(rawValue);
-                      setFormData({
-                        ...formData,
-                        hours:
-                          rawValue === ''
-                            ? 0
-                            : Math.max(
-                                serviceQuantityMin,
-                                Number.isNaN(parsedValue) ? 0 : parsedValue,
-                              ),
-                      });
+                      const next = e.target.value.replace(/[^\d,.]/g, '');
+                      const sepCount = (next.match(/[,.]/g) || []).length;
+                      if (sepCount > 1) return;
+                      setHoursInputValue(next);
+                      const num = parseFloat(next.replace(',', '.'));
+                      const parsed = Number.isNaN(num) ? 0 : Math.max(serviceQuantityMin, num);
+                      setFormData({ ...formData, hours: parsed });
+                    }}
+                    onBlur={() => {
+                      const h = formData.hours;
+                      setHoursInputValue(h === 0 ? '' : String(h).replace('.', ','));
                     }}
                     readOnly={formData.pricing_type === 'daily'}
                     className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formData.pricing_type === 'daily' ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed' : ''}`}
