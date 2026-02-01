@@ -842,11 +842,11 @@ export default function MessagesPage() {
       {showDeleteConfirm.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowDeleteConfirm({ isOpen: false, messageId: null, type: 'message' })}>
           <div 
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full border border-gray-200 dark:border-gray-700 transform transition-all"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 transform transition-all"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-xl">
                   <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
@@ -864,30 +864,31 @@ export default function MessagesPage() {
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-6">
-              <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
+            {/* Content scrollable */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-6">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 {showDeleteConfirm.type === 'conversation' 
                   ? 'Êtes-vous sûr de vouloir supprimer tous vos messages de cette conversation ? Cette action est irréversible. Note: Seuls vos propres messages seront supprimés.'
                   : 'Êtes-vous sûr de vouloir supprimer ce message ? Cette action est irréversible.'}
               </p>
-              
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm({ isOpen: false, messageId: null, type: 'message' })}
-                  className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-medium"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmDelete}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
-                >
-                  Supprimer
-                </button>
-              </div>
+            </div>
+
+            {/* Footer fixe */}
+            <div className="flex-shrink-0 flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm({ isOpen: false, messageId: null, type: 'message' })}
+                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-medium"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+              >
+                Supprimer
+              </button>
             </div>
           </div>
         </div>
@@ -897,11 +898,11 @@ export default function MessagesPage() {
       {showNewMessageModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowNewMessageModal(false)}>
           <div 
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full border border-gray-200 dark:border-gray-700 transform transition-all"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 transform transition-all"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
                   <Plus className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -923,8 +924,8 @@ export default function MessagesPage() {
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-6 space-y-4">
+            {/* Content scrollable */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   ID utilisateur (UUID) du destinataire
@@ -959,17 +960,18 @@ export default function MessagesPage() {
                   </p>
                 </div>
               )}
+            </div>
 
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={handleNewConversation}
-                  disabled={!recipientEmail.trim()}
-                  className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-md hover:shadow-lg"
-                >
-                  Créer la conversation
-                </button>
-              </div>
+            {/* Footer fixe */}
+            <div className="flex-shrink-0 p-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={handleNewConversation}
+                disabled={!recipientEmail.trim()}
+                className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+              >
+                Créer la conversation
+              </button>
             </div>
           </div>
         </div>

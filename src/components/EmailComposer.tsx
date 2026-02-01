@@ -786,7 +786,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
         </div>
 
         {/* Contenu scrollable */}
-        <div className="flex-1 overflow-y-auto scrollbar-none">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-none">
           <div className="p-3 sm:p-6 space-y-4">
             {/* Destinataire principal */}
             <div className="space-y-2">

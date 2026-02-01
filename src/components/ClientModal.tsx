@@ -83,8 +83,8 @@ export default function ClientModal({
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto">
-          <form onSubmit={onSubmit} className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
+        <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Type de client *
@@ -288,24 +288,27 @@ export default function ClientModal({
                 />
               </div>
             </div>
-            
-            <div className="flex flex-col space-y-2 pt-3 sm:pt-4">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="w-full px-4 py-2.5 sm:py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                className="w-full px-4 py-2.5 sm:py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-full hover:from-green-700 hover:to-green-800 dark:from-green-700 dark:to-green-800 dark:hover:from-green-800 dark:hover:to-green-900 transition-all duration-200 text-xs sm:text-sm font-medium"
-              >
-                {editingClient ? 'Modifier' : 'Créer'}
-              </button>
-            </div>
-          </form>
         </div>
+
+        {/* Footer with buttons - always visible */}
+        <div className="flex-shrink-0 p-3 sm:p-4 lg:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+            <button
+              type="button"
+              onClick={resetForm}
+              className="flex-1 px-4 py-2.5 sm:py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2.5 sm:py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-full hover:from-green-700 hover:to-green-800 dark:from-green-700 dark:to-green-800 dark:hover:from-green-800 dark:hover:to-green-900 transition-all duration-200 text-xs sm:text-sm font-medium"
+            >
+              {editingClient ? 'Modifier' : 'Créer'}
+            </button>
+          </div>
+        </div>
+        </form>
       </div>
     </div>
   );

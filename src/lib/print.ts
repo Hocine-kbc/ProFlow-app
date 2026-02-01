@@ -68,24 +68,22 @@ export function openInvoicePrintWindow(invoice: Invoice, clients?: any[], servic
   if (invoiceServices.length === 0 && servicesData.length > 0) {
     console.log('No services found in invoice, trying to find from passed services...');
     
-    // Find services that are marked as 'invoiced' and belong to the same client
+    // Find services that belong to this invoice (same client and linked to this invoice)
     const clientServices = servicesData.filter((s: any) => 
-      s.client_id === invoice.client_id && s.status === 'invoiced'
+      s.client_id === invoice.client_id && s.invoice_id === invoice.id
     );
     
     if (clientServices.length > 0) {
-      console.log('Found invoiced services for this client:', clientServices);
+      console.log('Found services for this invoice:', clientServices);
       invoiceServices = clientServices;
     } else {
-      // If no invoiced services found, try to find completed services for this client
-      // This is a fallback for cases where services might not be marked as 'invoiced'
-      const completedServices = servicesData.filter((s: any) => 
-        s.client_id === invoice.client_id && s.status === 'completed'
+      // Fallback: services for this client not yet on any invoice
+      const clientAvailable = servicesData.filter((s: any) => 
+        s.client_id === invoice.client_id && !s.invoice_id
       );
-      
-      if (completedServices.length > 0) {
-        console.log('Found completed services for this client (fallback):', completedServices);
-        invoiceServices = completedServices;
+      if (clientAvailable.length > 0) {
+        console.log('Found services for this client (fallback):', clientAvailable);
+        invoiceServices = clientAvailable;
       }
     }
   }

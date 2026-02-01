@@ -28,7 +28,6 @@ export interface Service {
   hours: number;
   hourly_rate: number;
   description: string;
-  status: 'pending' | 'completed' | 'invoiced';
   article_id?: string; // Référence vers l'article utilisé
   invoice_id?: string; // Référence vers la facture associée
   pricing_type?: ServicePricingType;

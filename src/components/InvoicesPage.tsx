@@ -488,9 +488,9 @@ export default function InvoicesPage() {
   const [originalPaymentTerms, setOriginalPaymentTerms] = useState<number | null>(null);
   const [dueDateManuallyModified, setDueDateManuallyModified] = useState(false);
 
-  // Get available services for invoicing (completed but not invoiced) - recalculé automatiquement
+  // Get available services for invoicing (not yet on an invoice)
   const availableServices = useMemo(() => {
-    const filtered = services.filter(s => s.status === 'completed');
+    const filtered = services.filter(s => !s.invoice_id);
     return filtered;
   }, [services]);
   
@@ -502,21 +502,20 @@ export default function InvoicesPage() {
       
       // If no services in invoice, try to find them from global services
       if (invoiceServices.length === 0 && services.length > 0) {
-        // Find services that are marked as 'invoiced' and belong to the same client
+        // Find services for this client that are on this invoice
         const clientServices = services.filter(s => 
-          s.client_id === editingInvoice.client_id && s.status === 'invoiced'
+          s.client_id === editingInvoice.client_id && s.invoice_id === editingInvoice.id
         );
         
         if (clientServices.length > 0) {
           invoiceServices = clientServices;
         } else {
-          // If no invoiced services found, try to find completed services for this client
-          const completedServices = services.filter(s => 
-            s.client_id === editingInvoice.client_id && s.status === 'completed'
+          // Fallback: services for this client not yet on any invoice
+          const clientAvailable = services.filter(s => 
+            s.client_id === editingInvoice.client_id && !s.invoice_id
           );
-          
-          if (completedServices.length > 0) {
-            invoiceServices = completedServices;
+          if (clientAvailable.length > 0) {
+            invoiceServices = clientAvailable;
           }
         }
       }
@@ -725,19 +724,18 @@ export default function InvoicesPage() {
       
       // Find services that are marked as 'invoiced' and belong to the same client
       const clientServices = services.filter(s => 
-        s.client_id === inv.client_id && s.status === 'invoiced'
+        s.client_id === inv.client_id && s.invoice_id === inv.id
       );
       
       if (clientServices.length > 0) {
         invoiceServices = clientServices;
       } else {
-        // If no invoiced services found, try to find completed services for this client
-        const completedServices = services.filter(s => 
-          s.client_id === inv.client_id && s.status === 'completed'
+        // Fallback: services for this client not yet on any invoice
+        const clientAvailable = services.filter(s => 
+          s.client_id === inv.client_id && !s.invoice_id
         );
-        
-        if (completedServices.length > 0) {
-          invoiceServices = completedServices;
+        if (clientAvailable.length > 0) {
+          invoiceServices = clientAvailable;
         }
       }
     }
@@ -816,12 +814,11 @@ export default function InvoicesPage() {
       onConfirm: async () => {
         setDeletingInvoice(id);
         try {
-          // Mark services as completed again before deleting
           if (invoice && invoice.services) {
             invoice.services.forEach((service: Service) => {
               dispatch({
                 type: 'UPDATE_SERVICE',
-                payload: { ...service, status: 'completed' }
+                payload: { ...service }
               });
             });
           }
@@ -935,13 +932,12 @@ export default function InvoicesPage() {
           for (const invoiceId of selectedInvoices) {
             const invoice = invoices.find(inv => inv.id === invoiceId);
             if (invoice && invoice.services) {
-            // Marquer les services comme completed avant suppression
-            invoice.services.forEach((service: Service) => {
-              dispatch({
-                type: 'UPDATE_SERVICE',
-                payload: { ...service, status: 'completed' }
+              invoice.services.forEach((service: Service) => {
+                dispatch({
+                  type: 'UPDATE_SERVICE',
+                  payload: { ...service }
+                });
               });
-            });
             }
             await deleteInvoiceApi(invoiceId);
             dispatch({ type: 'DELETE_INVOICE', payload: invoiceId });
@@ -1183,9 +1179,9 @@ export default function InvoicesPage() {
 
       {/* Contenu conditionnel selon la vue */}
       {currentView === 'invoices' && (
-        <>
+        <div>
           {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
           <div className="text-xs text-gray-500 dark:text-gray-300">Total facturé</div>
           <div className="text-xl font-bold text-gray-900 dark:text-white">{totalHT.toFixed(2)}€</div>
@@ -1656,6 +1652,7 @@ export default function InvoicesPage() {
             </div>
           </div>
         )}
+        </div>
         
         {/* Vue desktop - Table */}
         <div className="hidden lg:block">
@@ -1877,7 +1874,7 @@ export default function InvoicesPage() {
         </div>
         
         {/* Pagination desktop uniquement - v2 */}
-        {totalPages > 0 && (
+        {totalPages > 0 ? (
           <div className="hidden lg:block bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-1">
@@ -1958,8 +1955,9 @@ export default function InvoicesPage() {
               </div>
             </div>
           </div>
-        )}
-      </div>
+        ) : null}
+        </div>
+      )}
 
       {/* Modal */}
       {showModal && (
@@ -2014,9 +2012,9 @@ export default function InvoicesPage() {
               </div>
             </div>
             
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Scrollable content */}
-            <div className="overflow-y-auto flex-1">
-              <form onSubmit={handleSubmit} className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-6 lg:space-y-8">
+            <div className="overflow-y-auto flex-1 min-h-0 p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-6 lg:space-y-8">
                 {/* Client and Invoice Number Section */}
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
                   <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4 flex items-center">
@@ -2373,16 +2371,6 @@ export default function InvoicesPage() {
                                         <span className="text-sm font-semibold text-gray-900 dark:text-white">
                                           {new Date(service.date).toLocaleDateString('fr-FR')}
                                         </span>
-                                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                                          service.status === 'completed' 
-                                            ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                                            : service.status === 'invoiced'
-                                            ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
-                                            : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400'
-                                        }`}>
-                                          {service.status === 'completed' ? 'Terminée' : 
-                                           service.status === 'invoiced' ? 'Facturée' : 'En attente'}
-                                        </span>
                                       </div>
                                       {service.description && (
                                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 sm:mt-2 line-clamp-2">
@@ -2437,11 +2425,10 @@ export default function InvoicesPage() {
                     </div>
                   </div>
                 )}
-              </form>
             </div>
             
-            {/* Footer with buttons */}
-            <div className="bg-gray-50 dark:bg-gray-700 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
+            {/* Footer with buttons - always visible */}
+            <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-700 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
                   type="button"
@@ -2452,15 +2439,15 @@ export default function InvoicesPage() {
                 </button>
                 <button
                   type="submit"
-                  onClick={handleSubmit}
                   disabled={selectedServices.length === 0}
-                    className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-700 dark:to-purple-800 dark:hover:from-purple-800 dark:hover:to-purple-900 text-white rounded-full border border-purple-500 dark:border-purple-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
+                  className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-700 dark:to-purple-800 dark:hover:from-purple-800 dark:hover:to-purple-900 text-white rounded-full border border-purple-500 dark:border-purple-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
                 >
                   <span className="hidden sm:inline">{editingInvoice ? 'Mettre à jour la facture' : 'Créer la facture'}</span>
                   <span className="sm:hidden">{editingInvoice ? 'Mettre à jour' : 'Créer'}</span>
                 </button>
               </div>
             </div>
+            </form>
           </div>
         </div>
       )}
@@ -2538,7 +2525,7 @@ export default function InvoicesPage() {
             </div>
             
             {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto scrollbar-hide">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
               <div className="p-2 sm:p-4 md:p-6 lg:p-8">
                 {/* Invoice Content */}
                 <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl md:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-10 max-w-4xl xl:max-w-5xl mx-auto shadow-2xl hover:shadow-3xl transition-all duration-300">
@@ -2864,9 +2851,9 @@ export default function InvoicesPage() {
               </div>
             </div>
 
-            {/* Form */}
-            <div className="p-3 sm:p-4 md:p-6 flex-1 overflow-y-auto">
-              <form onSubmit={(e) => { e.preventDefault(); handleSendEmail(); }} className="space-y-3 sm:space-y-4 md:space-y-6">
+            <form onSubmit={(e) => { e.preventDefault(); handleSendEmail(); }} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            {/* Form - scrollable */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
                 {/* Email Address */}
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
@@ -2931,22 +2918,24 @@ export default function InvoicesPage() {
                     </div>
                   </div>
                 </div>
+            </div>
 
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-600 mt-4 sm:mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setEmailModal(null)}
-                    className="flex-1 px-3 py-2 sm:px-4 sm:py-2.5 md:px-6 md:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-xs sm:text-sm font-medium"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={sendingEmail || !emailData.to.trim()}
-                    className="flex-1 px-3 py-2 sm:px-4 sm:py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-700 dark:to-purple-800 dark:hover:from-purple-800 dark:hover:to-purple-900 text-white rounded-full border border-purple-500 dark:border-purple-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                  >
-                    {sendingEmail ? (
+            {/* Footer with buttons - always visible */}
+            <div className="flex-shrink-0 p-3 sm:p-4 md:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setEmailModal(null)}
+                  className="flex-1 px-3 py-2.5 sm:px-4 sm:py-2.5 md:px-6 md:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-xs sm:text-sm font-medium"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendingEmail || !emailData.to.trim()}
+                  className="flex-1 px-3 py-2.5 sm:px-4 sm:py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-700 dark:to-purple-800 dark:hover:from-purple-800 dark:hover:to-purple-900 text-white rounded-full border border-purple-500 dark:border-purple-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  {sendingEmail ? (
                       <>
                         <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -2962,13 +2951,11 @@ export default function InvoicesPage() {
                       </>
                     )}
                   </button>
-                </div>
-              </form>
+              </div>
             </div>
+            </form>
           </div>
         </div>
-      )}
-        </>
       )}
 
       {/* Page Paramètres */}

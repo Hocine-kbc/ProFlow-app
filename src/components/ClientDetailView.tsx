@@ -248,7 +248,6 @@ export default function ClientDetailView({
     hours: 0,
     hourly_rate: settings?.defaultHourlyRate || 25,
     description: '',
-    status: 'pending' as 'pending' | 'completed' | 'invoiced',
   });
 
   useEffect(() => {
@@ -272,7 +271,6 @@ export default function ClientDetailView({
       hours: 0,
       hourly_rate: defaultRate,
       description: '',
-      status: 'pending',
     });
     setEditingService(null);
     setShowServiceModal(true);
@@ -321,9 +319,8 @@ export default function ClientDetailView({
         client_id: serviceFormData.client_id,
         date: serviceFormData.date,
         hours: serviceFormData.hours,
-        hourly_rate: serviceFormData.hourly_rate, // Déjà en snake_case
+        hourly_rate: serviceFormData.hourly_rate,
         description: serviceFormData.description || '',
-        status: serviceFormData.status
       };
       
       console.log('🔍 Données préparées pour l\'API:', serviceData);
@@ -364,7 +361,6 @@ export default function ClientDetailView({
       hours: 0,
       hourly_rate: settings?.defaultHourlyRate || 25,
       description: '',
-      status: 'pending',
     });
     setEditingService(null);
     setShowServiceModal(false);
@@ -1039,7 +1035,7 @@ export default function ClientDetailView({
           hours: Number(service.hours || service.duration || 0) || 0,
           hourlyRate: Number(service.hourly_rate || service.rate || 0) || 0,
           amount: Number(service.amount || service.total_amount || 0) || 0,
-          status: service.status || 'completed',
+          status: 'completed' as const,
           invoiceId: service.invoice_id || service.invoiceId
         })) || [],
         
@@ -2927,7 +2923,7 @@ export default function ClientDetailView({
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-300 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
             {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-4 sm:p-6 text-white relative overflow-hidden">
+            <div className="flex-shrink-0 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-4 sm:p-6 text-white relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}
               <div className="absolute inset-0 opacity-20">
                 {/* Traits horizontaux qui traversent */}
@@ -2990,7 +2986,7 @@ export default function ClientDetailView({
             </div>
             
             {/* Scrollable content */}
-            <div className="overflow-y-auto max-h-[calc(95vh-200px)] scrollbar-hide">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
               <div className="p-4 sm:p-8">
                 {/* Invoice Content */}
                 <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl sm:rounded-3xl p-3 sm:p-6 lg:p-10 max-w-4xl xl:max-w-5xl mx-auto shadow-2xl hover:shadow-3xl transition-all duration-300">
@@ -3566,9 +3562,9 @@ export default function ClientDetailView({
               </div>
             </div>
 
-            {/* Form */}
-            <div className="p-6 flex-1 overflow-y-auto">
-              <form onSubmit={(e) => { e.preventDefault(); handleSendEmail(); }} className="space-y-6">
+            <form onSubmit={(e) => { e.preventDefault(); handleSendEmail(); }} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            {/* Form - scrollable */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
                 {/* Email Address */}
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
@@ -3611,40 +3607,42 @@ export default function ClientDetailView({
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
-
-                {/* Actions */}
-                <div className="flex space-x-4 pt-4 border-t border-gray-200 dark:border-gray-600 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setEmailModal(null)}
-                    className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={sendingEmail || !emailData.to.trim()}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                  >
-                    {sendingEmail ? (
-                      <>
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <span>Envoi en cours...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                        </svg>
-                        <span>Envoyer la facture</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
             </div>
+
+            {/* Footer with buttons - always visible */}
+            <div className="flex-shrink-0 p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setEmailModal(null)}
+                  className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendingEmail || !emailData.to.trim()}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  {sendingEmail ? (
+                    <>
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span>Envoi en cours...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                      <span>Envoyer la facture</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+            </form>
           </div>
         </div>
       )}
@@ -3690,9 +3688,9 @@ export default function ClientDetailView({
               </div>
             </div>
             
+            <form onSubmit={handleServiceSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Scrollable content area */}
-            <div className="overflow-y-auto scrollbar-hide max-h-[calc(95vh-120px)]">
-              <form onSubmit={handleServiceSubmit} className="p-4 sm:p-6 space-y-4">
+            <div className="overflow-y-auto flex-1 min-h-0 scrollbar-hide p-4 sm:p-6 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="lg:col-span-2">
                     <CustomSelect
@@ -3764,20 +3762,6 @@ export default function ClientDetailView({
                     />
                   </div>
                   
-                  <div>
-                    <CustomSelect
-                      label="Statut"
-                      value={serviceFormData.status}
-                      onChange={(value) => setServiceFormData({ ...serviceFormData, status: value as any })}
-                      placeholder="Sélectionner un statut"
-                      options={[
-                        { value: "pending", label: "En attente" },
-                        { value: "completed", label: "Terminée" },
-                        { value: "invoiced", label: "Facturée" }
-                      ]}
-                      className="text-xs sm:text-sm"
-                    />
-                  </div>
                 </div>
                 
                 <div>
@@ -3805,24 +3789,27 @@ export default function ClientDetailView({
                     </div>
                   </div>
                 )}
-                
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={resetServiceForm}
-                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm font-medium"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-full border border-green-500 dark:border-green-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
-                  >
-                    {editingService ? 'Modifier' : 'Ajouter'}
-                  </button>
-                </div>
-              </form>
             </div>
+
+            {/* Footer with buttons - always visible */}
+            <div className="flex-shrink-0 p-4 sm:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button
+                  type="button"
+                  onClick={resetServiceForm}
+                  className="flex-1 px-4 py-2.5 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm font-medium"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-full border border-green-500 dark:border-green-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
+                >
+                  {editingService ? 'Modifier' : 'Ajouter'}
+                </button>
+              </div>
+            </div>
+            </form>
           </div>
         </div>
       )}
@@ -3867,9 +3854,9 @@ export default function ClientDetailView({
               </div>
             </div>
             
+            <form onSubmit={handleInvoiceSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Scrollable content */}
-            <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
-              <form onSubmit={handleInvoiceSubmit} className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+            <div className="overflow-y-auto flex-1 min-h-0 p-4 sm:p-6 space-y-6 sm:space-y-8">
                 {/* Client and Invoice Number Section */}
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 sm:p-6">
                   <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
@@ -4072,11 +4059,10 @@ export default function ClientDetailView({
                     </div>
                   </div>
                 )}
-              </form>
             </div>
             
-            {/* Footer with buttons */}
-            <div className="bg-gray-50 dark:bg-gray-700 px-4 sm:px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
+            {/* Footer with buttons - always visible */}
+            <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
                   type="button"
@@ -4087,13 +4073,13 @@ export default function ClientDetailView({
                 </button>
                 <button
                   type="submit"
-                  onClick={handleInvoiceSubmit}
                   className="flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-700 dark:to-indigo-700 dark:hover:from-blue-800 dark:hover:to-indigo-800 text-white rounded-full border border-blue-500 dark:border-blue-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-xs sm:text-sm sm:text-base"
                 >
                   Mettre à jour la facture
                 </button>
               </div>
             </div>
+            </form>
           </div>
         </div>
       )}

@@ -317,7 +317,6 @@ export default function ServicesPage() {
   const [sortBy, setSortBy] = useState<'name' | 'hours' | 'amount' | 'date'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed' | 'invoiced'>('all');
   const [clientFilter, setClientFilter] = useState<string>('');
   
   // États pour le système de glissement des prestations
@@ -333,7 +332,6 @@ export default function ServicesPage() {
     hours: 0,
     hourly_rate: settings?.defaultHourlyRate || 25,
     description: '',
-    status: 'pending' as 'pending' | 'completed' | 'invoiced',
     article_id: '',
     pricing_type: DEFAULT_SERVICE_PRICING_TYPE as ServicePricingType,
   });
@@ -502,7 +500,6 @@ export default function ServicesPage() {
       hours: 0,
       hourly_rate: settings?.defaultHourlyRate || 25,
       description: '',
-      status: 'pending',
       article_id: '',
       pricing_type: DEFAULT_SERVICE_PRICING_TYPE,
     });
@@ -623,7 +620,6 @@ export default function ServicesPage() {
       hours: service.hours,
       hourly_rate: service.hourly_rate,
       description: service.description,
-      status: service.status,
       article_id: service.article_id || '',
       pricing_type: service.pricing_type || DEFAULT_SERVICE_PRICING_TYPE,
     });
@@ -669,13 +665,10 @@ export default function ServicesPage() {
       client.name.toLowerCase().includes(query.toLowerCase()) ||
       service.description.toLowerCase().includes(query.toLowerCase());
     
-    // Filtre par statut
-    const matchesStatus = statusFilter === 'all' || service.status === statusFilter;
-    
     // Filtre par client
     const matchesClient = clientFilter === '' || client.id === clientFilter;
     
-    return matchesQuery && matchesStatus && matchesClient;
+    return matchesQuery && matchesClient;
   });
 
   // Calculer le total mensuel des prestations
@@ -989,12 +982,11 @@ export default function ServicesPage() {
                   </div>
                   
                   {/* Bouton de réinitialisation */}
-                  {(query || statusFilter !== 'all' || clientFilter || sortBy !== 'date' || sortDir !== 'desc') && (
+                  {(query || clientFilter || sortBy !== 'date' || sortDir !== 'desc') && (
                     <button
                       type="button"
                       onClick={() => {
                         setQuery('');
-                        setStatusFilter('all');
                         setClientFilter('');
                         setSortBy('date');
                         setSortDir('desc');
@@ -1008,7 +1000,7 @@ export default function ServicesPage() {
                 </div>
                 
                 {/* Grille des filtres */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Recherche */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
@@ -1056,25 +1048,6 @@ export default function ServicesPage() {
                     />
                   </div>
 
-                  {/* Filtre par statut */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Statut
-                    </label>
-                    <CustomSelect
-                      value={statusFilter}
-                      onChange={(value) => setStatusFilter(value as 'all' | 'pending' | 'completed' | 'invoiced')}
-                      placeholder="Tous les statuts"
-                      options={[
-                        { value: "all", label: "Tous les statuts" },
-                        { value: "pending", label: "🟡 En attente" },
-                        { value: "completed", label: "🟢 Terminée" },
-                        { value: "invoiced", label: "🔵 Facturée" }
-                      ]}
-                      className="w-full"
-                    />
-                  </div>
-
                   {/* Tri */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1114,12 +1087,6 @@ export default function ServicesPage() {
                         </span>
                       </div>
                       
-                      {/* Statistiques rapides */}
-                      <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                        <span>En attente: {services.filter(s => s.status === 'pending').length}</span>
-                        <span>Terminées: {services.filter(s => s.status === 'completed').length}</span>
-                        <span>Facturées: {services.filter(s => s.status === 'invoiced').length}</span>
-                      </div>
                     </div>
                     
                     {/* Actions rapides (sélection multiple supprimée) */}
@@ -1389,15 +1356,6 @@ export default function ServicesPage() {
                         <span className="font-semibold text-gray-900 dark:text-white">{amount.toFixed(2)}€</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
-                          service.status === 'completed'
-                            ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-                            : service.status === 'invoiced'
-                            ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300'
-                            : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
-                        }`}>
-                          {service.status === 'completed' ? 'Terminée' : service.status === 'invoiced' ? 'Facturée' : 'En attente'}
-                        </span>
                         <div className="flex items-center space-x-1">
                           <button
                             type="button"
@@ -1427,11 +1385,11 @@ export default function ServicesPage() {
 
         {/* Vue desktop - Table */}
         <div className="hidden lg:block overflow-x-auto">
-          <table className="w-full table-fixed" style={{ minWidth: '800px' }}>
+          <table className="w-full table-auto">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 {isSelectionMode && (
-                  <th className="w-16 px-6 py-4 text-left">
+                  <th className="w-14 px-3 py-3 text-left">
                     <button
                       type="button"
                       onClick={() => {
@@ -1463,28 +1421,25 @@ export default function ServicesPage() {
                     </button>
                   </th>
                 )}
-                <th className="w-48 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-56 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Client
                 </th>
-                <th className="w-28 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="pl-8 pr-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Description
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th scope="col" className="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">
                   Quantité
                 </th>
-                <th className="w-24 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">
                   Tarif
                 </th>
-                <th className="w-28 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">
                   Montant
                 </th>
-                <th className="w-28 px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Statut
-                </th>
-                <th className="w-40 px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="w-32 px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">
                   Actions
                 </th>
               </tr>
@@ -1497,7 +1452,7 @@ export default function ServicesPage() {
                 return (
                   <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     {isSelectionMode && (
-                      <td className="w-16 px-6 py-4 whitespace-nowrap">
+                      <td className="w-14 px-3 py-3 whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => toggleServiceSelection(service.id)}
@@ -1511,7 +1466,7 @@ export default function ServicesPage() {
                         </button>
                       </td>
                     )}
-                    <td className="w-48 px-6 py-4">
+                    <td className="w-56 px-4 py-3">
                       <div className="flex items-start min-w-0">
                         {(() => {
                           if (!client) {
@@ -1566,35 +1521,24 @@ export default function ServicesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="w-28 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="w-24 px-3 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {new Date(service.date).toLocaleDateString('fr-FR')}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                      <div className="break-words">
+                    <td className="pl-8 pr-3 py-3 text-sm text-gray-900 dark:text-white max-w-[280px]">
+                      <div className="break-words line-clamp-2" title={service.description || 'Aucune description'}>
                         {service.description || 'Aucune description'}
                       </div>
                     </td>
-                    <td className="w-20 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="w-20 px-3 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {formatQuantityWithUnit(service.hours, service.pricing_type)}
                     </td>
-                    <td className="w-24 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="w-20 px-3 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {formatRateWithSuffix(service.hourly_rate, service.pricing_type)}
                     </td>
-                    <td className="w-28 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                    <td className="w-20 px-3 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
                       {amount.toFixed(2)}€
                     </td>
-                    <td className="w-28 px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        service.status === 'completed'
-                          ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-                          : service.status === 'invoiced'
-                          ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300'
-                          : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
-                      }`}>
-                        {service.status === 'completed' ? 'Terminée' : service.status === 'invoiced' ? 'Facturée' : 'En attente'}
-                      </span>
-                    </td>
-                    <td className="w-40 px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="w-32 px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           type="button"
@@ -1870,13 +1814,7 @@ export default function ServicesPage() {
                                       e.stopPropagation();
                                       handleEdit(dayServices[0]);
                                     }}
-                                    className={`w-full rounded-lg p-1 cursor-pointer transition-all duration-200 active:scale-95 border-2 overflow-hidden ${
-                                      dayServices[0].status === 'completed'
-                                        ? 'bg-emerald-500 dark:bg-emerald-600 border-emerald-600 dark:border-emerald-500'
-                                        : dayServices[0].status === 'invoiced'
-                                        ? 'bg-rose-500 dark:bg-rose-600 border-rose-600 dark:border-rose-500'
-                                        : 'bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500'
-                                    }`}
+                                    className="w-full rounded-lg p-1 cursor-pointer transition-all duration-200 active:scale-95 border-2 overflow-hidden bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500"
                                   >
                                     <div className="text-white text-[10px] font-bold leading-tight min-w-0">
                                       <div className="truncate text-[10px]">
@@ -1922,13 +1860,7 @@ export default function ServicesPage() {
                               {dayServices.length === 1 ? (
                                 dayServices[0] && (
                                   <div
-                                    className={`w-full rounded-lg sm:rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-gray-400/50 border-l-4 backdrop-blur-sm relative group ${
-                                      dayServices[0].status === 'completed'
-                                        ? 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border-emerald-400 shadow-emerald-200/50 dark:shadow-emerald-800/30'
-                                        : dayServices[0].status === 'invoiced'
-                                        ? 'bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/30 dark:to-pink-900/30 border-rose-400 shadow-rose-200/50 dark:shadow-rose-800/30'
-                                        : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30'
-                                    }`}
+                                    className="w-full rounded-lg sm:rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-gray-400/50 border-l-4 backdrop-blur-sm relative group bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30"
                                     onClick={() => handleEdit(dayServices[0])}
                                   >
                                     <button
@@ -1945,14 +1877,8 @@ export default function ServicesPage() {
                                     <div className="px-2 py-1.5">
                                       <div className="flex items-center justify-between mb-1">
                                         <div className="flex items-center space-x-1.5">
-                                          <div className={`w-1.5 h-1.5 rounded-full ${
-                                            dayServices[0].status === 'completed' ? 'bg-emerald-500' :
-                                            dayServices[0].status === 'invoiced' ? 'bg-rose-500' : 'bg-blue-500'
-                                          }`}></div>
-                                          <div className={`text-xs font-bold ${
-                                            dayServices[0].status === 'completed' ? 'text-emerald-700 dark:text-emerald-300' :
-                                            dayServices[0].status === 'invoiced' ? 'text-rose-700 dark:text-rose-300' : 'text-blue-700 dark:text-blue-300'
-                                          }`}>
+                                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                          <div className="text-xs font-bold text-blue-700 dark:text-blue-300">
                                             {formatQuantityWithUnit(dayServices[0].hours, dayServices[0].pricing_type)}
                                           </div>
                                         </div>
@@ -1976,13 +1902,7 @@ export default function ServicesPage() {
                                       return (
                                         <div key={service.id} className="w-full flex-shrink-0">
                                           <div
-                                            className={`w-full rounded-md sm:rounded-lg cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-l-4 backdrop-blur-sm relative ${
-                                              service.status === 'completed'
-                                                ? 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border-emerald-400 shadow-emerald-200/50 dark:shadow-emerald-800/30'
-                                                : service.status === 'invoiced'
-                                                ? 'bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/30 dark:to-pink-900/30 border-rose-400 shadow-rose-200/50 dark:shadow-rose-800/30'
-                                                : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30'
-                                            }`}
+                                            className="w-full rounded-md sm:rounded-lg cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-l-4 backdrop-blur-sm relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30"
                                             onClick={() => handleEdit(service)}
                                           >
                                             <button
@@ -1999,14 +1919,8 @@ export default function ServicesPage() {
                                             <div className="px-1.5 md:px-3 py-1 md:py-2">
                                               <div className="flex items-center justify-between mb-1">
                                                 <div className="flex items-center space-x-1.5">
-                                                  <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${
-                                                    service.status === 'completed' ? 'bg-emerald-500' :
-                                                    service.status === 'invoiced' ? 'bg-rose-500' : 'bg-blue-500'
-                                                  }`}></div>
-                                                  <div className={`text-xs font-semibold ${
-                                                    service.status === 'completed' ? 'text-emerald-700 dark:text-emerald-300' :
-                                                    service.status === 'invoiced' ? 'text-rose-700 dark:text-rose-300' : 'text-blue-700 dark:text-blue-300'
-                                                  }`}>
+                                                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-500"></div>
+                                                  <div className="text-xs font-semibold text-blue-700 dark:text-blue-300">
                                                     {formatQuantityWithUnit(service.hours, service.pricing_type)}
                                                   </div>
                                                 </div>
@@ -2298,9 +2212,9 @@ export default function ServicesPage() {
               </div>
             </div>
             
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Scrollable content area */}
-            <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-blue-600">
-              <form onSubmit={handleSubmit} className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
+            <div className="overflow-y-auto flex-1 min-h-0 p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-blue-600">
               <CustomSelect
                 label="Client *"
                 value={formData.client_id}
@@ -2430,23 +2344,6 @@ export default function ServicesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <CustomSelect
-                    label="Statut"
-                    value={formData.status}
-                    onChange={(value) => setFormData({ ...formData, status: value as 'pending' | 'completed' | 'invoiced' })}
-                    placeholder="Sélectionner un statut"
-                    options={[
-                      { value: "pending", label: "En attente" },
-                      { value: "completed", label: "Terminée" },
-                      { value: "invoiced", label: "Facturée" }
-                    ]}
-                  />
-                </div>
-                <div className="md:hidden" />
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
@@ -2517,24 +2414,27 @@ export default function ServicesPage() {
                   )}
                 </div>
               </div>
+            </div>
 
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2 flex-shrink-0">
+            {/* Footer with buttons - always visible */}
+            <div className="flex-shrink-0 p-3 sm:p-4 md:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="flex-1 px-3 py-2 sm:px-4 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm font-medium"
+                  className="flex-1 px-3 py-2.5 sm:px-4 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm font-medium"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-3 py-2 sm:px-4 bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-full border border-orange-500 dark:border-orange-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
+                  className="flex-1 px-3 py-2.5 sm:px-4 bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-full border border-orange-500 dark:border-orange-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium"
                 >
                   {editingService ? 'Modifier' : 'Ajouter'}
                 </button>
               </div>
-              </form>
             </div>
+            </form>
           </div>
         </div>
       )}
@@ -2747,9 +2647,9 @@ export default function ServicesPage() {
               </div>
             </div>
             
-            {/* Contenu */}
-            <div className="overflow-y-auto max-h-[calc(95vh-120px)] scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-blue-600">
-              <form onSubmit={handleArticleSubmit} className="p-4 sm:p-6 space-y-4">
+            <form onSubmit={handleArticleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            {/* Contenu scrollable */}
+            <div className="overflow-y-auto flex-1 min-h-0 p-4 sm:p-6 space-y-4 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-blue-600">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -2829,24 +2729,27 @@ export default function ServicesPage() {
                     Article actif
                   </label>
                 </div>
-                
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={resetArticleForm}
-                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-full border border-orange-500 dark:border-orange-600 shadow-md hover:shadow-lg transition-all text-sm font-medium"
-                  >
-                    {editingArticle ? 'Modifier' : 'Créer'}
-                  </button>
-                </div>
-              </form>
             </div>
+
+            {/* Footer with buttons - always visible */}
+            <div className="flex-shrink-0 p-4 sm:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button
+                  type="button"
+                  onClick={resetArticleForm}
+                  className="flex-1 px-4 py-2.5 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-full border border-orange-500 dark:border-orange-600 shadow-md hover:shadow-lg transition-all text-sm font-medium"
+                >
+                  {editingArticle ? 'Modifier' : 'Créer'}
+                </button>
+              </div>
+            </div>
+            </form>
           </div>
         </div>
       )}
@@ -2856,9 +2759,9 @@ export default function ServicesPage() {
       {/* Modal mobile pour afficher les prestations d'un jour */}
       {selectedDateForModal && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setSelectedDateForModal(null)}>
-          <div className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md max-h-[85vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 rounded-t-3xl sm:rounded-t-2xl">
+            <div className="flex-shrink-0 bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 rounded-t-3xl sm:rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-bold text-white">
@@ -2880,7 +2783,7 @@ export default function ServicesPage() {
             </div>
             
             {/* Contenu */}
-            <div className="overflow-y-auto flex-1 p-4">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4">
               <div className="space-y-3">
                 {getServicesForDate(selectedDateForModal).map((service) => {
                   if (!service) return null;
@@ -2892,13 +2795,7 @@ export default function ServicesPage() {
                         setSelectedDateForModal(null);
                         handleEdit(service);
                       }}
-                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 active:scale-95 ${
-                        service.status === 'completed'
-                          ? 'bg-emerald-500 dark:bg-emerald-600 border-emerald-600 dark:border-emerald-500'
-                          : service.status === 'invoiced'
-                          ? 'bg-rose-500 dark:bg-rose-600 border-rose-600 dark:border-rose-500'
-                          : 'bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500'
-                      }`}
+                      className="p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 active:scale-95 bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500"
                     >
                       <div className="text-white">
                         <div className="flex items-center justify-between mb-2">
@@ -2911,9 +2808,6 @@ export default function ServicesPage() {
                         </div>
                         <div className="flex items-center justify-between text-sm opacity-90">
                           <span>{formatQuantityWithUnit(service.hours, service.pricing_type)}</span>
-                          <span className="font-semibold">
-                            {service.status === 'completed' ? 'Terminée' : service.status === 'invoiced' ? 'Facturée' : 'En attente'}
-                          </span>
                         </div>
                         {service.description && (
                           <p className="text-xs opacity-75 mt-2 line-clamp-2">
@@ -2934,7 +2828,7 @@ export default function ServicesPage() {
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
+            <div className="flex-shrink-0 bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
               <div className="absolute inset-0 opacity-20">
                 <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
                 <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
@@ -2971,7 +2865,7 @@ export default function ServicesPage() {
             </div>
             
             {/* Contenu */}
-            <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="p-4 sm:p-6">
                 <div className="space-y-3">
                   {selectedDayServices.map((service) => {
@@ -2980,13 +2874,7 @@ export default function ServicesPage() {
                     return (
                       <div
                         key={service.id}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${
-                          service.status === 'completed'
-                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
-                            : service.status === 'invoiced'
-                            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
-                            : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700'
-                        }`}
+                        className="p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700"
                         onClick={() => handleEdit(service)}
                       >
                         <div className="flex items-start justify-between mb-2">
@@ -2998,16 +2886,6 @@ export default function ServicesPage() {
                               {service.description || 'Aucune description'}
                             </p>
                           </div>
-                          <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                            service.status === 'completed'
-                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                              : service.status === 'invoiced'
-                              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
-                              : 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300'
-                          }`}>
-                            {service.status === 'completed' ? 'Terminée' : 
-                             service.status === 'invoiced' ? 'Facturée' : 'En attente'}
-                          </span>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">

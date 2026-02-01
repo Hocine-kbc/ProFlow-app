@@ -86,10 +86,10 @@ export default function AlertModal({
   const colors = getColors();
 
   return (
-    <div className="modal-overlay bg-black bg-opacity-50 flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 overflow-y-auto">
-      <div className={`${colors.bg} ${colors.border} border-2 rounded-2xl shadow-2xl max-w-[92vw] sm:max-w-md w-full transform transition-all duration-300 scale-100`}>
+    <div className="fixed inset-0 modal-overlay bg-black bg-opacity-50 flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 overflow-y-auto">
+      <div className={`${colors.bg} ${colors.border} border-2 rounded-2xl shadow-2xl max-w-[92vw] sm:max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden transform transition-all duration-300 scale-100`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200">
+        <div className="flex-shrink-0 flex items-center justify-between p-3 sm:p-6 border-b border-gray-200">
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div className={`${colors.iconBg} p-1.5 sm:p-2 rounded-full`}>
               {getIcon()}
@@ -105,13 +105,13 @@ export default function AlertModal({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-3 sm:p-6">
+        {/* Content scrollable */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6">
           <p className="text-xs sm:text-base text-gray-700 leading-relaxed">{message}</p>
         </div>
 
-        {/* Footer */}
-        <div className="flex space-x-2 p-3 sm:p-6 border-t border-gray-200">
+        {/* Footer fixe */}
+        <div className="flex-shrink-0 flex space-x-2 p-3 sm:p-6 border-t border-gray-200">
           <button
             type="button"
             onClick={onClose}
