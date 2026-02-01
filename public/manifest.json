@@ -1,0 +1,23 @@
+{
+  "name": "ProFlow",
+  "short_name": "ProFlow",
+  "description": "Votre flux professionnel simplifié. Gestion complète pour auto-entrepreneurs.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/logoPF.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logoPF.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
