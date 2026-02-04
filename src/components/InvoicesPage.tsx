@@ -1274,7 +1274,7 @@ export default function InvoicesPage() {
 
       {/* Contrôles de filtrage et tri - Design responsive */}
       {!isSelectionMode && invoices.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
           {/* Barre de recherche et filtres - Tout sur la même ligne */}
           <div className="flex flex-wrap gap-4 items-end">
             {/* Barre de recherche */}
