@@ -11,16 +11,21 @@ import { generateInvoicePDFWithPuppeteer } from './src/lib/puppeteerPdfGenerator
 import messagesRouter from './api/messages.js';
 import juice from 'juice';
 
-// Configuration
-dotenv.config();
+// Configuration - charger .env depuis le répertoire du projet
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '.env') });
+
 const app = express();
 const PORT = process.env.PORT || 3001;
-
 
 // Configuration SendGrid
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || 'SG.test-key-not-configured';
 if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.test-key-not-configured') {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('📧 Email: SendGrid configuré');
+} else if (process.env.GMAIL_USER) {
+  console.log('📧 Email: SendGrid non configuré, Gmail sera utilisé');
 }
 
 // Configuration Gmail (solution de secours)

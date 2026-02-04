@@ -1197,7 +1197,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Statut des factures */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Statut des factures</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 w-full">
           {[
