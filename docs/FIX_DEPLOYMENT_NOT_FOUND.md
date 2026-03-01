@@ -86,8 +86,10 @@ Si vous ne voyez **aucun hook** configuré mais que l’erreur continue, Supabas
    cd "c:\Users\houho\OneDrive\Desktop\Developement_web\appli autoentreprise\project_autoentreprise_new"
    npx supabase link --project-ref tdfhqkgvcgqgkrxarmui
    npx supabase functions deploy auth-callback
+   npx supabase functions deploy custom-access-token
    npx supabase functions deploy delete-user-account
    ```
+   La fonction **custom-access-token** correspond au nom souvent utilisé par le hook Supabase « Custom Access Token ». Si le 404 persiste, Supabase appelle peut‑être une autre fonction (nom inconnu) → contacter le support avec l’ID d’erreur.
 2. Le projet contient maintenant une fonction **auth-callback** (minimale, qui ne fait qu’accepter l’appel). Si Supabase appelle un nom proche ou une fonction “par défaut”, cela peut suffire à faire disparaître le 404.
 3. **Vérifier les variables d’environnement en production (Vercel)** : assurez-vous que `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` pointent bien vers **ce** projet (tdfhqkgvcgqgkrxarmui). Si la prod pointe vers un autre projet, c’est peut‑être lui qui a un hook ou une config différente.
 
