@@ -13,7 +13,7 @@ import PricingPage from './components/PricingPage.tsx';
 import EmailInboxPage from './components/EmailInboxPage.tsx';
 import { AppProvider, useApp } from './contexts/AppContext.tsx';
 import { ThemeProvider } from './contexts/ThemeContext.tsx';
-import { fetchClients, fetchServices, fetchInvoices } from './lib/api.ts';
+import { fetchClients, fetchServices, fetchInvoices, fetchSettings } from './lib/api.ts';
 import AuthPage from './components/AuthPage.tsx';
 import ResetPasswordPage from './components/ResetPasswordPage.tsx';
 import { supabase } from './lib/supabase.ts';
@@ -164,7 +164,6 @@ function AppContent() {
       
       // Charger les paramètres du profil
       try {
-        const { fetchSettings } = await import('./lib/api.ts');
         const settings = await fetchSettings();
         if (settings) {
           // Sauvegarder dans localStorage pour l'affichage
