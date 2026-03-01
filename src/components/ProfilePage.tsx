@@ -60,6 +60,17 @@ export default function ProfilePage() {
   });
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
   const [changingPassword, setChangingPassword] = useState(false);
+  const [isOAuthOnlyUser, setIsOAuthOnlyUser] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const oauthOnly = user?.identities?.length
+        ? !user.identities.some((i: { provider: string }) => i.provider === 'email')
+        : false;
+      setIsOAuthOnlyUser(oauthOnly);
+    })();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -125,7 +136,7 @@ export default function ProfilePage() {
   const validatePasswordForm = () => {
     const errors: Record<string, string> = {};
 
-    if (!passwordData.currentPassword) {
+    if (!isOAuthOnlyUser && !passwordData.currentPassword) {
       errors.currentPassword = 'Le mot de passe actuel est requis';
     }
 
@@ -167,29 +178,26 @@ export default function ProfilePage() {
     setPasswordErrors({});
 
     try {
-      console.log('👤 Vérification de l\'utilisateur connecté...');
-      // Vérifier que l'utilisateur est connecté
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user?.email) {
-        console.error('❌ Erreur utilisateur:', userError);
         throw new Error('Utilisateur non connecté');
       }
-      console.log('✅ Utilisateur trouvé:', user.email);
 
-      console.log('🔍 Vérification du mot de passe actuel...');
-      // Vérifier le mot de passe actuel en tentant une reconnexion
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: passwordData.currentPassword
-      });
+      const oauthOnly = user.identities?.length
+        ? !user.identities.some((i: { provider: string }) => i.provider === 'email')
+        : false;
 
-      if (signInError) {
-        console.error('❌ Mot de passe actuel incorrect:', signInError.message);
-        setPasswordErrors({ currentPassword: 'Mot de passe actuel incorrect' });
-        setChangingPassword(false);
-        return;
+      if (!oauthOnly) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: passwordData.currentPassword
+        });
+        if (signInError) {
+          setPasswordErrors({ currentPassword: 'Mot de passe actuel incorrect' });
+          setChangingPassword(false);
+          return;
+        }
       }
-      console.log('✅ Mot de passe actuel vérifié');
 
       console.log('🔄 Mise à jour du mot de passe...');
       // Mettre à jour le mot de passe
@@ -623,7 +631,7 @@ export default function ProfilePage() {
               className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-full font-semibold transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl text-xs sm:text-sm w-fit"
             >
               <Lock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span>Modifier le mot de passe</span>
+              <span>{isOAuthOnlyUser ? 'Définir un mot de passe' : 'Modifier le mot de passe'}</span>
             </button>
           )}
         </div>
@@ -640,44 +648,47 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h4 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-                    Modification du mot de passe
+                    {isOAuthOnlyUser ? 'Définir un mot de passe' : 'Modification du mot de passe'}
                   </h4>
                   <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    Pour des raisons de sécurité, confirmez votre mot de passe actuel
+                    {isOAuthOnlyUser
+                      ? 'Vous vous connectez avec Google. Définissez un mot de passe pour pouvoir aussi vous connecter par email.'
+                      : 'Pour des raisons de sécurité, confirmez votre mot de passe actuel'}
                   </p>
                 </div>
               </div>
                 
               <div className="space-y-4 sm:space-y-6">
-                {/* Mot de passe actuel */}
-                <div className="space-y-2 sm:space-y-3">
-                  <label className="block text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-indigo-500 rounded-full mr-2"></div>
-                    Mot de passe actuel
-                  </label>
-                  <div className="relative group">
-                    <input
-                      type={showPasswords.current ? 'text' : 'password'}
-                      className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-10 sm:pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-indigo-300 dark:group-hover:border-indigo-500 text-sm sm:text-base"
-                      value={passwordData.currentPassword}
-                      onChange={(e) => handlePasswordInputChange('currentPassword', e.target.value)}
-                      placeholder="Saisissez votre mot de passe actuel"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => togglePasswordVisibility('current')}
-                      className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
-                    >
-                      {showPasswords.current ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
-                    </button>
-                  </div>
-                  {passwordErrors.currentPassword && (
-                    <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-xs sm:text-sm">
-                      <div className="w-1 h-1 bg-red-500 rounded-full"></div>
-                      <span>{passwordErrors.currentPassword}</span>
+                {!isOAuthOnlyUser && (
+                  <div className="space-y-2 sm:space-y-3">
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-indigo-500 rounded-full mr-2"></div>
+                      Mot de passe actuel
+                    </label>
+                    <div className="relative group">
+                      <input
+                        type={showPasswords.current ? 'text' : 'password'}
+                        className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-10 sm:pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-indigo-300 dark:group-hover:border-indigo-500 text-sm sm:text-base"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => handlePasswordInputChange('currentPassword', e.target.value)}
+                        placeholder="Saisissez votre mot de passe actuel"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => togglePasswordVisibility('current')}
+                        className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+                      >
+                        {showPasswords.current ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+                      </button>
                     </div>
-                  )}
-                </div>
+                    {passwordErrors.currentPassword && (
+                      <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-xs sm:text-sm">
+                        <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                        <span>{passwordErrors.currentPassword}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Nouveau mot de passe */}
                 <div className="space-y-2 sm:space-y-3">

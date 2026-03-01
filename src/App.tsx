@@ -67,20 +67,30 @@ function AppContent() {
   useEffect(() => {
     let isMounted = true;
     (async () => {
+      const hash = window.location.hash || '';
+      const isOAuthCallback = hash.includes('access_token=') || hash.includes('refresh_token=');
+
+      if (isOAuthCallback) {
+        // Laisser Supabase traiter les tokens dans le hash, puis récupérer la session
+        await new Promise((r) => setTimeout(r, 100));
+      }
+
       const { data } = await supabase.auth.getSession();
       if (!isMounted) return;
       setIsAuthenticated(!!data.session);
-      
+
+      if (data.session && isOAuthCallback) {
+        // Nettoyer l'URL (retirer les tokens du hash) après connexion Google
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+
       // Vérifier si l'utilisateur est en train de réinitialiser son mot de passe
       if (data.session) {
         const { data: user } = await supabase.auth.getUser();
         if (user.user && user.user.email_confirmed_at && user.user.last_sign_in_at) {
-          // Vérifier si l'URL contient un token de réinitialisation de mot de passe
           const urlParams = new URLSearchParams(window.location.search);
           const accessToken = urlParams.get('access_token');
           const refreshToken = urlParams.get('refresh_token');
-          
-          // Si l'URL contient des tokens de réinitialisation, c'est une réinitialisation de mot de passe
           if (accessToken && refreshToken) {
             setIsResettingPassword(true);
           }
