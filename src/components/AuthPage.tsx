@@ -163,7 +163,7 @@ export default function AuthPage() {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${globalThis.location.origin}/reset-password`,
+        redirectTo: `${(globalThis.location.origin || '').trim().replace(/\s/g, '')}/reset-password`,
       });
       
       if (error) throw error;
@@ -202,13 +202,8 @@ export default function AuthPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${globalThis.location.origin}/`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-          scopes: 'openid email profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-        }
+          redirectTo: `${(globalThis.location.origin || '').trim().replace(/\s/g, '')}/`,
+        },
       });
 
       if (error) {
