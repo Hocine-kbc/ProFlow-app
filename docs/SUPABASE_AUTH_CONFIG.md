@@ -2,6 +2,8 @@
 
 Ce guide permet de faire fonctionner **la connexion avec Google** et **le changement / réinitialisation de mot de passe** en production.
 
+**Important :** Cette app est en **Vite + React** (pas Next.js). Il n’y a **pas de `middleware.ts`** ni de route `/auth/callback` : le code avec `createServerClient` et `@supabase/ssr` concerne Next.js uniquement. Ici, Supabase redirige vers l’URL de l’app (ex. `https://pro-flow-woad.vercel.app/`) avec les tokens dans l’URL ; le client Supabase dans le navigateur gère la session.
+
 ---
 
 ## 1. Connexion avec Google
@@ -43,7 +45,8 @@ Pour que le lien “Mot de passe oublié” fonctionne en production :
    http://localhost:5173/
    http://localhost:5173/reset-password
    ```
-   Sans ces URLs, le lien de réinitialisation peut être refusé ou ne pas ouvrir la bonne page.
+   Sans ces URLs, le lien de réinitialisation peut être refusé ou ne pas ouvrir la bonne page.  
+   **Pas besoin** d’ajouter `https://ton-projet.vercel.app/auth/callback` : cette app n’a pas cette route. La racine `/` et `/reset-password` suffisent.
 
 ---
 

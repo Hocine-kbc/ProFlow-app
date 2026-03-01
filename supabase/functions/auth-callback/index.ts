@@ -1,5 +1,4 @@
-// Fonction minimale pour éviter DEPLOYMENT_NOT_FOUND si Supabase appelle une Edge Function au sign-in.
-// Ne fait rien d'autre que répondre OK.
+// Auth Hook Custom Access Token : renvoie les claims reçus tels quels (pass-through).
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -11,8 +10,20 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-  return new Response(JSON.stringify({ ok: true }), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+
+  try {
+    const body = await req.json().catch(() => ({}));
+    const claims = typeof body?.claims === "object" && body.claims !== null ? body.claims : {};
+
+    // Toujours renvoyer { claims } au format attendu (pass-through sans modification).
+    return new Response(JSON.stringify({ claims }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ claims: {} }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 });

@@ -95,6 +95,19 @@ Si après déploiement l’erreur est toujours là, contacter le support Supabas
 
 ---
 
+## 8. Erreur 500 MIDDLEWARE_INVOCATION_FAILED
+
+Si vous voyez **500 MIDDLEWARE_INVOCATION_FAILED** après avoir déployé une fonction, c’est que le **Auth Hook** est bien appelé mais que la réponse ne correspond pas au format attendu par Supabase.
+
+- **Solution 1 (recommandée)** : dans **Authentication** → **Auth Hooks**, **désactivez** ou **supprimez** le hook. La connexion fonctionnera sans hook.
+- **Solution 2** : la fonction **auth-callback** a été adaptée pour renvoyer le format attendu par le hook « Custom Access Token ». Redéployez-la :
+  ```bash
+  npx supabase functions deploy auth-callback
+  ```
+  Puis réessayez la connexion. Si l’erreur persiste, le hook est peut‑être d’un autre type (Send Email, etc.) → dans ce cas, désactiver le hook (solution 1).
+
+---
+
 ## Liens directs (remplacez par votre project ref si différent)
 
 - Dashboard du projet : **https://supabase.com/dashboard/project/tdfhqkgvcgqgkrxarmui**

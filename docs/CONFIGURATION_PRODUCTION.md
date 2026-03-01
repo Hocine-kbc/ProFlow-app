@@ -14,6 +14,7 @@ En local vous avez le fichier `.env`. En production (Vercel), il faut **définir
 | `VITE_SUPABASE_URL` | `https://tdfhqkgvcgqgkrxarmui.supabase.co` | Connexion, auth, données |
 | `VITE_SUPABASE_ANON_KEY` | votre clé anon (comme dans `.env`) | Connexion, auth, données |
 | `VITE_BACKEND_URL` | URL de votre backend en prod (voir ci‑dessous) | Envoi de factures par email |
+| `VITE_DISABLE_GOOGLE_LOGIN` | `true` pour masquer le bouton « Continuer avec Google » | Contourner une erreur 500 MIDDLEWARE_INVOCATION_FAILED en attendant la résolution côté Supabase |
 
 Sans `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`, **l’auth et les données ne marcheront pas en prod**.
 

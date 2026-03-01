@@ -203,6 +203,11 @@ export default function AuthPage() {
         provider: 'google',
         options: {
           redirectTo: `${globalThis.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          scopes: 'openid email profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
         }
       });
 
@@ -604,8 +609,8 @@ export default function AuthPage() {
               </button>
             </form>
 
-            {/* Séparateur et bouton Google - masqués en mode forgot-password */}
-            {mode !== 'forgot-password' && (
+            {/* Séparateur et bouton Google - masqués en mode forgot-password ou si désactivé (ex. contournement 500 en prod) */}
+            {mode !== 'forgot-password' && import.meta.env.VITE_DISABLE_GOOGLE_LOGIN !== 'true' && (
               <>
                 {/* Séparateur */}
                 <div className="flex items-center my-6">
