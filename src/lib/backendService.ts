@@ -3,10 +3,12 @@ import {
   fetchSettings,
 } from './api.ts';
 
-// URL du backend - utilise VITE_BACKEND_URL si définie, sinon localhost en dev
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL 
-  ? `${import.meta.env.VITE_BACKEND_URL}/api`
-  : 'http://localhost:3001/api';
+// URL du backend - en prod : VITE_BACKEND_URL ou même origine (/api) ; en dev : localhost
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+  ? `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '')}/api`
+  : import.meta.env.PROD
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/api`
+    : 'http://localhost:3001/api';
 export interface BackendResponse {
   success: boolean;
   message: string;
