@@ -1404,7 +1404,7 @@ export default function InvoicesPage() {
       )}
 
       {/* Invoices table */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Vue mobile/tablette - Cards */}
         <div className="block lg:hidden">
           {currentInvoices.length === 0 ? (
@@ -1652,7 +1652,6 @@ export default function InvoicesPage() {
             </div>
           </div>
         )}
-        </div>
         
         {/* Vue desktop - Table */}
         <div className="hidden lg:block">
@@ -1723,7 +1722,7 @@ export default function InvoicesPage() {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
               {currentInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={isSelectionMode ? 9 : 8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     <div className="flex flex-col items-center space-y-2">
                       <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600" />
                       <p className="text-lg font-medium">Aucune facture trouvée</p>
@@ -1956,6 +1955,7 @@ export default function InvoicesPage() {
             </div>
           </div>
         ) : null}
+      </div>
         </div>
       )}
 
@@ -2933,21 +2933,23 @@ export default function InvoicesPage() {
                 <button
                   type="submit"
                   disabled={sendingEmail || !emailData.to.trim()}
-                  className="flex-1 px-3 py-2.5 sm:px-4 sm:py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-700 dark:to-purple-800 dark:hover:from-purple-800 dark:hover:to-purple-900 text-white rounded-full border border-purple-500 dark:border-purple-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="flex-1 min-h-[2.75rem] px-3 py-2.5 sm:px-4 sm:py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-700 dark:to-purple-800 dark:hover:from-purple-800 dark:hover:to-purple-900 text-white rounded-full border border-purple-500 dark:border-purple-600 shadow-md hover:shadow-lg transition-all text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 max-w-full"
                 >
                   {sendingEmail ? (
                       <>
-                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
-                        <span>Envoi en cours...</span>
+                        <span className="min-w-0 text-center leading-snug sm:hidden">Envoi…</span>
+                        <span className="min-w-0 text-center leading-snug hidden sm:inline">Envoi en cours…</span>
                       </>
                     ) : (
                       <>
-                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                         </svg>
-                        <span>Envoyer la facture</span>
+                        <span className="min-w-0 text-center leading-snug sm:hidden">Envoyer</span>
+                        <span className="min-w-0 text-center leading-snug hidden sm:inline">Envoyer la facture</span>
                       </>
                     )}
                   </button>

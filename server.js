@@ -5,7 +5,6 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import sgMail from '@sendgrid/mail';
 import nodemailer from 'nodemailer';
 import { generateInvoicePDFWithPuppeteer } from './src/lib/puppeteerPdfGenerator.js';
 import messagesRouter from './api/messages.js';
@@ -19,16 +18,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Configuration SendGrid
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || 'SG.test-key-not-configured';
-if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.test-key-not-configured') {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log('📧 Email: SendGrid configuré');
-} else if (process.env.GMAIL_USER) {
-  console.log('📧 Email: SendGrid non configuré, Gmail sera utilisé');
-}
-
-// Configuration Gmail (solution de secours)
+// Configuration Gmail
 let gmailTransporter = null;
 if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
   gmailTransporter = nodemailer.createTransport({
@@ -38,6 +28,9 @@ if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       pass: process.env.GMAIL_APP_PASSWORD
     }
   });
+  console.log('📧 Email: Gmail configuré (' + process.env.GMAIL_USER + ')');
+} else {
+  console.log('⚠️  Email: GMAIL_USER ou GMAIL_APP_PASSWORD manquant');
 }
 
 // Middleware
@@ -154,8 +147,6 @@ app.post('/api/send-invoice', async (req, res) => {
     const emailMessage = customEmailData?.message || `Bonjour ${invoice.client.name},\n\nVeuillez trouver ci-joint votre facture au format PDF.\n\nJe vous remercie de bien vouloir me confirmer la bonne réception de ce message et de la pièce jointe. Pour toute question ou précision, je reste à votre disposition.\n\nCordialement,\n${companyData.name}`;
     const emailSubject = customEmailData?.subject || `Facture ${invoice.invoice_number}`;
     // Utiliser une adresse fixe vérifiée comme expéditeur
-    // L'email de l'utilisateur sera en Reply-To pour que les clients puissent répondre
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || userEmail;
     const fromName = companyData.name || 'ProFlow';
     const replyToEmail = userEmail; // Email de l'utilisateur pour les réponses
     // Fonction pour convertir date YYYY-MM-DD en DD-MM-YYYY
@@ -479,196 +470,32 @@ app.post('/api/send-invoice', async (req, res) => {
 
     const inlinedHtml = juice(htmlContent, { removeStyleTags: false, preserveImportant: true, applyStyleTags: true });
 
-    // Envoyer email avec template HTML
-    const msg = {
+    // Envoyer email avec Gmail
+    if (!gmailTransporter) {
+      return res.json({
+        success: false,
+        message: 'Email non envoyé : Gmail non configuré',
+        hint: 'Vérifiez que GMAIL_USER et GMAIL_APP_PASSWORD sont définis dans le fichier .env'
+      });
+    }
+
+    await gmailTransporter.sendMail({
+      from: `${fromName} <${process.env.GMAIL_USER}>`,
       to: invoice.client.email,
-      from: {
-        email: fromEmail,
-        name: fromName
-      },
-      replyTo: {
-        email: replyToEmail,
-        name: fromName
-      },
+      replyTo: replyToEmail,
       subject: emailSubject,
       text: emailMessage,
       html: inlinedHtml,
       attachments: [
         {
-          content: Buffer.from(pdfData.buffer).toString('base64'),
           filename: pdfData.fileName,
-          type: 'application/pdf',
-          disposition: 'attachment'
+          content: pdfData.buffer,
+          contentType: 'application/pdf'
         }
       ]
-    };
+    });
 
-    // Utiliser SendGrid en priorité - Gmail timeout depuis Railway
-    // Gmail ne fonctionne pas de manière fiable depuis les serveurs cloud
-    const useGmailFirst = false;
-    
-    if (useGmailFirst && gmailTransporter) {
-      // PRIORITÉ 1 : Gmail
-      try {
-        // Avec Gmail, on envoie depuis l'email de l'utilisateur
-        const gmailMsg = {
-          from: {
-            address: replyToEmail, // Envoyer depuis l'email de l'utilisateur
-            name: fromName
-          },
-          to: invoice.client.email,
-          subject: emailSubject,
-          text: emailMessage,
-          html: inlinedHtml,
-          attachments: [
-            {
-              filename: pdfData.fileName,
-              content: pdfData.buffer,
-              contentType: 'application/pdf'
-            }
-          ]
-        };
-        
-        await gmailTransporter.sendMail(gmailMsg);
-        res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
-      } catch (gmailError) {
-        // FALLBACK : Essayer SendGrid
-        if (process.env.SENDGRID_API_KEY) {
-          try {
-            await sgMail.send(msg);
-            res.json({ success: true, message: 'Facture envoyée avec succès (SendGrid)' });
-          } catch (sendgridError) {
-            res.json({ 
-              success: false, 
-              message: 'PDF généré mais email non envoyé (Gmail et SendGrid ont échoué)', 
-              pdfPath: pdfData.filePath,
-              error: `Gmail: ${gmailError.message}, SendGrid: ${sendgridError.message}`
-            });
-          }
-        } else {
-          res.json({ 
-            success: false, 
-            message: 'PDF généré mais email non envoyé (Gmail échoué, SendGrid non configuré)', 
-            pdfPath: pdfData.filePath,
-            error: gmailError.message 
-          });
-        }
-      }
-    } else {
-      // PRIORITÉ 1 : SendGrid (si Gmail n'est pas configuré)
-      try {
-        await sgMail.send(msg);
-        res.json({ success: true, message: 'Facture envoyée avec succès (SendGrid)' });
-      } catch (emailError) {
-        // FALLBACK : Essayer Gmail
-        if (gmailTransporter) {
-          try {
-            const gmailMsg = {
-              from: {
-                address: replyToEmail,
-                name: fromName
-              },
-              to: invoice.client.email,
-              subject: emailSubject,
-              text: emailMessage,
-              html: inlinedHtml,
-              attachments: [
-                {
-                  filename: pdfData.fileName,
-                  content: pdfData.buffer,
-                  contentType: 'application/pdf'
-                }
-              ]
-            };
-            
-            await gmailTransporter.sendMail(gmailMsg);
-            res.json({ success: true, message: 'Facture envoyée avec succès (Gmail)' });
-          } catch (gmailError) {
-            // Analyser les erreurs pour donner des conseils
-            let hint = '';
-            const sendgridErrorMsg = emailError.message?.toLowerCase() || '';
-            const gmailErrorMsg = gmailError.message?.toLowerCase() || '';
-            
-            // Vérifier les erreurs dans la réponse SendGrid
-            if (emailError.response && emailError.response.body && emailError.response.body.errors) {
-              emailError.response.body.errors.forEach((err) => {
-                const errMsg = err.message?.toLowerCase() || '';
-                if (errMsg.includes('maximum credits exceeded') || errMsg.includes('credits exceeded') || errMsg.includes('quota')) {
-                  hint = 'SendGrid: Votre compte a atteint sa limite de crédits mensuels. Gmail: ' + (gmailErrorMsg.includes('invalid login') || gmailErrorMsg.includes('authentication') 
-                    ? 'Les identifiants GMAIL_USER ou GMAIL_APP_PASSWORD sont incorrects. Utilisez un mot de passe d\'application.'
-                    : 'Vérifiez GMAIL_USER et GMAIL_APP_PASSWORD.');
-                }
-              });
-            }
-            
-            if (!hint) {
-              if (sendgridErrorMsg.includes('maximum credits exceeded') || sendgridErrorMsg.includes('credits exceeded') || sendgridErrorMsg.includes('quota')) {
-                hint = 'SendGrid: Votre compte a atteint sa limite de crédits mensuels. Gmail: ' + (gmailErrorMsg.includes('invalid login') || gmailErrorMsg.includes('authentication') 
-                  ? 'Les identifiants sont incorrects. Utilisez un mot de passe d\'application.'
-                  : 'Vérifiez GMAIL_USER et GMAIL_APP_PASSWORD.');
-              } else if (sendgridErrorMsg.includes('verified') || sendgridErrorMsg.includes('sender-identity')) {
-                hint = 'SendGrid: L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée. Vérifiez-la dans votre compte SendGrid.';
-              } else if (sendgridErrorMsg.includes('api key') || sendgridErrorMsg.includes('unauthorized')) {
-                hint = 'SendGrid: La clé API SENDGRID_API_KEY est invalide ou expirée. Vérifiez-la dans votre compte SendGrid.';
-              } else if (gmailErrorMsg.includes('invalid login') || gmailErrorMsg.includes('authentication')) {
-                hint = 'Gmail: Les identifiants GMAIL_USER ou GMAIL_APP_PASSWORD sont incorrects. Utilisez un mot de passe d\'application, pas votre mot de passe Gmail normal.';
-              } else {
-                hint = 'Vérifiez la configuration de SendGrid (SENDGRID_API_KEY + SENDGRID_FROM_EMAIL) et/ou Gmail (GMAIL_USER + GMAIL_APP_PASSWORD) sur votre plateforme de déploiement.';
-              }
-            }
-            
-            res.json({ 
-              success: false, 
-              message: 'PDF généré mais email non envoyé (SendGrid et Gmail ont échoué)', 
-              pdfPath: pdfData.filePath,
-              error: `SendGrid: ${emailError.message}, Gmail: ${gmailError.message}`,
-              hint
-            });
-          }
-        } else {
-          // Logs détaillés pour déboguer SendGrid
-          let hint = '';
-          if (emailError.response && emailError.response.body && emailError.response.body.errors) {
-            emailError.response.body.errors.forEach((err, index) => {
-              
-              // Détecter les erreurs spécifiques
-              const errorMsg = err.message?.toLowerCase() || '';
-              if (errorMsg.includes('maximum credits exceeded') || errorMsg.includes('credits exceeded') || errorMsg.includes('quota')) {
-                hint = 'Votre compte SendGrid a atteint sa limite de crédits mensuels. Vous pouvez : 1) Attendre le renouvellement mensuel, 2) Passer à un plan payant, 3) Utiliser Gmail en attendant. Le système essaie automatiquement Gmail en secours.';
-              } else if (errorMsg.includes('verified') || errorMsg.includes('sender-identity')) {
-                hint = 'L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée dans SendGrid. Allez dans SendGrid > Settings > Sender Authentication pour vérifier votre email.';
-              } else if (errorMsg.includes('api key') || errorMsg.includes('unauthorized')) {
-                hint = 'La clé API SENDGRID_API_KEY est invalide ou expirée. Vérifiez-la dans SendGrid > Settings > API Keys.';
-              } else if (errorMsg.includes('from') && errorMsg.includes('email')) {
-                hint = 'L\'adresse email expéditrice n\'est pas autorisée. Vérifiez SENDGRID_FROM_EMAIL dans votre configuration.';
-              }
-            });
-          }
-          
-          // Si aucun hint spécifique n'a été trouvé, donner un conseil générique
-          if (!hint) {
-            const errorMsg = emailError.message?.toLowerCase() || '';
-            if (errorMsg.includes('maximum credits exceeded') || errorMsg.includes('credits exceeded') || errorMsg.includes('quota')) {
-              hint = 'Votre compte SendGrid a atteint sa limite de crédits mensuels. Le système essaie automatiquement Gmail en secours.';
-            } else if (errorMsg.includes('verified') || errorMsg.includes('sender-identity')) {
-              hint = 'L\'adresse email SENDGRID_FROM_EMAIL n\'est pas vérifiée. Vérifiez-la dans votre compte SendGrid.';
-            } else if (errorMsg.includes('api key') || errorMsg.includes('unauthorized')) {
-              hint = 'La clé API SENDGRID_API_KEY est invalide. Vérifiez-la dans votre compte SendGrid.';
-            } else {
-              hint = 'Vérifiez que SENDGRID_API_KEY est valide et que SENDGRID_FROM_EMAIL est vérifié dans SendGrid. Si Gmail est configuré, vérifiez GMAIL_USER et GMAIL_APP_PASSWORD.';
-            }
-          }
-          
-          res.json({ 
-            success: false, 
-            message: 'PDF généré mais email non envoyé (SendGrid échoué, Gmail non configuré)', 
-            pdfPath: pdfData.filePath,
-            error: emailError.message,
-            hint
-          });
-        }
-      }
-    }
+    res.json({ success: true, message: 'Facture envoyée avec succès' });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -686,8 +513,7 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     env: {
       supabaseConfigured: !!(process.env.VITE_SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY),
-      gmailConfigured: !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD),
-      sendgridConfigured: !!process.env.SENDGRID_API_KEY
+      resendConfigured: !!process.env.RESEND_API_KEY
     }
   });
 });

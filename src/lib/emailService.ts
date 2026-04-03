@@ -55,16 +55,12 @@ export const sendInvoiceEmail = async (emailData: EmailData, invoiceId?: string,
       let hint = '';
       const errorMsg = result.message?.toLowerCase() || '';
       
-      if (errorMsg.includes('maximum credits exceeded') || errorMsg.includes('credits exceeded') || errorMsg.includes('quota')) {
-        hint = 'Votre compte SendGrid a atteint sa limite de crédits mensuels. Options : 1) Attendre le renouvellement, 2) Passer à un plan payant, 3) Configurer Gmail (GMAIL_USER + GMAIL_APP_PASSWORD) pour continuer.';
-      } else if (errorMsg.includes('sendgrid') && errorMsg.includes('verified')) {
-        hint = 'Vérifiez que SENDGRID_FROM_EMAIL est vérifié dans votre compte SendGrid.';
-      } else if (errorMsg.includes('sendgrid') && errorMsg.includes('api key')) {
-        hint = 'Vérifiez que SENDGRID_API_KEY est correctement configuré sur votre plateforme de déploiement.';
-      } else if (errorMsg.includes('gmail') && errorMsg.includes('password')) {
-        hint = 'Vérifiez que GMAIL_APP_PASSWORD est un mot de passe d\'application (pas votre mot de passe Gmail normal).';
+      if (errorMsg.includes('api key') || errorMsg.includes('unauthorized')) {
+        hint = 'Vérifiez que RESEND_API_KEY est correctement configuré sur votre plateforme de déploiement.';
+      } else if (errorMsg.includes('domain') || errorMsg.includes('from') || errorMsg.includes('sender')) {
+        hint = 'Vérifiez que RESEND_FROM_EMAIL appartient à un domaine vérifié sur resend.com.';
       } else if (errorMsg.includes('configuration') || errorMsg.includes('manquante')) {
-        hint = 'Configurez soit Gmail (GMAIL_USER + GMAIL_APP_PASSWORD) soit SendGrid (SENDGRID_API_KEY + SENDGRID_FROM_EMAIL) sur votre plateforme de déploiement.';
+        hint = 'Configurez RESEND_API_KEY et RESEND_FROM_EMAIL sur votre plateforme de déploiement.';
       }
       
       return {
