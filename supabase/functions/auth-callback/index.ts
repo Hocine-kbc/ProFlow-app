@@ -1,5 +1,5 @@
 // Auth Hook Custom Access Token : renvoie les claims reçus tels quels (pass-through).
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "std/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +20,7 @@ serve(async (req) => {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e) {
+  } catch (_e) {
     return new Response(JSON.stringify({ claims: {} }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
