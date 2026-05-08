@@ -87,25 +87,25 @@ app.post('/api/send-invoice', async (req, res) => {
     if (clientError) {
       return res.status(404).json({ error: 'Client non trouvé' });
     }
-    // Récupérer les services spécifiques à cette facture depuis les données envoyées par le frontend
-    const { services: invoiceServices, invoiceData } = req.body;
+    // Récupérer uniquement les services liés à CETTE facture (pas tous ceux du client)
+    const { services: invoiceServicesFromRequest, invoiceData } = req.body;
     let services = [];
-    
-    // Utiliser les services envoyés par le frontend s'ils existent
-    if (invoiceServices && invoiceServices.length > 0) {
-      services = invoiceServices;
+
+    if (Array.isArray(invoiceServicesFromRequest) && invoiceServicesFromRequest.length > 0) {
+      services = invoiceServicesFromRequest;
+    } else if (Array.isArray(invoice?.services) && invoice.services.length > 0) {
+      services = invoice.services;
     } else {
-      // Fallback : récupérer tous les services du client (ancien comportement)
-      const { data: allServices, error: servicesError } = await supabase
+      const { data: linkedServices, error: servicesError } = await supabase
         .from('services')
         .select('*')
-        .eq('client_id', invoice.client_id);
+        .eq('invoice_id', invoice.id);
 
       if (servicesError) {
-        return res.status(404).json({ error: 'Services non trouvés' });
+        return res.status(404).json({ error: 'Services de la facture non trouvés' });
       }
-      
-      services = allServices || [];
+
+      services = linkedServices || [];
     }
     // Fusionner données
     invoice.client = client;
@@ -113,7 +113,9 @@ app.post('/api/send-invoice', async (req, res) => {
     // Vérifier si des services existent
     if (!services || services.length === 0) {
       return res.status(400).json({ 
-        error: 'Aucun service trouvé pour cette facture. Veuillez d\'abord ajouter des services.' 
+        error: 'Aucun service trouvé pour cette facture. Veuillez d\'abord ajouter des services.',
+        message: 'Cette facture ne contient aucune prestation liée.',
+        hint: 'Ouvrez la facture, ajoutez/associez les prestations, puis renvoyez l\'email.'
       });
     }
     

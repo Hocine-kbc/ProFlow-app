@@ -1014,6 +1014,10 @@ export default function InvoicesPage() {
       } else {
         // Afficher un message d'erreur détaillé avec des conseils
         let errorMessage = emailResult.message || 'Erreur lors de l\'envoi de l\'email';
+        const rawError = `${emailResult.message || ''} ${emailResult.error || ''}`.toLowerCase();
+        if (rawError.includes('aucun service') || rawError.includes('aucune prestation')) {
+          errorMessage = 'Impossible d\'envoyer cette facture : aucune prestation n\'est liée à cette facture.';
+        }
         if (emailResult.hint) {
           errorMessage += `\n\n💡 ${emailResult.hint}`;
         }

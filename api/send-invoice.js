@@ -103,26 +103,31 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Client non trouvé' });
     }
 
-    // Utiliser les services envoyés par le frontend
-    let invoiceServices = services || [];
-    
-    if (!invoiceServices || invoiceServices.length === 0) {
-      // Fallback : récupérer tous les services du client
-      const { data: allServices, error: servicesError } = await supabase
+    // Utiliser uniquement les services liés à cette facture
+    let invoiceServices = Array.isArray(services) ? services : [];
+
+    if (invoiceServices.length === 0 && Array.isArray(invoice?.services) && invoice.services.length > 0) {
+      invoiceServices = invoice.services;
+    }
+
+    if (invoiceServices.length === 0) {
+      const { data: linkedServices, error: servicesError } = await supabase
         .from('services')
         .select('*')
-        .eq('client_id', invoice.client_id);
+        .eq('invoice_id', invoice.id);
 
       if (servicesError) {
-        return res.status(404).json({ error: 'Services non trouvés' });
+        return res.status(404).json({ error: 'Services de la facture non trouvés' });
       }
       
-      invoiceServices = allServices || [];
+      invoiceServices = linkedServices || [];
     }
 
     if (!invoiceServices || invoiceServices.length === 0) {
       return res.status(400).json({ 
-        error: 'Aucun service trouvé pour cette facture. Veuillez d\'abord ajouter des services.' 
+        error: 'Aucun service trouvé pour cette facture. Veuillez d\'abord ajouter des services.',
+        message: 'Cette facture ne contient aucune prestation liée.',
+        hint: 'Ouvrez la facture, ajoutez/associez les prestations, puis renvoyez l\'email.'
       });
     }
 
