@@ -48,11 +48,15 @@ export const sendInvoiceViaBackend = async (invoiceId: string, invoiceData?: unk
     if (customEmailData) {
     }
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
     const response = await fetch(`${BACKEND_URL}/send-invoice`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: controller.signal,
       body: JSON.stringify({ 
         invoiceId,
         companySettings,
@@ -60,7 +64,7 @@ export const sendInvoiceViaBackend = async (invoiceId: string, invoiceData?: unk
         services: invoiceServices,
         customEmailData
       }),
-    });
+    }).finally(() => clearTimeout(timeoutId));
 
     const data = await response.json();
 
@@ -77,13 +81,18 @@ export const sendInvoiceViaBackend = async (invoiceId: string, invoiceData?: unk
   } catch (error) {
     // Détecter les erreurs de connexion réseau
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('Failed to fetch');
+    const isAbortError = error instanceof DOMException && error.name === 'AbortError';
+    const isNetworkError = isAbortError || errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('Failed to fetch');
     
     return {
       success: false,
-      message: isNetworkError ? 'Impossible de se connecter au backend' : 'Erreur lors de l\'envoi de la facture',
+      message: isAbortError
+        ? 'Le serveur met trop de temps à répondre pour l’envoi de la facture'
+        : (isNetworkError ? 'Impossible de se connecter au backend' : 'Erreur lors de l\'envoi de la facture'),
       error: errorMessage,
-      hint: isNetworkError ? 'Vérifiez que le backend est démarré et que VITE_BACKEND_URL est correctement configuré.' : undefined
+      hint: isAbortError
+        ? 'Réessayez dans quelques secondes. Si le problème persiste, redémarrez le backend et vérifiez la config email (Gmail/SendGrid).'
+        : (isNetworkError ? 'Vérifiez que le backend est démarré et que VITE_BACKEND_URL est correctement configuré.' : undefined)
     };
   }
 };

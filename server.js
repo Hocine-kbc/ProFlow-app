@@ -10,6 +10,17 @@ import { generateInvoicePDFWithPuppeteer } from './src/lib/puppeteerPdfGenerator
 import messagesRouter from './api/messages.js';
 import juice from 'juice';
 
+const withTimeout = (promise, timeoutMs, stepLabel) => {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`Timeout pendant ${stepLabel} (> ${timeoutMs / 1000}s)`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+};
+
 // Configuration - charger .env depuis le répertoire du projet
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,7 +37,10 @@ if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
     auth: {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_APP_PASSWORD
-    }
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 30000
   });
   console.log('📧 Email: Gmail configuré (' + process.env.GMAIL_USER + ')');
 } else {
@@ -141,8 +155,12 @@ app.post('/api/send-invoice', async (req, res) => {
       showLegalRate: companySettings?.showLegalRate !== false,
       showFixedFee: companySettings?.showFixedFee !== false
     };
-    // Générer le PDF avec Puppeteer
-    const pdfData = await generateInvoicePDFWithPuppeteer(invoice, companyData);
+    // Générer le PDF avec timeout pour éviter un chargement infini côté frontend
+    const pdfData = await withTimeout(
+      generateInvoicePDFWithPuppeteer(invoice, companyData),
+      45000,
+      'la génération du PDF'
+    );
     // Récupérer les données personnalisées du frontend
     const { customEmailData } = req.body;
     // Utiliser le message personnalisé ou le message par défaut
@@ -481,7 +499,7 @@ app.post('/api/send-invoice', async (req, res) => {
       });
     }
 
-    await gmailTransporter.sendMail({
+    await withTimeout(gmailTransporter.sendMail({
       from: `${fromName} <${process.env.GMAIL_USER}>`,
       to: invoice.client.email,
       replyTo: replyToEmail,
@@ -495,7 +513,7 @@ app.post('/api/send-invoice', async (req, res) => {
           contentType: 'application/pdf'
         }
       ]
-    });
+    }), 30000, 'l\'envoi de l\'email');
 
     res.json({ success: true, message: 'Facture envoyée avec succès' });
 
