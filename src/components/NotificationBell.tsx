@@ -211,7 +211,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header avec gradient et traits décoratifs */}
-              <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 px-5 py-4 overflow-hidden">
+              <div className="relative z-10 flex-shrink-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 px-3 py-3 sm:px-5 sm:py-4 overflow-hidden">
                 {/* Traits décoratifs */}
                 <div className="absolute inset-0 opacity-20">
                   <div className="absolute top-2 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
@@ -220,28 +220,28 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
                   <div className="absolute top-0 bottom-0 right-8 w-0.5 h-full bg-white/15 transform -rotate-12"></div>
                 </div>
                 
-                <div className="relative z-10 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                <div className="relative z-10 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm flex-shrink-0">
                       <Bell className="w-5 h-5 text-white" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-bold text-white truncate">
                         Notifications
                       </h3>
                       {unreadCount > 0 && (
-                        <p className="text-xs text-white/80 mt-0.5">
+                        <p className="text-xs text-white/80 mt-0.5 truncate">
                           {unreadCount} non {unreadCount > 1 ? 'lues' : 'lue'}
                         </p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
                     {unreadCount > 0 && (
                       <button
                         type="button"
                         onClick={handleMarkAllAsRead}
-                        className="p-2 rounded-lg text-white/90 hover:bg-white/20 hover:text-white transition-all duration-200"
+                        className="p-1.5 sm:p-2 rounded-lg text-white/90 hover:bg-white/20 hover:text-white transition-all duration-200 flex-shrink-0"
                         title="Tout marquer comme lu"
                       >
                         <Check className="w-4 h-4" />
@@ -251,7 +251,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
                       <button
                         type="button"
                         onClick={handleDeleteRead}
-                        className="p-2 rounded-lg text-white/90 hover:bg-white/20 hover:text-white transition-all duration-200"
+                        className="p-1.5 sm:p-2 rounded-lg text-white/90 hover:bg-white/20 hover:text-white transition-all duration-200 flex-shrink-0"
                         title="Supprimer les notifications lues"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -262,7 +262,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
               </div>
 
               {/* Liste des notifications */}
-              <div className="flex-1 overflow-y-auto overscroll-contain bg-gray-50/50 dark:bg-gray-900/50">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-50/50 dark:bg-gray-900/50 relative z-0">
                 {loading ? (
                   <div className="p-12 text-center">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mb-3"></div>

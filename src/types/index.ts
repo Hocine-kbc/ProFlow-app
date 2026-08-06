@@ -30,6 +30,7 @@ export interface Service {
   description: string;
   article_id?: string; // Référence vers l'article utilisé
   invoice_id?: string; // Référence vers la facture associée
+  status?: string; // 'invoiced' une fois rattachée à une facture (peut être défini même sans invoice_id sur d'anciennes données)
   pricing_type?: ServicePricingType;
   client?: {
     id: string;

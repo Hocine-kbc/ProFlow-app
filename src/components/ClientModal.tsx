@@ -45,7 +45,7 @@ export default function ClientModal({
   const isProfessional = formData.clientType === 'professionnel';
 
   return (
-    <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 fixed inset-0 overflow-y-auto">
+    <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 fixed inset-0 overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-[92vw] sm:max-w-lg lg:max-w-2xl w-full max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
         {/* Header with gradient */}
         <div className="bg-gradient-to-r from-green-600 via-green-600 to-green-700 dark:from-green-700 dark:via-green-700 dark:to-green-800 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden flex-shrink-0">
@@ -151,7 +151,7 @@ export default function ClientModal({
                       name: e.target.value
                     }))
                   }
-                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
               
@@ -169,7 +169,7 @@ export default function ClientModal({
                       email: e.target.value
                     }))
                   }
-                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
             </div>
@@ -188,7 +188,7 @@ export default function ClientModal({
                       phone: e.target.value
                     }))
                   }
-                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
               <div>
@@ -207,7 +207,7 @@ export default function ClientModal({
                   placeholder="ex : 123 456 789"
                   disabled={!isProfessional}
                   required={isProfessional}
-                  className={`w-full px-3 py-2.5 sm:px-3 sm:py-2 border rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base ${
+                  className={`w-full px-3 py-2.5 sm:px-3 sm:py-2 border rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base ${
                     isProfessional
                       ? 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
                       : 'border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed'
@@ -233,7 +233,7 @@ export default function ClientModal({
                       street: e.target.value
                     }))
                   }
-                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
             </div>
@@ -252,7 +252,7 @@ export default function ClientModal({
                       postalCode: e.target.value
                     }))
                   }
-                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
               <div>
@@ -268,7 +268,7 @@ export default function ClientModal({
                       city: e.target.value
                     }))
                   }
-                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
               <div>
@@ -284,15 +284,15 @@ export default function ClientModal({
                       country: e.target.value
                     }))
                   }
-                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  className="w-full px-3 py-2.5 sm:px-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
               </div>
             </div>
         </div>
 
         {/* Footer with buttons - always visible */}
-        <div className="flex-shrink-0 p-3 sm:p-4 lg:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+        <div className="flex-shrink-0 p-4 sm:p-5 lg:p-6 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+          <div className="flex flex-row space-x-3">
             <button
               type="button"
               onClick={resetForm}

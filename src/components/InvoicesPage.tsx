@@ -651,6 +651,17 @@ export default function InvoicesPage() {
       }
 
       if (persistedInvoice) {
+        // Refléter immédiatement le rattachement à la facture sur les prestations
+        // (sans ça, elles restent affichées comme "en attente" tant que la page n'est pas rechargée)
+        selectedServiceEntries.forEach((service) => {
+          dispatch({
+            type: 'UPDATE_SERVICE',
+            payload: { ...service, invoice_id: persistedInvoice!.id },
+          });
+        });
+      }
+
+      if (persistedInvoice) {
         try {
           const existingDescriptions = JSON.parse(localStorage.getItem('invoice-summary-descriptions') || '{}');
           if (summaryDescriptionValue) {
@@ -1658,8 +1669,8 @@ export default function InvoicesPage() {
         )}
         
         {/* Vue desktop - Table */}
-        <div className="hidden lg:block">
-          <table className="w-full divide-y divide-gray-200 dark:divide-gray-600">
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full min-w-[900px] divide-y divide-gray-200 dark:divide-gray-600">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th className="w-6 px-1 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1965,7 +1976,7 @@ export default function InvoicesPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden flex-shrink-0">
@@ -2057,7 +2068,7 @@ export default function InvoicesPage() {
                         value={formData.invoice_number}
                         onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
                         placeholder={generateInvoiceNumber()}
-                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                       />
                     </div>
 
@@ -2167,7 +2178,7 @@ export default function InvoicesPage() {
                           }
                         }}
                         placeholder="jj/mm/aaaa"
-                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                       />
                       </div>
                     </div>
@@ -2191,7 +2202,7 @@ export default function InvoicesPage() {
                           setDueDateManuallyModified(true);
                         }}
                           placeholder="jj/mm/aaaa"
-                          className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                          className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                       />
                       </div>
                     </div>
@@ -2216,7 +2227,7 @@ export default function InvoicesPage() {
                               setFormData(prev => ({ ...prev, due_date: dueDateString }));
                             }
                           }}
-                          className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                          className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                           placeholder="30"
                         />
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -2432,8 +2443,8 @@ export default function InvoicesPage() {
             </div>
             
             {/* Footer with buttons - always visible */}
-            <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-700 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+            <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-700 px-3 sm:px-6 py-4 sm:py-5 border-t border-gray-200 dark:border-gray-600">
+              <div className="flex flex-row space-x-4">
                 <button
                   type="button"
                   onClick={resetForm}
@@ -2458,7 +2469,7 @@ export default function InvoicesPage() {
 
       {/* Invoice Preview Modal */}
       {previewInvoice && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-300 overflow-y-auto">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-300 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 px-3 py-3 sm:p-4 md:p-6 text-white relative overflow-hidden flex-shrink-0">
@@ -2814,7 +2825,7 @@ export default function InvoicesPage() {
 
       {/* Email Modal */}
       {emailModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-200 overflow-y-auto">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 px-3 py-3 sm:p-4 md:p-6 text-white rounded-t-xl sm:rounded-t-2xl relative overflow-hidden flex-shrink-0">

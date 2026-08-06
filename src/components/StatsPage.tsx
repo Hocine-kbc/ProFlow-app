@@ -35,6 +35,7 @@ import {
   ComposedChart
 } from 'recharts';
 import { supabase } from '../lib/supabase.ts';
+import AnimatedNumber from './AnimatedNumber.tsx';
 import { 
   exportStatsToExcel, 
   exportStatsToPdf, 
@@ -1337,7 +1338,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
   }
 
   return (
-    <div className="space-y-4 bg-gray-50 dark:bg-gray-900 min-h-screen -mt-4 pt-4 pb-8 px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto">
+    <div className="space-y-4">
       <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-700 dark:from-indigo-700 dark:via-indigo-700 dark:to-indigo-800 text-white shadow-lg overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
@@ -1398,38 +1399,47 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       )}
 
       {/* Filtre de période pour les KPI */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6 mb-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Période d'analyse</h3>
-            {/* Sélecteurs selon le type de période */}
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 sm:p-5 lg:p-6 mb-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Période d'analyse</h3>
+            {/* Sélecteurs selon le type de période - toujours sur une seule ligne, groupés pour ne jamais se scinder */}
+            <div className="flex flex-nowrap items-center justify-center sm:justify-end gap-1.5 sm:gap-2 overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0 sm:overflow-visible">
               {/* Sélecteur d'année (toujours visible) */}
-              <button
-                type="button"
-                onClick={() => setSelectedKpiYear(selectedKpiYear - 1)}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
-                title="Année précédente"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <div className="px-5 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm">
-                <span className="text-base font-bold text-gray-900 dark:text-white min-w-[80px] text-center block">
-                  {selectedKpiYear}
-                </span>
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedKpiYear(selectedKpiYear - 1)}
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex-shrink-0"
+                  title="Année précédente"
+                >
+                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+                <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
+                  <span className="text-xs sm:text-base font-bold text-gray-900 dark:text-white min-w-[40px] sm:min-w-[80px] text-center block">
+                    {selectedKpiYear}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedKpiYear(selectedKpiYear + 1)}
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex-shrink-0"
+                  title="Année suivante"
+                >
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedKpiYear(selectedKpiYear + 1)}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
-                title="Année suivante"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
 
-              {/* Sélecteur de trimestre (si trimestriel) */}
-              {kpiPeriodFilter === 'quarter' && (
-                <>
+              {/* Sélecteur de trimestre (si trimestriel) - collapse/slide animé au lieu d'un montage/démontage brut */}
+              <div
+                className={`flex items-center flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+                  kpiPeriodFilter === 'quarter'
+                    ? 'max-w-[220px] opacity-100 gap-1.5 sm:gap-2 ml-1 sm:ml-1.5'
+                    : 'max-w-0 opacity-0 gap-0 ml-0 pointer-events-none'
+                }`}
+                aria-hidden={kpiPeriodFilter !== 'quarter'}
+              >
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => {
@@ -1440,13 +1450,13 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                         setSelectedKpiYear(selectedKpiYear - 1);
                       }
                     }}
-                    className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex-shrink-0"
                     title="Trimestre précédent"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  <div className="px-5 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm">
-                    <span className="text-base font-bold text-gray-900 dark:text-white min-w-[60px] text-center block">
+                  <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
+                    <span className="text-xs sm:text-base font-bold text-gray-900 dark:text-white min-w-[28px] sm:min-w-[60px] text-center block">
                       T{selectedKpiQuarter}
                     </span>
                   </div>
@@ -1460,17 +1470,24 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                         setSelectedKpiYear(selectedKpiYear + 1);
                       }
                     }}
-                    className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex-shrink-0"
                     title="Trimestre suivant"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                </>
-              )}
+                </div>
+              </div>
 
-              {/* Sélecteur de mois (si mensuel) */}
-              {kpiPeriodFilter === 'month' && (
-                <>
+              {/* Sélecteur de mois (si mensuel) - collapse/slide animé au lieu d'un montage/démontage brut */}
+              <div
+                className={`flex items-center flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+                  kpiPeriodFilter === 'month'
+                    ? 'max-w-[220px] opacity-100 gap-1.5 sm:gap-2 ml-1 sm:ml-1.5'
+                    : 'max-w-0 opacity-0 gap-0 ml-0 pointer-events-none'
+                }`}
+                aria-hidden={kpiPeriodFilter !== 'month'}
+              >
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => {
@@ -1481,16 +1498,16 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                         setSelectedKpiYear(selectedKpiYear - 1);
                       }
                     }}
-                    className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex-shrink-0"
                     title="Mois précédent"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  <div className="px-5 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm">
+                  <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
                     <select
                       value={selectedKpiMonth}
                       onChange={(e) => setSelectedKpiMonth(Number(e.target.value))}
-                      className="text-base font-bold text-gray-900 dark:text-white bg-transparent border-none outline-none cursor-pointer appearance-none text-center min-w-[120px]"
+                      className="text-xs sm:text-base font-bold text-gray-900 dark:text-white bg-transparent border-none outline-none cursor-pointer appearance-none text-center min-w-[64px] sm:min-w-[120px]"
                     >
                       <option value="1">Janvier</option>
                       <option value="2">Février</option>
@@ -1516,13 +1533,13 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                         setSelectedKpiYear(selectedKpiYear + 1);
                       }
                     }}
-                    className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex-shrink-0"
                     title="Mois suivant"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                </>
-              )}
+                </div>
+              </div>
             </div>
           </div>
           {/* Boutons de type de période - alignés à gauche */}
@@ -1581,123 +1598,123 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       </div>
 
       {/* KPI Cards Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
-          <div className="absolute top-4 right-4 p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
-            <DollarSign className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+            <DollarSign className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">CA Brut Total</p>
-            <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-              {formatCurrency(kpiData.totalRevenueBrut)}
+          <div className="pr-9 sm:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">CA Brut Total</p>
+            <p className="text-base sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              <AnimatedNumber value={kpiData.totalRevenueBrut} format={formatCurrency} />
             </p>
           </div>
-          <div className="mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-2 sm:mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
             <TrendingUp className="w-4 h-4 mr-1 text-blue-500 dark:text-blue-400" />
             <span>Toutes les factures payées</span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
-          <div className="absolute top-4 right-4 p-2.5 bg-green-100 dark:bg-green-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
-            <Euro className="w-6 h-6 text-green-600 dark:text-green-400" />
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-green-100 dark:bg-green-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+            <Euro className="w-4 h-4 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">CA Net Total</p>
-            <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-              {formatCurrency(kpiData.totalRevenueNet)}
+          <div className="pr-9 sm:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">CA Net Total</p>
+            <p className="text-base sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              <AnimatedNumber value={kpiData.totalRevenueNet} format={formatCurrency} />
             </p>
           </div>
-          <div className="mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-2 sm:mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
             <span>Après cotisations URSSAF</span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
-          <div className="absolute top-4 right-4 p-2.5 bg-red-100 dark:bg-red-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
-            <Calculator className="w-6 h-6 text-red-600 dark:text-red-400" />
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-red-100 dark:bg-red-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+            <Calculator className="w-4 h-4 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Cotisations URSSAF</p>
-            <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-              {formatCurrency(kpiData.totalContributions)}
+          <div className="pr-9 sm:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Cotisations URSSAF</p>
+            <p className="text-base sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              <AnimatedNumber value={kpiData.totalContributions} format={formatCurrency} />
             </p>
           </div>
-          <div className="mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-2 sm:mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
             <Percent className="w-4 h-4 mr-1 text-red-500 dark:text-red-400" />
             <span>{formatPercent(kpiData.contributionRate)}</span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
-          <div className="absolute top-4 right-4 p-2.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
-            <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+            <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Factures Payées</p>
-            <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-              {kpiData.paidInvoices}
+          <div className="pr-9 sm:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Factures Payées</p>
+            <p className="text-base sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              <AnimatedNumber value={kpiData.paidInvoices} />
             </p>
           </div>
-          <div className="mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-2 sm:mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
             <span className="text-gray-500 dark:text-gray-400">Total factures réglées</span>
           </div>
         </div>
       </div>
 
       {/* KPI Cards Supplémentaires - Revenus et Paiements */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
-          <div className="absolute top-4 right-4 p-2.5 bg-purple-100 dark:bg-purple-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
-            <Receipt className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-purple-100 dark:bg-purple-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+            <Receipt className="w-4 h-4 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Montant moyen par facture</p>
-            <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-              {formatCurrency(kpiData.averageInvoiceAmount)}
+          <div className="pr-9 sm:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Montant moyen par facture</p>
+            <p className="text-base sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              <AnimatedNumber value={kpiData.averageInvoiceAmount} format={formatCurrency} />
             </p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
-          <div className="absolute top-4 right-4 p-2.5 bg-green-100 dark:bg-green-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
-            <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-green-100 dark:bg-green-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+            <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Taux de paiement à temps</p>
-            <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-              {formatPercent(kpiData.onTimePaymentRate)}
+          <div className="pr-9 sm:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Taux de paiement à temps</p>
+            <p className="text-base sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              <AnimatedNumber value={kpiData.onTimePaymentRate} format={formatPercent} />
             </p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
-          <div className="absolute top-4 right-4 p-2.5 bg-orange-100 dark:bg-orange-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
-            <AlertCircle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-orange-100 dark:bg-orange-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+            <AlertCircle className="w-4 h-4 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Factures en retard</p>
-            <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-              {formatCurrency(kpiData.overdueAmount)}
+          <div className="pr-9 sm:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Factures en retard</p>
+            <p className="text-base sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              <AnimatedNumber value={kpiData.overdueAmount} format={formatCurrency} />
             </p>
           </div>
-          <div className="mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-2 sm:mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
             <XCircle className="w-4 h-4 mr-1 text-orange-500" />
             <span>{kpiData.overdueInvoices} facture(s)</span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
-          <div className="absolute top-4 right-4 p-2.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
-            <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+            <AlertCircle className="w-4 h-4 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />
           </div>
-          <div className="pr-16">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Factures en attente</p>
-            <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-              {kpiData.pendingInvoices}
+          <div className="pr-9 sm:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Factures en attente</p>
+            <p className="text-base sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              <AnimatedNumber value={kpiData.pendingInvoices} />
             </p>
           </div>
-          <div className="mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-2 sm:mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
             <span>{formatCurrency(kpiData.pendingAmount)}</span>
           </div>
         </div>
@@ -2619,7 +2636,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       {/* 👥 Statistiques Clients */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">👥 Statistiques Clients</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Nombre total de clients actifs</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.activeClients}</p>
@@ -2642,7 +2659,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       {/* 🧾 Statistiques Factures */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">🧾 Statistiques Factures</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Factures émises ce mois</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.invoicesThisMonth}</p>

@@ -490,34 +490,38 @@ app.post('/api/send-invoice', async (req, res) => {
 
     const inlinedHtml = juice(htmlContent, { removeStyleTags: false, preserveImportant: true, applyStyleTags: true });
 
-    // Envoyer email avec Gmail
     if (!gmailTransporter) {
       return res.json({
         success: false,
         message: 'Email non envoyé : Gmail non configuré',
-        hint: 'Vérifiez que GMAIL_USER et GMAIL_APP_PASSWORD sont définis dans le fichier .env'
+        hint: 'Vérifiez que GMAIL_USER et GMAIL_APP_PASSWORD sont définis'
       });
     }
 
-    await withTimeout(gmailTransporter.sendMail({
-      from: `${fromName} <${process.env.GMAIL_USER}>`,
-      to: invoice.client.email,
-      replyTo: replyToEmail,
-      subject: emailSubject,
-      text: emailMessage,
-      html: inlinedHtml,
-      attachments: [
-        {
-          filename: pdfData.fileName,
-          content: pdfData.buffer,
-          contentType: 'application/pdf'
-        }
-      ]
-    }), 30000, 'l\'envoi de l\'email');
+    await withTimeout(
+      gmailTransporter.sendMail({
+        from: `${fromName} <${process.env.GMAIL_USER}>`,
+        to: invoice.client.email,
+        replyTo: replyToEmail,
+        subject: emailSubject,
+        text: emailMessage,
+        html: inlinedHtml,
+        attachments: [
+          {
+            filename: pdfData.fileName,
+            content: pdfData.buffer,
+            contentType: 'application/pdf'
+          }
+        ]
+      }),
+      30000,
+      'l\'envoi Gmail'
+    );
 
-    res.json({ success: true, message: 'Facture envoyée avec succès' });
+    res.json({ success: true, message: 'Facture envoyée avec succès', emailService: 'gmail' });
 
   } catch (err) {
+    console.error('❌ Erreur envoi facture:', err);
     res.status(500).json({ error: err.message });
   }
 });

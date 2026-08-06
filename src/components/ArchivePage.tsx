@@ -563,8 +563,8 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
         {/* Contenu */}
         <div className="p-4 sm:p-6 w-full max-w-full">
           {/* Vue desktop - Table */}
-          <div className="hidden lg:block overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600">
-            <table className="w-full divide-y divide-gray-200 dark:divide-gray-600">
+          <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+            <table className="w-full min-w-[900px] divide-y divide-gray-200 dark:divide-gray-600">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   {isSelectionMode && (
@@ -835,8 +835,8 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
 
           {/* Vue tablette - Table compacte */}
           <div className="hidden md:block lg:hidden">
-            <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600">
-              <table className="w-full divide-y divide-gray-200 dark:divide-gray-600">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+              <table className="w-full min-w-[640px] divide-y divide-gray-200 dark:divide-gray-600">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     {isSelectionMode && (

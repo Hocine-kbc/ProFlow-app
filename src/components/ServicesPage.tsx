@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { CheckCircle, ChevronLeft, ChevronRight, Circle, Clock, Edit2, Filter, Plus, Search, Trash, Trash2, X, Package, Calendar, List } from 'lucide-react';
 import { useApp } from '../contexts/AppContext.tsx';
 import { useSettings } from '../hooks/useSettings.ts';
@@ -101,21 +101,18 @@ const calculateInclusiveDaysBetween = (startDate: string, endDate: string): numb
 
 export default function ServicesPage() {
   const { state, dispatch, showNotification } = useApp();
-  const { services, clients } = state;
+  const { services, clients, invoices } = state;
   const settings = useSettings();
   
   const [currentTab, setCurrentTab] = useState<'services' | 'articles'>('services');
-  const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
+  const [currentView, setCurrentView] = useState<'list' | 'calendar'>('calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
   // Refs pour les boutons de vue
   const listButtonRef = useRef<HTMLButtonElement>(null);
   const calendarButtonRef = useRef<HTMLButtonElement>(null);
   const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, left: 0 });
-  const tabServicesButtonRef = useRef<HTMLButtonElement>(null);
-  const tabArticlesButtonRef = useRef<HTMLButtonElement>(null);
-  const [tabIndicatorStyle, setTabIndicatorStyle] = useState({ width: 0, left: 0 });
-  
+
   // États pour la navigation tactile
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -421,30 +418,6 @@ export default function ServicesPage() {
     };
   }, [currentView]);
 
-  useEffect(() => {
-    const updateTabIndicator = () => {
-      const activeButton = currentTab === 'services' ? tabServicesButtonRef.current : tabArticlesButtonRef.current;
-      if (activeButton && activeButton.parentElement) {
-        const containerRect = activeButton.parentElement.getBoundingClientRect();
-        const buttonRect = activeButton.getBoundingClientRect();
-        setTabIndicatorStyle({
-          width: buttonRect.width,
-          left: buttonRect.left - containerRect.left,
-        });
-      }
-    };
-
-    const rafId = requestAnimationFrame(() => {
-      requestAnimationFrame(updateTabIndicator);
-    });
-
-    window.addEventListener('resize', updateTabIndicator);
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', updateTabIndicator);
-    };
-  }, [currentTab]);
-
   const loadArticles = async () => {
     try {
       const articlesData = await fetchArticles();
@@ -655,6 +628,58 @@ export default function ServicesPage() {
 
   const calculateAmount = (hours: number, rate: number) => hours * rate;
 
+  // Statut d'une prestation pour la vue calendrier : facturée > terminée > en attente
+  type ServiceCalendarStatus = 'invoiced' | 'completed' | 'pending';
+
+  // Sur certaines anciennes factures, le lien n'a jamais été écrit sur la prestation
+  // elle-même (ni invoice_id, ni status) : seule la liste "services" embarquée dans la
+  // facture fait foi. On construit donc aussi l'ensemble des ids de prestations qui
+  // apparaissent dans au moins une facture, pour ne rater aucun cas historique.
+  const invoicedServiceIds = useMemo(() => {
+    const ids = new Set<string>();
+    invoices.forEach((invoice) => {
+      (invoice.services || []).forEach((s) => {
+        if (s?.id) ids.add(s.id);
+      });
+    });
+    return ids;
+  }, [invoices]);
+
+  const getServiceCalendarStatus = (service: Service): ServiceCalendarStatus => {
+    if (service.invoice_id || service.status === 'invoiced' || invoicedServiceIds.has(service.id)) {
+      return 'invoiced';
+    }
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return new Date(service.date) <= today ? 'completed' : 'pending';
+  };
+
+  const SERVICE_CALENDAR_COLORS: Record<ServiceCalendarStatus, {
+    mobileBadge: string;
+    desktopCard: string;
+    dot: string;
+    text: string;
+  }> = {
+    invoiced: {
+      mobileBadge: 'bg-emerald-500 dark:bg-emerald-600 border-emerald-600 dark:border-emerald-500',
+      desktopCard: 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border-emerald-400 shadow-emerald-200/50 dark:shadow-emerald-800/30',
+      dot: 'bg-emerald-500',
+      text: 'text-emerald-700 dark:text-emerald-300',
+    },
+    completed: {
+      mobileBadge: 'bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500',
+      desktopCard: 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30',
+      dot: 'bg-blue-500',
+      text: 'text-blue-700 dark:text-blue-300',
+    },
+    pending: {
+      mobileBadge: 'bg-rose-500 dark:bg-rose-600 border-rose-600 dark:border-rose-500',
+      desktopCard: 'bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/30 dark:to-pink-900/30 border-rose-400 shadow-rose-200/50 dark:shadow-rose-800/30',
+      dot: 'bg-rose-500',
+      text: 'text-rose-700 dark:text-rose-300',
+    },
+  };
+
   // Logique de filtrage et pagination
   const filteredServices = services.filter(service => {
     const client = clients.find(c => c.id === service.client_id);
@@ -817,6 +842,26 @@ export default function ServicesPage() {
   return (
     <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 text-white shadow-lg overflow-hidden">
+        {/* Bouton Articles - coin haut droit du header */}
+        {currentTab === 'services' ? (
+          <button
+            type="button"
+            onClick={() => setCurrentTab('articles')}
+            title="Gérer les articles"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur transition-colors border border-white/25"
+          >
+            <Package className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCurrentTab('services')}
+            title="Retour aux prestations"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur transition-colors border border-white/25"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        )}
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -853,62 +898,6 @@ export default function ServicesPage() {
               </span>
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* Onglets */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
-        <div className="relative flex p-1 bg-gray-100 dark:bg-gray-700/60 rounded-full" role="tablist">
-          {/* Indicateur bleu pour Prestations */}
-          <div
-            className={`absolute h-9 rounded-full shadow-md bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 ${
-              currentTab === 'services' ? 'opacity-100' : 'opacity-0'
-            }`}
-            style={{
-              width: tabIndicatorStyle.width ? `${tabIndicatorStyle.width}px` : '50%',
-              left: tabIndicatorStyle.width ? `${tabIndicatorStyle.left}px` : currentTab === 'services' ? '0%' : '50%',
-              transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in-out',
-            }}
-          />
-          {/* Indicateur orange pour Articles */}
-          <div
-            className={`absolute h-9 rounded-full shadow-md bg-gradient-to-r from-orange-500 to-amber-600 dark:from-orange-500 dark:to-amber-500 ${
-              currentTab === 'articles' ? 'opacity-100' : 'opacity-0'
-            }`}
-            style={{
-              width: tabIndicatorStyle.width ? `${tabIndicatorStyle.width}px` : '50%',
-              left: tabIndicatorStyle.width ? `${tabIndicatorStyle.left}px` : currentTab === 'services' ? '0%' : '50%',
-              transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in-out',
-            }}
-          />
-          <button
-            ref={tabServicesButtonRef}
-            type="button"
-            onClick={() => setCurrentTab('services')}
-            role="tab"
-            className={`relative z-10 flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-full transition-colors ${
-              currentTab === 'services'
-                ? 'text-white'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            <span>Prestations</span>
-          </button>
-          <button
-            ref={tabArticlesButtonRef}
-            type="button"
-            onClick={() => setCurrentTab('articles')}
-            role="tab"
-            className={`relative z-10 flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-full transition-colors ${
-              currentTab === 'articles'
-                ? 'text-white'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
-            }`}
-          >
-            <Package className="w-4 h-4" />
-            <span>Articles</span>
-          </button>
         </div>
       </div>
 
@@ -969,18 +958,18 @@ export default function ServicesPage() {
           {currentView === 'list' ? (
             <>
               {/* Filtres et recherche modernes */}
-              <div className="bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-lg">
-                <div className="flex items-center justify-between mb-6">
+              <div className="bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-3 sm:p-6 shadow-lg">
+                <div className="flex items-center justify-between mb-3 sm:mb-6">
                   <div className="flex items-center">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
-                      <Filter className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-2 sm:mr-3">
+                      <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">Filtres et recherche</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Affinez vos résultats</p>
+                      <h3 className="text-sm sm:text-lg font-bold text-gray-900 dark:text-white">Filtres et recherche</h3>
+                      <p className="hidden sm:block text-sm text-gray-500 dark:text-gray-400">Affinez vos résultats</p>
                     </div>
                   </div>
-                  
+
                   {/* Bouton de réinitialisation */}
                   {(query || clientFilter || sortBy !== 'date' || sortDir !== 'desc') && (
                     <button
@@ -991,20 +980,20 @@ export default function ServicesPage() {
                         setSortBy('date');
                         setSortDir('desc');
                       }}
-                      className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     >
-                      <X className="w-4 h-4 mr-1" />
+                      <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
                       Réinitialiser
                     </button>
                   )}
                 </div>
-                
-                {/* Grille des filtres */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                {/* Champs de filtre - largeur contenue, pas étirés sur toute la largeur */}
+                <div className="flex flex-col md:flex-row md:flex-wrap gap-2.5 sm:gap-4">
                   {/* Recherche */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
-                      <Search className="w-4 h-4 mr-1" />
+                  <div className="space-y-1 sm:space-y-2 w-full md:w-auto md:flex-1 md:min-w-[220px] md:max-w-sm">
+                    <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                      <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
                       Recherche
                     </label>
                     <div className="relative">
@@ -1013,7 +1002,7 @@ export default function ServicesPage() {
                         placeholder="Client, description..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        className="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
+                        className="w-full pl-9 sm:pl-10 pr-9 sm:pr-10 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base transition-all duration-200"
                       />
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                       {query && (
@@ -1029,8 +1018,8 @@ export default function ServicesPage() {
                   </div>
 
                   {/* Filtre par client */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="space-y-1 sm:space-y-2 w-full md:w-56">
+                    <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Client
                     </label>
                     <CustomSelect
@@ -1044,13 +1033,13 @@ export default function ServicesPage() {
                           label: client.name
                         }))
                       ]}
-                      className="w-full"
+                      className="w-full [&>div>button]:py-2 sm:[&>div>button]:py-3 [&>div>button]:text-sm [&>div>button]:rounded-full"
                     />
                   </div>
 
                   {/* Tri */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="space-y-1 sm:space-y-2 w-full md:w-56">
+                    <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Tri
                     </label>
                     <CustomSelect
@@ -1071,24 +1060,24 @@ export default function ServicesPage() {
                         { value: "hours-desc", label: "⏰ Quantité (plus)" },
                         { value: "hours-asc", label: "⏰ Quantité (moins)" }
                       ]}
-                      className="w-full"
+                      className="w-full [&>div>button]:py-2 sm:[&>div>button]:py-3 [&>div>button]:text-sm [&>div>button]:rounded-full"
                     />
                   </div>
                 </div>
 
                 {/* Résultats et statistiques */}
-                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div className="mt-3 pt-3 sm:mt-6 sm:pt-4 border-t border-gray-200 dark:border-gray-600">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center space-x-6">
                       <div className="flex items-center space-x-2">
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                           {sortedServices.length} prestation{sortedServices.length !== 1 ? 's' : ''}
                         </span>
                       </div>
-                      
+
                     </div>
-                    
+
                     {/* Actions rapides (sélection multiple supprimée) */}
                     <div className="flex items-center space-x-2 mt-3 sm:mt-0"></div>
                   </div>
@@ -1814,7 +1803,7 @@ export default function ServicesPage() {
                                       e.stopPropagation();
                                       handleEdit(dayServices[0]);
                                     }}
-                                    className="w-full rounded-lg p-1 cursor-pointer transition-all duration-200 active:scale-95 border-2 overflow-hidden bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500"
+                                    className={`w-full rounded-lg p-1 cursor-pointer transition-all duration-200 active:scale-95 border-2 overflow-hidden ${SERVICE_CALENDAR_COLORS[getServiceCalendarStatus(dayServices[0])].mobileBadge}`}
                                   >
                                     <div className="text-white text-[10px] font-bold leading-tight min-w-0">
                                       <div className="truncate text-[10px]">
@@ -1860,7 +1849,7 @@ export default function ServicesPage() {
                               {dayServices.length === 1 ? (
                                 dayServices[0] && (
                                   <div
-                                    className="w-full rounded-lg sm:rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-gray-400/50 border-l-4 backdrop-blur-sm relative group bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30"
+                                    className={`w-full rounded-lg sm:rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-gray-400/50 border-l-4 backdrop-blur-sm relative group ${SERVICE_CALENDAR_COLORS[getServiceCalendarStatus(dayServices[0])].desktopCard}`}
                                     onClick={() => handleEdit(dayServices[0])}
                                   >
                                     <button
@@ -1877,8 +1866,8 @@ export default function ServicesPage() {
                                     <div className="px-2 py-1.5">
                                       <div className="flex items-center justify-between mb-1">
                                         <div className="flex items-center space-x-1.5">
-                                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                          <div className="text-xs font-bold text-blue-700 dark:text-blue-300">
+                                          <div className={`w-1.5 h-1.5 rounded-full ${SERVICE_CALENDAR_COLORS[getServiceCalendarStatus(dayServices[0])].dot}`}></div>
+                                          <div className={`text-xs font-bold ${SERVICE_CALENDAR_COLORS[getServiceCalendarStatus(dayServices[0])].text}`}>
                                             {formatQuantityWithUnit(dayServices[0].hours, dayServices[0].pricing_type)}
                                           </div>
                                         </div>
@@ -1902,7 +1891,7 @@ export default function ServicesPage() {
                                       return (
                                         <div key={service.id} className="w-full flex-shrink-0">
                                           <div
-                                            className="w-full rounded-md sm:rounded-lg cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-l-4 backdrop-blur-sm relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-400 shadow-blue-200/50 dark:shadow-blue-800/30"
+                                            className={`w-full rounded-md sm:rounded-lg cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-l-4 backdrop-blur-sm relative ${SERVICE_CALENDAR_COLORS[getServiceCalendarStatus(service)].desktopCard}`}
                                             onClick={() => handleEdit(service)}
                                           >
                                             <button
@@ -1919,8 +1908,8 @@ export default function ServicesPage() {
                                             <div className="px-1.5 md:px-3 py-1 md:py-2">
                                               <div className="flex items-center justify-between mb-1">
                                                 <div className="flex items-center space-x-1.5">
-                                                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-blue-500"></div>
-                                                  <div className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                                                  <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${SERVICE_CALENDAR_COLORS[getServiceCalendarStatus(service)].dot}`}></div>
+                                                  <div className={`text-xs font-semibold ${SERVICE_CALENDAR_COLORS[getServiceCalendarStatus(service)].text}`}>
                                                     {formatQuantityWithUnit(service.hours, service.pricing_type)}
                                                   </div>
                                                 </div>
@@ -2000,14 +1989,14 @@ export default function ServicesPage() {
                 <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 rounded-md bg-emerald-500 border border-emerald-600"></div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Terminées</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-md bg-rose-500 border border-rose-600"></div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Facturées</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 rounded-md bg-blue-500 border border-blue-600"></div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Terminées</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 rounded-md bg-rose-500 border border-rose-600"></div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">En attente</span>
                   </div>
                 </div>
@@ -2174,8 +2163,8 @@ export default function ServicesPage() {
       )}
 
       {showModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 px-3 py-3 sm:p-4 md:p-6 text-white relative overflow-hidden flex-shrink-0">
               {/* Decorative lines - consistent with other page headers */}
@@ -2187,7 +2176,7 @@ export default function ServicesPage() {
                 <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
                 <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
               </div>
-              
+
               <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -2313,7 +2302,7 @@ export default function ServicesPage() {
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                       placeholder="jj/mm/aaaa"
-                      className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                      className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                     />
                   </div>
                 </div>
@@ -2334,7 +2323,7 @@ export default function ServicesPage() {
                           value={dailyEndDate}
                           onChange={(e) => setDailyEndDate(e.target.value)}
                           placeholder="jj/mm/aaaa"
-                          className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                          className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                         />
                       </div>
                     </div>
@@ -2369,7 +2358,7 @@ export default function ServicesPage() {
                       setHoursInputValue(h === 0 ? '' : String(h).replace('.', ','));
                     }}
                     readOnly={formData.pricing_type === 'daily'}
-                    className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formData.pricing_type === 'daily' ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed' : ''}`}
+                    className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formData.pricing_type === 'daily' ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed' : ''}`}
                   />
                   {formData.pricing_type === 'daily' && (
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Calculé automatiquement à partir des dates.</p>
@@ -2395,7 +2384,7 @@ export default function ServicesPage() {
                         hourly_rate: rawValue === '' ? 0 : Number.isNaN(parsedValue) ? 0 : parsedValue,
                       });
                     }}
-                    className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
                 <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-4 flex flex-col justify-center">
@@ -2417,8 +2406,8 @@ export default function ServicesPage() {
             </div>
 
             {/* Footer with buttons - always visible */}
-            <div className="flex-shrink-0 p-3 sm:p-4 md:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+            <div className="flex-shrink-0 p-4 sm:p-5 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+              <div className="flex flex-row space-x-3">
                 <button
                   type="button"
                   onClick={resetForm}
@@ -2611,7 +2600,7 @@ export default function ServicesPage() {
 
       {/* Modal de création/édition d'article */}
       {showArticleModal && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
@@ -2660,7 +2649,7 @@ export default function ServicesPage() {
                       required
                       value={articleFormData.name}
                       onChange={(e) => setArticleFormData({ ...articleFormData, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       placeholder="Ex: Développement web, Conseil..."
                     />
                   </div>
@@ -2699,7 +2688,7 @@ export default function ServicesPage() {
                       required
                       value={articleFormData.hourly_rate || ''}
                       onChange={(e) => setArticleFormData({ ...articleFormData, hourly_rate: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   
@@ -2711,7 +2700,7 @@ export default function ServicesPage() {
                       type="text"
                       value={articleFormData.category}
                       onChange={(e) => setArticleFormData({ ...articleFormData, category: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       placeholder="Ex: Développement, Design..."
                     />
                   </div>
@@ -2732,8 +2721,8 @@ export default function ServicesPage() {
             </div>
 
             {/* Footer with buttons - always visible */}
-            <div className="flex-shrink-0 p-4 sm:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+            <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+              <div className="flex flex-row space-x-3">
                 <button
                   type="button"
                   onClick={resetArticleForm}
@@ -2795,7 +2784,7 @@ export default function ServicesPage() {
                         setSelectedDateForModal(null);
                         handleEdit(service);
                       }}
-                      className="p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 active:scale-95 bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500"
+                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 active:scale-95 ${SERVICE_CALENDAR_COLORS[getServiceCalendarStatus(service)].mobileBadge}`}
                     >
                       <div className="text-white">
                         <div className="flex items-center justify-between mb-2">
@@ -2825,7 +2814,7 @@ export default function ServicesPage() {
       )}
 
       {selectedDayServices.length > 0 && (
-        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+        <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="flex-shrink-0 bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">

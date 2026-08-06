@@ -33,6 +33,7 @@
     "react-dom": "^18.3.1",
     "recharts": "^3.2.1",
     "resend": "^6.10.0",
+    "tailwindcss-animate": "^1.0.7",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

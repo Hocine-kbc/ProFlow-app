@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Users, Clock, Euro, FileText, TrendingUp, BarChart3, PieChart, ChevronLeft, ChevronRight, Settings, X, Check } from 'lucide-react';
+import { Users, Clock, Euro, FileText, TrendingUp, BarChart3, PieChart, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
 import { useApp } from '../contexts/AppContext.tsx';
+import AnimatedNumber from './AnimatedNumber.tsx';
+import CircularGauge from './CircularGauge.tsx';
 
 // Composant pour afficher un chiffre avec segments LED
 const SegmentDigit = ({ digit, showColons }: { digit: string; showColons?: boolean }) => {
@@ -450,16 +452,16 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
       </div>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">CA Mensuel</p>
               <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
-                {monthlyRevenue.toFixed(2)}€
+                <AnimatedNumber value={monthlyRevenue} format={(v) => `${v.toFixed(2)}€`} />
               </p>
             </div>
-            <div className="p-2 sm:p-3 bg-green-100 rounded-full">
+            <div className="p-1.5 sm:p-3 bg-green-100 rounded-full">
               <Euro className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
             </div>
           </div>
@@ -470,13 +472,15 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Clients</p>
-              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{clients.length}</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
+                <AnimatedNumber value={clients.length} />
+              </p>
             </div>
-            <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
+            <div className="p-1.5 sm:p-3 bg-blue-100 rounded-full">
               <Users className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" />
             </div>
           </div>
@@ -489,15 +493,15 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Heures ce mois</p>
               <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
-                {currentMonthHours}h
+                <AnimatedNumber value={currentMonthHours} format={(v) => `${v.toFixed(1).replace(/\.0$/, '')}h`} />
               </p>
             </div>
-            <div className="p-2 sm:p-3 bg-purple-100 rounded-full">
+            <div className="p-1.5 sm:p-3 bg-purple-100 rounded-full">
               <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-purple-600" />
             </div>
           </div>
@@ -506,13 +510,15 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Factures en attente</p>
-              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{pendingInvoices.length}</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
+                <AnimatedNumber value={pendingInvoices.length} />
+              </p>
             </div>
-            <div className="p-2 sm:p-3 bg-orange-100 rounded-full">
+            <div className="p-1.5 sm:p-3 bg-orange-100 rounded-full">
               <FileText className="w-4 h-4 sm:w-6 sm:h-6 text-orange-600" />
             </div>
           </div>
@@ -525,104 +531,97 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
       </div>
 
       {/* Objectifs & Indicateurs */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {/* Objectif mensuel CA */}
-        <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+        <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 sm:p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-gray-900 dark:text-white">Objectif CA mensuel</h3>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setIsEditingGoal(true)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                title="Modifier l'objectif"
-              >
-                <Settings className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-              </button>
-              <TrendingUp className="w-3.5 h-3.5 text-green-500" />
-            </div>
+            <h3 className="text-xs font-semibold text-gray-900 dark:text-white whitespace-nowrap">Objectif CA mensuel</h3>
+            <TrendingUp className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
           </div>
-          
+
           {isEditingGoal ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={goalInput}
-                  onChange={(e) => setGoalInput(e.target.value)}
-                  className="flex-1 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Objectif en €"
-                  min="0"
-                  step="100"
-                />
+            <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 zoom-in-95 duration-500 ease-out">
+              <input
+                type="number"
+                value={goalInput}
+                onChange={(e) => setGoalInput(e.target.value)}
+                className="w-full min-w-0 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Objectif en €"
+                min="0"
+                step="100"
+              />
+              <div className="flex items-center gap-2 min-w-0">
                 <button
                   type="button"
                   onClick={handleSaveGoal}
-                  className="p-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                  className="flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 py-1.5 bg-green-500 hover:bg-green-600 text-white text-[11px] sm:text-xs font-medium rounded-full transition-colors"
                   title="Enregistrer"
                 >
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="hidden sm:inline truncate">Valider</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleCancelGoal}
-                  className="p-1.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                  className="flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 py-1.5 bg-gray-500 hover:bg-gray-600 text-white text-[11px] sm:text-xs font-medium rounded-full transition-colors"
                   title="Annuler"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="hidden sm:inline truncate">Annuler</span>
                 </button>
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
-              <div>
-                <div className="flex items-baseline justify-between mb-1.5">
-                  <span className="text-xl font-bold text-gray-900 dark:text-white">{monthlyRevenue.toFixed(0)}€</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">/ {monthlyGoal.toFixed(0)}€</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min((monthlyRevenue / monthlyGoal) * 100, 100)}%` }}
-                  ></div>
-                </div>
+            <div className="flex items-center gap-2 sm:gap-4 animate-in fade-in zoom-in-95 duration-500 ease-out">
+              <button
+                type="button"
+                onClick={() => setIsEditingGoal(true)}
+                className="flex-shrink-0 rounded-full transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                title="Modifier l'objectif"
+              >
+                <CircularGauge
+                  percentage={monthlyGoal > 0 ? (monthlyRevenue / monthlyGoal) * 100 : 0}
+                  gradientFrom="#22c55e"
+                  gradientTo="#10b981"
+                  gradientId="dashboardGoalGauge"
+                  size={64}
+                  strokeWidth={7}
+                />
+              </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">{monthlyRevenue.toFixed(0)}€</p>
+                <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">objectif {monthlyGoal.toFixed(0)}€</p>
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                {((monthlyRevenue / monthlyGoal) * 100).toFixed(0)}% de l'objectif atteint
-              </p>
             </div>
           )}
         </div>
 
         {/* Taux de facturation */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 sm:p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-gray-900 dark:text-white">Taux de facturation</h3>
             <FileText className="w-3.5 h-3.5 text-blue-500" />
           </div>
-          <div className="space-y-2">
-            <div>
-              <div className="flex items-baseline justify-between mb-1.5">
-                <span className="text-xl font-bold text-gray-900 dark:text-white">
-                  {invoices.filter(i => i.status === 'paid').length}
-                </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">/ {invoices.length} factures</span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${invoices.length > 0 ? (invoices.filter(i => i.status === 'paid').length / invoices.length) * 100 : 0}%` }}
-                ></div>
-              </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <CircularGauge
+              percentage={invoices.length > 0 ? (invoices.filter(i => i.status === 'paid').length / invoices.length) * 100 : 0}
+              gradientFrom="#3b82f6"
+              gradientTo="#6366f1"
+              gradientId="dashboardInvoiceGauge"
+              size={64}
+              strokeWidth={7}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
+                {invoices.filter(i => i.status === 'paid').length}
+              </p>
+              <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">/ {invoices.length} factures payées</p>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              {invoices.length > 0 ? ((invoices.filter(i => i.status === 'paid').length / invoices.length) * 100).toFixed(0) : 0}% de factures payées
-            </p>
           </div>
         </div>
 
         {/* CA moyen par client */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+        <div className="col-span-2 lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 sm:p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-gray-900 dark:text-white">CA moyen / client</h3>
             <Users className="w-3.5 h-3.5 text-purple-500" />

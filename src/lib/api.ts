@@ -84,6 +84,7 @@ interface DatabaseService {
   created_at: string;
   updated_at: string;
   pricing_type?: ServicePricingType | null;
+  invoice_id?: string | null;
 }
 
 interface DatabaseInvoice {
@@ -376,9 +377,9 @@ export async function deleteClient(id: string): Promise<void> {
 // Services
 export async function fetchServices(): Promise<Service[]> {
   const selectionVariants = [
-    'id, client_id, description, hourly_rate, hours, date, status, article_id, created_at, updated_at, pricing_type, user_id',
-    'id, client_id, description, hourly_rate, hours, date, status, article_id, created_at, updated_at, pricing_type',
-    'id, client_id, description, hourly_rate, hours, date, status, article_id, created_at, updated_at'
+    'id, client_id, description, hourly_rate, hours, date, status, article_id, invoice_id, created_at, updated_at, pricing_type, user_id',
+    'id, client_id, description, hourly_rate, hours, date, status, article_id, invoice_id, created_at, updated_at, pricing_type',
+    'id, client_id, description, hourly_rate, hours, date, status, article_id, invoice_id, created_at, updated_at'
   ];
 
   let servicesData: DatabaseService[] = [];
