@@ -20,10 +20,10 @@ const menuItems = [
   { id: 'invoices', label: 'Factures', icon: FileText, color: 'purple' },
   { id: 'messages', label: 'Messages', icon: MessageCircle, color: 'cyan' },
   { id: 'stats', label: 'Statistiques', icon: BarChart3, color: 'indigo' },
-  { id: 'pricing', label: 'Plans & offres', icon: CreditCard, color: 'emerald' },
   { id: 'urssaf', label: 'URSSAF', icon: Scale, color: 'red' },
   { id: 'archive', label: 'Archive', icon: Archive, color: 'gray' },
   { id: 'profile', label: 'Profil', icon: User, color: 'pink' },
+  { id: 'pricing', label: 'Plans & offres', icon: CreditCard, color: 'emerald' },
 ];
 
 export default function Layout({ children, currentPage, onPageChange }: LayoutProps) {
@@ -333,8 +333,8 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
 
       </div>
 
-      {/* Header fixe en haut - Toute la largeur, derrière le menu */}
-      <div className="bg-gradient-to-r from-white via-white to-gray-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 shadow-md border-b border-gray-200/80 dark:border-slate-800/80 backdrop-blur-sm px-4 lg:px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-50" style={{ height: '64px' }}>
+      {/* Header fixe en haut - Toute la largeur sur mobile, à droite du menu sur desktop */}
+      <div className={`bg-gradient-to-r from-white via-white to-gray-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 shadow-md border-b border-gray-200/80 dark:border-slate-800/80 backdrop-blur-sm px-4 lg:px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'lg:left-16' : 'lg:left-72'}`} style={{ height: '64px' }}>
         {/* Mobile: Menu hamburger */}
         <div className="relative z-50 flex items-center lg:hidden flex-1">
           <label
