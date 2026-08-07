@@ -92,7 +92,7 @@ const EmailTest: React.FC = () => {
               value={invoiceId}
               onChange={(e) => setInvoiceId(e.target.value)}
               placeholder="ID de facture (ex: FAC-202509-001)"
-              className="flex-1 border border-gray-300 p-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="flex-1 border border-gray-300 p-2 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <button
               type="button"

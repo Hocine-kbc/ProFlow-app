@@ -97,7 +97,7 @@ export default function PricingPage() {
       </header>
 
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 shadow-sm flex flex-col">
+        <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
               <ShieldCheck className="w-6 h-6" />
@@ -125,14 +125,14 @@ export default function PricingPage() {
           </ul>
           <button
             type="button"
-            className="mt-8 inline-flex items-center justify-center px-4 py-2.5 rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors text-sm font-medium"
+            className="mt-8 inline-flex items-center justify-center px-4 py-2.5 rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800/60 transition-colors text-sm font-medium"
             disabled
           >
             Plan actuel
           </button>
         </div>
 
-        <div className="relative bg-white dark:bg-gray-900 border-2 border-indigo-500/60 dark:border-indigo-400/60 rounded-2xl p-6 shadow-xl flex flex-col overflow-hidden">
+        <div className="relative bg-white dark:bg-slate-950 border-2 border-indigo-500/60 dark:border-indigo-400/60 rounded-2xl p-6 shadow-xl flex flex-col overflow-hidden">
           <div className="absolute inset-x-6 top-0 h-[180px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-10 blur-3xl" />
           <div className="relative flex items-center gap-3">
             <div className="p-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg">
@@ -177,7 +177,7 @@ export default function PricingPage() {
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <LineChart className="w-6 h-6 text-sky-500" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Fonctionnalités Pro clés</h3>
@@ -192,7 +192,7 @@ export default function PricingPage() {
           </ul>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <Clock3 className="w-6 h-6 text-amber-500" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Expérience utilisateur</h3>
@@ -207,7 +207,7 @@ export default function PricingPage() {
           </ul>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <ShieldCheck className="w-6 h-6 text-emerald-500" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sécurité & conformité</h3>
@@ -223,14 +223,14 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="bg-white dark:bg-gray-800 border border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
+      <section className="bg-white dark:bg-slate-900 border border-dashed border-gray-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <Zap className="w-5 h-5 text-yellow-500" />
           Feuille de route Pro (prochaines étapes)
         </h3>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           {roadmapItems.map((item) => (
-            <div key={item.title} className="bg-gray-50 dark:bg-gray-900/60 border border-gray-100 dark:border-gray-700 rounded-xl p-4 flex flex-col gap-3">
+            <div key={item.title} className="bg-gray-50 dark:bg-slate-950/60 border border-gray-100 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-3">
               <div className="flex items-center gap-3">
                 {item.icon}
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{item.title}</p>

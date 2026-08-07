@@ -37,6 +37,7 @@ import { supabase } from '../lib/supabase.ts';
 import { Invoice, Service, ServicePricingType } from '../types/index.ts';
 
 import AlertModal from './AlertModal.tsx';
+import AnimatedNumber from './AnimatedNumber.tsx';
 import CustomSelect from './CustomSelect.tsx';
 
 type InvoiceTypeMode = 'detailed' | 'summary';
@@ -1195,101 +1196,106 @@ export default function InvoicesPage() {
       {/* Contenu conditionnel selon la vue */}
       {currentView === 'invoices' && (
         <div>
-          {/* Summary cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-          <div className="text-xs text-gray-500 dark:text-gray-300">Total facturé</div>
-          <div className="text-xl font-bold text-gray-900 dark:text-white">{totalHT.toFixed(2)}€</div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-          <div className="text-xs text-gray-500 dark:text-gray-300">Payées</div>
-          <div className="text-xl font-bold text-green-600 dark:text-green-400">{totalPayees.toFixed(2)}€</div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-          <div className="text-xs text-gray-500 dark:text-gray-300">Envoyées en attente</div>
-          <div className="text-xl font-bold text-indigo-600">{totalEnvoyees}</div>
-        </div>
-      </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_1fr] lg:items-stretch gap-4">
+          {/* Répartition des factures */}
+          {(() => {
+            const donutSize = 120;
+            const strokeWidth = 13;
+            const r = (donutSize - strokeWidth) / 2;
+            const circumference = 2 * Math.PI * r;
+            const statuses = [
+              {
+                label: 'Payées',
+                count: activeInvoices.filter(i => i.status === 'paid').length,
+                amount: totalPayees,
+                dotColor: 'bg-green-500',
+                strokeColor: 'text-green-500 dark:text-green-400',
+                textColor: 'text-green-600 dark:text-green-400'
+              },
+              {
+                label: 'Envoyées',
+                count: totalEnvoyees,
+                amount: activeInvoices.filter(i => i.status === 'sent').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
+                dotColor: 'bg-yellow-500',
+                strokeColor: 'text-yellow-500 dark:text-yellow-400',
+                textColor: 'text-yellow-600 dark:text-yellow-400'
+              },
+              {
+                label: 'Brouillons',
+                count: activeInvoices.filter(i => i.status === 'draft').length,
+                amount: activeInvoices.filter(i => i.status === 'draft').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
+                dotColor: 'bg-gray-400',
+                strokeColor: 'text-gray-400 dark:text-gray-500',
+                textColor: 'text-gray-600 dark:text-gray-400'
+              }
+            ];
+            let cumulative = 0;
+            const segments = statuses.map((status) => {
+              const pct = totalHT > 0 ? (status.amount / totalHT) * 100 : 0;
+              const arc = (pct / 100) * circumference;
+              const segment = { ...status, pct, arc, offset: cumulative };
+              cumulative += arc;
+              return segment;
+            });
 
-      {/* Statut des factures */}
-      <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Statut des factures</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 w-full">
-          {[
-            { 
-              label: 'Payées', 
-              count: activeInvoices.filter(i => i.status === 'paid').length,
-              amount: activeInvoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
-              color: 'bg-green-500',
-              textColor: 'text-green-600 dark:text-green-400'
-            },
-            { 
-              label: 'Envoyées', 
-              count: activeInvoices.filter(i => i.status === 'sent').length,
-              amount: activeInvoices.filter(i => i.status === 'sent').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
-              color: 'bg-yellow-500',
-              textColor: 'text-yellow-600 dark:text-yellow-400'
-            },
-            { 
-              label: 'Brouillons', 
-              count: activeInvoices.filter(i => i.status === 'draft').length,
-              amount: activeInvoices.filter(i => i.status === 'draft').reduce((sum, inv) => sum + calculateInvoiceAmount(inv), 0),
-              color: 'bg-gray-500',
-              textColor: 'text-gray-600 dark:text-gray-400'
-            }
-          ].map((status, idx) => (
-            <div key={idx} className="flex items-center p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-              <div className="flex items-center space-x-4">
-                <div className={`w-12 h-12 rounded-full ${status.color} flex items-center justify-center`}>
-                  <span className="text-white font-bold text-lg">{status.count}</span>
-                </div>
-                <div className="flex items-center space-x-6">
-                  <div className={`text-base font-medium ${status.textColor}`}>{status.label}</div>
-                  <div className="text-xl font-bold text-gray-900 dark:text-white">
-                    {status.amount.toFixed(2)}€
+            return (
+              <div className="h-full bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-3 sm:p-4 shadow-sm flex items-center">
+                <div className="flex flex-row items-center gap-3 sm:gap-5">
+                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 lg:w-40 lg:h-40 flex-shrink-0">
+                    <svg viewBox={`0 0 ${donutSize} ${donutSize}`} className="w-full h-full -rotate-90">
+                      <circle
+                        cx={donutSize / 2}
+                        cy={donutSize / 2}
+                        r={r}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={strokeWidth}
+                        className="text-gray-100 dark:text-gray-700"
+                      />
+                      {segments.map((segment) => (
+                        <circle
+                          key={segment.label}
+                          cx={donutSize / 2}
+                          cy={donutSize / 2}
+                          r={r}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={strokeWidth}
+                          strokeLinecap="round"
+                          className={segment.strokeColor}
+                          strokeDasharray={`${segment.arc} ${circumference - segment.arc}`}
+                          strokeDashoffset={-segment.offset}
+                          style={{ transition: 'stroke-dasharray 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                        />
+                      ))}
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-base sm:text-lg lg:text-xl font-extrabold text-gray-900 dark:text-white leading-none">
+                        <AnimatedNumber value={totalHT} format={(v) => `${v.toFixed(0)}€`} />
+                      </span>
+                      <span className="text-[10px] sm:text-xs lg:text-sm text-gray-400 dark:text-gray-500 mt-1 leading-none">Total</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-start gap-x-3 sm:gap-x-4 gap-y-1.5">
+                    {segments.map((segment) => (
+                      <div key={segment.label} className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${segment.dotColor}`} />
+                        <span className={`text-xs font-semibold ${segment.textColor}`}>{segment.label}</span>
+                        <span className="text-xs font-bold text-gray-900 dark:text-white">{segment.amount.toFixed(0)}€</span>
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500">({segment.pct.toFixed(0)}%)</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            );
+          })()}
 
-      {/* Sélection multiple */}
-      {isSelectionMode && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center">
-              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                {selectedInvoices.size} facture(s) sélectionnée(s)
-              </span>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={handleBulkDelete}
-                disabled={selectedInvoices.size === 0}
-                className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
-              >
-                <Trash className="w-4 h-4 mr-2" />
-                Supprimer sélection
-              </button>
-              <button
-                type="button"
-                onClick={toggleSelectionMode}
-                className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Annuler
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+          <div className="h-full flex flex-col gap-4">
       {/* Contrôles de filtrage et tri - Design responsive */}
-      {!isSelectionMode && invoices.length > 0 && (
-        <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
+      {invoices.length > 0 && (
+        <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl p-4 border border-gray-200 dark:border-slate-800">
           {/* Barre de recherche et filtres - Tout sur la même ligne */}
           <div className="flex flex-wrap gap-4 items-end">
             {/* Barre de recherche */}
@@ -1299,7 +1305,7 @@ export default function InvoicesPage() {
               placeholder="Rechercher par numéro, date, statut ou client..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             />
           </div>
           
@@ -1322,7 +1328,7 @@ export default function InvoicesPage() {
                     className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                       statusFilter === option.value
                         ? 'bg-blue-500 text-white shadow-md'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
                     {option.label}
@@ -1348,7 +1354,7 @@ export default function InvoicesPage() {
                       className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                         sortBy === option.value
                           ? 'bg-green-500 text-white shadow-md'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       {option.label}
@@ -1375,51 +1381,84 @@ export default function InvoicesPage() {
           </div>
         </div>
       )}
-
+          </div>
+          </div>
 
       {/* En-tête avec nombre de factures et bouton mode sélection sur la même ligne */}
-      {!isSelectionMode && invoices.length > 0 && (
-        <div className="mb-2 flex justify-between items-center">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {activeInvoices.length === invoices.filter(invoice => !invoice.archived_at).length ? (
-              `${activeInvoices.length} facture${activeInvoices.length > 1 ? 's' : ''}`
+      {invoices.length > 0 && (
+        <div className="mt-4 mb-2 flex justify-between items-center gap-3">
+          <div className="text-sm text-gray-600 dark:text-gray-400 min-w-0">
+            {isSelectionMode ? (
+              <span key="selection-count" className="inline-block animate-in fade-in zoom-in-95 duration-300 ease-out font-medium text-blue-700 dark:text-blue-300">
+                {selectedInvoices.size} facture{selectedInvoices.size !== 1 ? 's' : ''} sélectionnée{selectedInvoices.size !== 1 ? 's' : ''}
+              </span>
             ) : (
-              `${activeInvoices.length} facture${activeInvoices.length > 1 ? 's' : ''} sur ${invoices.filter(invoice => !invoice.archived_at).length}`
-            )}
-            {(searchTerm || statusFilter !== 'all') && (
-              <span className="ml-2 text-blue-600 dark:text-blue-400">
-                (filtrées)
+              <span key="invoice-count" className="inline-block animate-in fade-in zoom-in-95 duration-300 ease-out">
+                {activeInvoices.length === invoices.filter(invoice => !invoice.archived_at).length ? (
+                  `${activeInvoices.length} facture${activeInvoices.length > 1 ? 's' : ''}`
+                ) : (
+                  `${activeInvoices.length} facture${activeInvoices.length > 1 ? 's' : ''} sur ${invoices.filter(invoice => !invoice.archived_at).length}`
+                )}
+                {(searchTerm || statusFilter !== 'all') && (
+                  <span className="ml-2 text-blue-600 dark:text-blue-400">
+                    (filtrées)
+                  </span>
+                )}
+                {(searchTerm || statusFilter !== 'all') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setStatusFilter('all');
+                    }}
+                    className="ml-3 inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                    title="Effacer tous les filtres"
+                  >
+                    <X className="w-3 h-3 mr-1" />
+                    Effacer les filtres
+                  </button>
+                )}
               </span>
             )}
-          {(searchTerm || statusFilter !== 'all') && (
+          </div>
+
+          {isSelectionMode ? (
+            <div key="selection-actions" className="flex items-center gap-2 animate-in fade-in zoom-in-95 slide-in-from-right-2 duration-300 ease-out">
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                disabled={selectedInvoices.size === 0}
+                className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium shadow-sm hover:shadow-md whitespace-nowrap"
+              >
+                <Trash className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Supprimer sélection</span>
+                <span className="sm:hidden">Supprimer</span>
+              </button>
+              <button
+                type="button"
+                onClick={toggleSelectionMode}
+                className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium shadow-sm hover:shadow-md whitespace-nowrap"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Annuler
+              </button>
+            </div>
+          ) : (
             <button
+              key="mode-selection"
               type="button"
-              onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('all');
-              }}
-              className="ml-3 inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-700 transition-all duration-200 shadow-sm hover:shadow-md"
-              title="Effacer tous les filtres"
+              onClick={toggleSelectionMode}
+              className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md animate-in fade-in zoom-in-95 duration-300 ease-out whitespace-nowrap"
             >
-              <X className="w-3 h-3 mr-1" />
-              Effacer les filtres
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Mode sélection
             </button>
           )}
-          </div>
-          
-          <button
-            type="button"
-            onClick={toggleSelectionMode}
-            className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Mode sélection
-          </button>
         </div>
       )}
 
       {/* Invoices table */}
-      <div className="mt-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="mt-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden">
         {/* Vue mobile/tablette - Cards */}
         <div className="block lg:hidden">
           {currentInvoices.length === 0 ? (
@@ -1478,7 +1517,7 @@ export default function InvoicesPage() {
                         ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
                         : invoice.status === 'sent'
                         ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200'
                     }`}>
                       {invoice.status === 'paid' ? 'Payée' : 
                        invoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
@@ -1586,7 +1625,7 @@ export default function InvoicesPage() {
         
         {/* Pagination mobile uniquement - v2 */}
         {totalPages > 0 && (
-          <div className="block lg:hidden bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+          <div className="block lg:hidden bg-gray-50 dark:bg-slate-800 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-1">
                 {/* Bouton Première page */}
@@ -1671,7 +1710,7 @@ export default function InvoicesPage() {
         {/* Vue desktop - Table */}
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full min-w-[900px] divide-y divide-gray-200 dark:divide-gray-600">
-            <thead className="bg-gray-50 dark:bg-gray-700">
+            <thead className="bg-gray-50 dark:bg-slate-800">
               <tr>
                 <th className="w-6 px-1 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   {isSelectionMode ? (
@@ -1734,7 +1773,7 @@ export default function InvoicesPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
+            <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-gray-600">
               {currentInvoices.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
@@ -1747,7 +1786,7 @@ export default function InvoicesPage() {
                 </tr>
               ) : (
                 currentInvoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                   <td className="w-6 px-1 py-4 whitespace-nowrap">
                     {isSelectionMode ? (
                       <button
@@ -1786,7 +1825,7 @@ export default function InvoicesPage() {
                         ? 'bg-green-100 dark:bg-green-900/30 dark:bg-green-900/20 text-green-800 dark:text-green-300'
                         : invoice.status === 'sent'
                         ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200'
                     }`}>
                       {invoice.status === 'paid' ? 'Payée' : 
                        invoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}
@@ -1889,7 +1928,7 @@ export default function InvoicesPage() {
         
         {/* Pagination desktop uniquement - v2 */}
         {totalPages > 0 ? (
-          <div className="hidden lg:block bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+          <div className="hidden lg:block bg-gray-50 dark:bg-slate-800 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-1">
                 {/* Bouton Première page */}
@@ -1977,7 +2016,7 @@ export default function InvoicesPage() {
       {/* Modal */}
       {showModal && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 p-3 sm:p-4 lg:p-6 text-white relative overflow-hidden flex-shrink-0">
               {/* Decorative lines - consistent with other page headers */}
@@ -2031,7 +2070,7 @@ export default function InvoicesPage() {
             {/* Scrollable content */}
             <div className="overflow-y-auto flex-1 min-h-0 p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-6 lg:space-y-8">
                 {/* Client and Invoice Number Section */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
+                <div className="bg-gray-50 dark:bg-slate-800 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
                   <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4 flex items-center">
                       <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
                         <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2068,7 +2107,7 @@ export default function InvoicesPage() {
                         value={formData.invoice_number}
                         onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
                         placeholder={generateInvoiceNumber()}
-                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                        className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm sm:text-base"
                       />
                     </div>
 
@@ -2083,10 +2122,10 @@ export default function InvoicesPage() {
                             setInvoiceType('detailed');
                             setSummaryDescription('');
                           }}
-                          className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
+                          className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-full border text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
                             invoiceType === 'detailed'
                               ? 'bg-purple-600 text-white border-purple-600 shadow-lg'
-                              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                              : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800'
                           }`}
                         >
                           <span>Détaillée</span>
@@ -2094,10 +2133,10 @@ export default function InvoicesPage() {
                         <button
                           type="button"
                           onClick={() => setInvoiceType('summary')}
-                          className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
+                          className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-full border text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
                             invoiceType === 'summary'
                               ? 'bg-purple-600 text-white border-purple-600 shadow-lg'
-                              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                              : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800'
                           }`}
                         >
                           <span>Synthèse</span>
@@ -2112,7 +2151,7 @@ export default function InvoicesPage() {
                             value={summaryDescription}
                             onChange={(e) => setSummaryDescription(e.target.value)}
                             rows={2}
-                            className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                            className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-colors duration-200"
                             placeholder="Prestations regroupées"
                           />
                           <p className="mt-1 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
@@ -2130,7 +2169,7 @@ export default function InvoicesPage() {
                 </div>
               
                 {/* Dates and Payment Section */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 lg:p-6">
+                <div className="bg-gray-50 dark:bg-slate-800 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 lg:p-6">
                   <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4 flex items-center">
                     <div className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
                       <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2178,7 +2217,7 @@ export default function InvoicesPage() {
                           }
                         }}
                         placeholder="jj/mm/aaaa"
-                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                        className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                       />
                       </div>
                     </div>
@@ -2202,7 +2241,7 @@ export default function InvoicesPage() {
                           setDueDateManuallyModified(true);
                         }}
                           placeholder="jj/mm/aaaa"
-                          className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                          className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                       />
                       </div>
                     </div>
@@ -2227,7 +2266,7 @@ export default function InvoicesPage() {
                               setFormData(prev => ({ ...prev, due_date: dueDateString }));
                             }
                           }}
-                          className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                          className="w-full px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm sm:text-base"
                           placeholder="30"
                         />
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -2259,7 +2298,7 @@ export default function InvoicesPage() {
               
                 {/* Services selection */}
                 {(formData.client_id || editingInvoice) && (
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
+                  <div className="bg-gray-50 dark:bg-slate-800 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-4">
                       <h4 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-2 sm:mb-0">
                         <div className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
@@ -2275,13 +2314,13 @@ export default function InvoicesPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="border border-gray-200 dark:border-gray-600 rounded-lg sm:rounded-xl bg-white dark:bg-gray-800 max-h-60 sm:max-h-80 overflow-y-auto">
+                    <div className="border border-gray-200 dark:border-gray-600 rounded-lg sm:rounded-xl bg-white dark:bg-slate-900 max-h-60 sm:max-h-80 overflow-y-auto">
                       {(() => {
                         const clientServices = selectableServices.filter(s => s.client_id === formData.client_id);
                         return clientServices.length === 0;
                       })() ? (
                         <div className="p-4 sm:p-6 lg:p-8 text-center">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                             <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -2292,7 +2331,7 @@ export default function InvoicesPage() {
                       ) : (
                         <>
                           {/* Boutons de sélection en masse */}
-                          <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
+                          <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-slate-800/50">
                             <div className="flex flex-col space-y-3">
                               {/* Boutons en pillule sur mobile, horizontaux sur desktop */}
                               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
@@ -2337,7 +2376,7 @@ export default function InvoicesPage() {
                                 <button
                                   type="button"
                                   onClick={() => setSelectedServices([])}
-                                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium text-sm sm:text-base"
+                                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium text-sm sm:text-base"
                                 >
                                   Tout désélectionner
                                 </button>
@@ -2345,7 +2384,7 @@ export default function InvoicesPage() {
                               
                               {/* Total sélectionné - centré sur mobile */}
                               <div className="text-center">
-                                <div className="inline-flex items-center space-x-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm">
+                                <div className="inline-flex items-center space-x-2 bg-white dark:bg-slate-900 px-4 py-2 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm">
                                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total:</span>
                                   <span className="text-lg font-bold text-gray-900 dark:text-white">
                                     {(() => {
@@ -2364,7 +2403,7 @@ export default function InvoicesPage() {
                           {/* Liste des prestations */}
                           <div className="divide-y divide-gray-100 dark:divide-gray-600">
                           {selectableServices.filter(s => s.client_id === formData.client_id).map((service) => (
-                            <label key={service.id} className="flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer group">
+                            <label key={service.id} className="flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer group">
                               <input
                                 type="checkbox"
                                 checked={selectedServices.includes(service.id)}
@@ -2375,7 +2414,7 @@ export default function InvoicesPage() {
                                     setSelectedServices(selectedServices.filter(id => id !== service.id));
                                   }
                                 }}
-                                className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 focus:ring-2 group-hover:border-blue-400 dark:group-hover:border-blue-500 mt-0.5 sm:mt-0"
+                                className="w-5 h-5 rounded-full border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 focus:ring-2 group-hover:border-blue-400 dark:group-hover:border-blue-500 mt-0.5 sm:mt-0"
                               />
                               <div className="flex-1">
                                 <div className="flex justify-between items-start">
@@ -2428,7 +2467,7 @@ export default function InvoicesPage() {
                       Récapitulatif
                     </h4>
                     <div className="space-y-2 sm:space-y-3">
-                      <div className="flex justify-between items-center py-2 sm:py-3 bg-white dark:bg-gray-800 rounded-lg px-3 sm:px-4 border-t-2 border-blue-200 dark:border-blue-600">
+                      <div className="flex justify-between items-center py-2 sm:py-3 bg-white dark:bg-slate-900 rounded-lg px-3 sm:px-4 border-t-2 border-blue-200 dark:border-blue-600">
                         <span className="text-sm sm:text-lg font-bold text-gray-900 dark:text-white">Total:</span>
                         <span className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
                           {services
@@ -2443,12 +2482,12 @@ export default function InvoicesPage() {
             </div>
             
             {/* Footer with buttons - always visible */}
-            <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-700 px-3 sm:px-6 py-4 sm:py-5 border-t border-gray-200 dark:border-gray-600">
+            <div className="flex-shrink-0 bg-gray-50 dark:bg-slate-800 px-3 sm:px-6 py-4 sm:py-5 border-t border-gray-200 dark:border-gray-600">
               <div className="flex flex-row space-x-4">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium text-sm sm:text-base"
+                  className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium text-sm sm:text-base"
                 >
                   Annuler
                 </button>
@@ -2470,7 +2509,7 @@ export default function InvoicesPage() {
       {/* Invoice Preview Modal */}
       {previewInvoice && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-300 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 px-3 py-3 sm:p-4 md:p-6 text-white relative overflow-hidden flex-shrink-0">
               {/* Decorative lines - consistent with other page headers */}
@@ -2543,9 +2582,9 @@ export default function InvoicesPage() {
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
               <div className="p-2 sm:p-4 md:p-6 lg:p-8">
                 {/* Invoice Content */}
-                <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl md:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-10 max-w-4xl xl:max-w-5xl mx-auto shadow-2xl hover:shadow-3xl transition-all duration-300">
+                <div className="bg-gradient-to-br from-gray-50 to-white dark:from-slate-900 dark:to-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl sm:rounded-2xl md:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-10 max-w-4xl xl:max-w-5xl mx-auto shadow-2xl hover:shadow-3xl transition-all duration-300">
                   {/* Header */}
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6 md:mb-8 lg:mb-12 pb-4 sm:pb-6 md:pb-8 border-b-2 border-gray-200 dark:border-gray-700 space-y-3 sm:space-y-4 sm:space-y-0">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6 md:mb-8 lg:mb-12 pb-4 sm:pb-6 md:pb-8 border-b-2 border-gray-200 dark:border-slate-800 space-y-3 sm:space-y-4 sm:space-y-0">
                     <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-6">
                       {(() => {
                         // Get business settings from localStorage
@@ -2677,7 +2716,7 @@ export default function InvoicesPage() {
                         <div className="block lg:hidden space-y-3">
                           {displayRows.length > 0 ? (
                             displayRows.map((row) => (
-                              <div key={row.key} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                              <div key={row.key} className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 shadow-sm">
                                 <div className="flex justify-between items-start mb-2">
                                   <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
                                     {row.description || 'N/A'}
@@ -2706,7 +2745,7 @@ export default function InvoicesPage() {
                             ))
                           ) : (
                             <div className="text-center py-8">
-                              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <div className="w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -2718,7 +2757,7 @@ export default function InvoicesPage() {
                         </div>
 
                         {/* Vue desktop - Table */}
-                        <div className="hidden sm:block overflow-x-auto rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800">
+                        <div className="hidden sm:block overflow-x-auto rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-800 shadow-lg bg-white dark:bg-slate-900">
                           <table className="w-full border-0 rounded-xl sm:rounded-2xl overflow-hidden">
                             <thead className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
                               <tr>
@@ -2731,10 +2770,10 @@ export default function InvoicesPage() {
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 last:rounded-tr-xl sm:last:rounded-tr-2xl">Total</th>
                               </tr>
                             </thead>
-                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-600">
+                            <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-100 dark:divide-gray-600">
                               {displayRows.length > 0 ? (
                                 displayRows.map((row, index) => (
-                                  <tr key={row.key} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${index === displayRows.length - 1 ? 'last:rounded-b-xl sm:last:rounded-b-2xl' : ''}`}>
+                                  <tr key={row.key} className={`hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors ${index === displayRows.length - 1 ? 'last:rounded-b-xl sm:last:rounded-b-2xl' : ''}`}>
                                     <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-medium ${index === displayRows.length - 1 ? 'first:rounded-bl-xl sm:first:rounded-bl-2xl' : ''}`}>
                                       {row.description || 'N/A'}
                                     </td>
@@ -2758,7 +2797,7 @@ export default function InvoicesPage() {
                                 <tr>
                                   <td colSpan={showDateColumn ? 5 : 4} className="px-3 sm:px-6 py-8 sm:py-12 text-center rounded-b-xl sm:rounded-b-2xl">
                                     <div className="flex flex-col items-center">
-                                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                                      <div className="w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
                                         <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
@@ -2794,7 +2833,7 @@ export default function InvoicesPage() {
                               <span className="text-xs sm:text-sm md:text-base text-gray-700 dark:text-gray-300 font-medium">Sous-total :</span>
                               <span className="text-sm sm:text-base md:text-lg font-bold text-gray-900 dark:text-white">{calculateInvoiceAmount(previewInvoice).toFixed(2)}€</span>
                             </div>
-                            <div className="flex justify-between items-center py-2 sm:py-3 md:py-4 bg-white dark:bg-gray-800 rounded-lg px-2 sm:px-3 md:px-4 border-2 border-blue-200 dark:border-blue-700">
+                            <div className="flex justify-between items-center py-2 sm:py-3 md:py-4 bg-white dark:bg-slate-900 rounded-lg px-2 sm:px-3 md:px-4 border-2 border-blue-200 dark:border-blue-700">
                               <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-900 dark:text-white">Total à payer :</span>
                               <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-blue-600 dark:text-blue-400">{calculateInvoiceAmount(previewInvoice).toFixed(2)}€</span>
                             </div>
@@ -2807,7 +2846,7 @@ export default function InvoicesPage() {
             </div>
             
             {/* Footer with metadata */}
-            <div className="bg-gray-50 dark:bg-gray-700 px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
+            <div className="bg-gray-50 dark:bg-slate-800 px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
               <div className="flex items-center justify-center">
                 <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-4 md:space-x-6 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   <div>
@@ -2826,7 +2865,7 @@ export default function InvoicesPage() {
       {/* Email Modal */}
       {emailModal && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-2 pb-12 sm:p-2 sm:p-4 px-2 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] animate-in zoom-in-95 duration-200 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[96vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-purple-600 via-purple-600 to-purple-700 dark:from-purple-700 dark:via-purple-700 dark:to-purple-800 px-3 py-3 sm:p-4 md:p-6 text-white rounded-t-xl sm:rounded-t-2xl relative overflow-hidden flex-shrink-0">
               {/* Decorative lines - consistent with other page headers */}
@@ -2879,7 +2918,7 @@ export default function InvoicesPage() {
                     value={emailData.to}
                     onChange={(e) => setEmailData({ ...emailData, to: e.target.value })}
                     placeholder="client@example.com"
-                    className="w-full px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-full sm:rounded-full focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                     required
                   />
                 </div>
@@ -2894,7 +2933,7 @@ export default function InvoicesPage() {
                     value={emailData.subject}
                     onChange={(e) => setEmailData({ ...emailData, subject: e.target.value })}
                     placeholder={`Facture N° ${emailModal.invoice_number} - ${new Date(emailModal.date).toLocaleDateString('fr-FR')}`}
-                    className="w-full px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-full sm:rounded-full focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                   />
                 </div>
 
@@ -2908,7 +2947,7 @@ export default function InvoicesPage() {
                     onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
                     placeholder="Bonjour, veuillez trouver ci-joint votre facture..."
                     rows={4}
-                    className="w-full px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-semibold italic"
+                    className="w-full px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors resize-none bg-white dark:bg-slate-800 text-gray-900 dark:text-white font-semibold italic"
                   />
                 </div>
 
@@ -2936,7 +2975,7 @@ export default function InvoicesPage() {
             </div>
 
             {/* Footer with buttons - always visible */}
-            <div className="flex-shrink-0 p-3 sm:p-4 md:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+            <div className="flex-shrink-0 p-3 sm:p-4 md:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-900">
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <button
                   type="button"
@@ -2994,7 +3033,7 @@ export default function InvoicesPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentView('invoices')}
-                  className="p-2 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur transition-colors"
+                  className="p-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur transition-colors"
                   title="Retour aux factures"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3011,7 +3050,7 @@ export default function InvoicesPage() {
 
           <form id="settings-form" onSubmit={handleSettingsSubmit} className="space-y-4 sm:space-y-6">
             {/* Billing Settings */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 p-4 sm:p-5 lg:p-6">
               <div className="flex items-center space-x-2 mb-4 sm:mb-6">
                 <Euro className="w-5 h-5 text-green-600 dark:text-green-400" />
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
@@ -3030,7 +3069,7 @@ export default function InvoicesPage() {
                     step="0.5"
                     value={billingSettings.defaultHourlyRate || ''}
                     onChange={(e) => handleSettingsChange('defaultHourlyRate', parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-colors duration-200"
                     placeholder="25.00"
                   />
                 </div>
@@ -3043,7 +3082,7 @@ export default function InvoicesPage() {
                     type="text"
                     value={billingSettings.invoicePrefix}
                     onChange={(e) => handleSettingsChange('invoicePrefix', e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-colors duration-200"
                     placeholder="FAC"
                   />
                 </div>
@@ -3068,7 +3107,7 @@ export default function InvoicesPage() {
                         handleSettingsChange('invoiceTerms', newDefaultTerms);
                       }
                     }}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-colors duration-200"
                     placeholder="30"
                   />
                 </div>
@@ -3080,7 +3119,7 @@ export default function InvoicesPage() {
                   <textarea
                     value={billingSettings.invoiceTerms}
                     onChange={(e) => handleSettingsChange('invoiceTerms', e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-colors duration-200"
                     placeholder="Paiement en 30 jours."
                     rows={3}
                   />
@@ -3091,14 +3130,14 @@ export default function InvoicesPage() {
                     <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                       Règlement
                     </h3>
-                    <div className="space-y-4 bg-gray-50 dark:bg-gray-700 p-5 rounded-lg">
+                    <div className="space-y-4 bg-gray-50 dark:bg-slate-800 p-5 rounded-lg">
                       <div className="flex items-start space-x-3">
                         <div className="flex-shrink-0 mt-0.5">
                           <input
                             type="checkbox"
                             checked={billingSettings.showLegalRate}
                             onChange={(e) => handleSettingsChange('showLegalRate', e.target.checked)}
-                            className="w-4 h-4 text-purple-600 bg-white border-gray-300 rounded focus:ring-purple-500 focus:ring-2 dark:bg-gray-800 dark:border-gray-600 dark:focus:ring-purple-600 dark:ring-offset-gray-800"
+                            className="w-4 h-4 text-purple-600 bg-white border-gray-300 rounded-full focus:ring-purple-500 focus:ring-2 dark:bg-slate-900 dark:border-gray-600 dark:focus:ring-purple-600 dark:ring-offset-slate-900"
                           />
                         </div>
                         <div className="flex-1">
@@ -3114,7 +3153,7 @@ export default function InvoicesPage() {
                             type="checkbox"
                             checked={billingSettings.showFixedFee}
                             onChange={(e) => handleSettingsChange('showFixedFee', e.target.checked)}
-                            className="w-4 h-4 text-purple-600 bg-white border-gray-300 rounded focus:ring-purple-500 focus:ring-2 dark:bg-gray-800 dark:border-gray-600 dark:focus:ring-purple-600 dark:ring-offset-gray-800"
+                            className="w-4 h-4 text-purple-600 bg-white border-gray-300 rounded-full focus:ring-purple-500 focus:ring-2 dark:bg-slate-900 dark:border-gray-600 dark:focus:ring-purple-600 dark:ring-offset-slate-900"
                           />
                         </div>
                         <div className="flex-1">
@@ -3130,7 +3169,7 @@ export default function InvoicesPage() {
             </div>
 
             {/* Tax Information */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 p-4 sm:p-5 lg:p-6">
               <div className="flex items-center space-x-2 mb-4 sm:mb-6">
                 <Percent className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
@@ -3165,7 +3204,7 @@ export default function InvoicesPage() {
                   rows={4}
                   value={billingSettings.invoiceTerms}
                   onChange={(e) => handleSettingsChange('invoiceTerms', e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200 resize-none"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-colors duration-200 resize-none"
                   placeholder="Paiement à 30 jours. Pas de TVA (franchise en base)."
                 />
                 {billingSettings.showLegalRate && (

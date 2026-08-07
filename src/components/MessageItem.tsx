@@ -81,7 +81,7 @@ export default function MessageItem({
       className={`
         px-3 sm:px-4 md:px-6 py-3 cursor-pointer transition-[background-color,box-shadow,transform] duration-200 ease-in-out 
         grid grid-cols-[32px_32px_minmax(0,2fr)] sm:grid-cols-[40px_40px_280px_1fr_120px_auto] gap-2 sm:gap-3
-        ${isFirst ? '' : 'border-t border-gray-200 dark:border-gray-700'}
+        ${isFirst ? '' : 'border-t border-gray-200 dark:border-slate-800'}
         items-center transform overflow-x-hidden
         ${isSelected 
           ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-600 dark:border-l-blue-400 shadow-sm' 
@@ -90,7 +90,7 @@ export default function MessageItem({
         ${!isSelected && isUnread
           ? 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:shadow-md hover:scale-[1.01] font-semibold'
           : !isSelected
-          ? 'hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md hover:scale-[1.01]'
+          ? 'hover:bg-gray-50 dark:hover:bg-slate-800 hover:shadow-md hover:scale-[1.01]'
           : ''
         }
       `}

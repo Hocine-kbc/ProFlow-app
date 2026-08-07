@@ -118,8 +118,8 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       },
       gray: {
         active: 'bg-gradient-to-r from-gray-500 to-gray-600',
-        icon: 'bg-gray-100 dark:bg-gray-700',
-        iconHover: 'group-hover:bg-gray-100 dark:group-hover:bg-gray-700',
+        icon: 'bg-gray-100 dark:bg-slate-800',
+        iconHover: 'group-hover:bg-gray-100 dark:group-hover:bg-slate-800',
         iconColor: 'text-gray-600 dark:text-gray-400'
       },
       pink: {
@@ -146,7 +146,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
   };
 
   return (
-    <div className="min-h-screen lg:h-screen bg-gray-50 dark:bg-gray-900 lg:overflow-hidden">
+    <div className="min-h-screen lg:h-screen bg-gray-50 dark:bg-slate-950 lg:overflow-hidden">
       {/* Mobile sidebar overlay */}
       <div 
         className={`fixed top-0 left-0 right-0 bottom-0 w-full h-full z-30 bg-black/50 lg:hidden transition-opacity duration-300 ease-out ${
@@ -156,7 +156,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       />
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-40 ${sidebarCollapsed ? 'w-16' : 'w-72'} bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg transform lg:translate-x-0 ${
+      <div className={`fixed inset-y-0 left-0 z-40 ${sidebarCollapsed ? 'w-16' : 'w-72'} bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:to-slate-950 shadow-lg transform lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } flex flex-col transition-all duration-300 ease-in-out`}>
         {/* Header avec gradient - Masqué sur mobile */}
@@ -246,7 +246,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
         </div>
         
         {/* Navigation moderne */}
-        <nav className="p-3 pt-[60px] lg:pt-3 space-y-1.5 flex-1 overflow-y-auto scrollbar-hide">
+        <nav className="p-3 pt-[76px] lg:pt-3 space-y-1.5 flex-1 overflow-y-auto scrollbar-hide">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
@@ -265,7 +265,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                   } ${
                     isActive
                       ? `${colors.active} text-white`
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white'
                   }`}
                   style={{ 
                     height: '48px', 
@@ -334,18 +334,25 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
       </div>
 
       {/* Header fixe en haut - Toute la largeur, derrière le menu */}
-      <div className="bg-gradient-to-r from-white via-white to-gray-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 shadow-md border-b border-gray-200/80 dark:border-gray-700/80 backdrop-blur-sm px-4 lg:px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-30" style={{ height: '64px' }}>
+      <div className="bg-gradient-to-r from-white via-white to-gray-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 shadow-md border-b border-gray-200/80 dark:border-slate-800/80 backdrop-blur-sm px-4 lg:px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-50" style={{ height: '64px' }}>
         {/* Mobile: Menu hamburger */}
-        <div className="flex items-center lg:hidden flex-1">
-          <button
-          type="button"
-          onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-300 active:scale-95"
+        <div className="relative z-50 flex items-center lg:hidden flex-1">
+          <label
+            htmlFor="mobile-sidebar-toggle"
+            title={sidebarOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            className="hamburger-toggle p-2 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800/50 transition-all duration-300 active:scale-95"
           >
-            <svg className="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <input
+              id="mobile-sidebar-toggle"
+              type="checkbox"
+              checked={sidebarOpen}
+              onChange={() => setSidebarOpen(prev => !prev)}
+            />
+            <svg viewBox="0 0 32 32">
+              <path className="line line-top-bottom" d="M27 10 13 10C10.8 10 9 8.2 9 6 9 3.5 10.8 2 13 2 15.2 2 17 3.8 17 6L17 26C17 28.2 18.8 30 21 30 23.2 30 25 28.2 25 26 25 23.8 23.2 22 21 22L7 22" />
+              <path className="line" d="M7 16 27 16" />
             </svg>
-          </button>
+          </label>
         </div>
         
         {/* Mobile: Logo */}
@@ -373,7 +380,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
           <button
             type="button"
             onClick={toggleTheme}
-            className="relative p-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-300 active:scale-95 group"
+            className="relative p-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800/50 transition-all duration-300 active:scale-95 group"
             title={isDark ? 'Mode clair' : 'Mode sombre'}
           >
             <div className="relative">

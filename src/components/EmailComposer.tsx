@@ -750,7 +750,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[96vh] flex flex-col border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[96vh] flex flex-col border border-gray-200 dark:border-slate-800 overflow-hidden">
         {/* Header moderne */}
         <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between relative overflow-hidden">
           {/* Traits décoratifs - consistent with other page headers */}
@@ -814,7 +814,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                 type="email"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-800 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white transition-all"
                 placeholder="destinataire@exemple.com"
                 required
               />
@@ -831,7 +831,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                   type="email"
                   value={cc}
                   onChange={(e) => setCc(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-800 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white transition-all"
                   placeholder="cc@exemple.com"
                 />
               </div>
@@ -848,7 +848,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                   type="email"
                   value={bcc}
                   onChange={(e) => setBcc(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-800 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white transition-all"
                   placeholder="cci@exemple.com"
                 />
               </div>
@@ -864,7 +864,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all"
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-800 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white transition-all"
                 placeholder="Objet du message"
               />
             </div>
@@ -886,7 +886,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                           : p === 'normal'
                           ? 'bg-blue-500 text-white shadow-lg'
                           : 'bg-gray-500 text-white shadow-lg'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
                     {p === 'urgent' ? 'Urgente' : p === 'high' ? 'Haute' : p === 'normal' ? 'Normale' : 'Basse'}
@@ -903,7 +903,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
               </label>
               
               {/* Barre d'outils de formatage */}
-              <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-t-xl border-b-0">
+              <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-50 dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-800 rounded-t-xl border-b-0">
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
@@ -914,7 +914,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                     className={`p-2 rounded-lg transition-all ${
                       activeFormatting.bold
                         ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        : 'hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300'
                     }`}
                     title="Gras (Ctrl+B)"
                   >
@@ -929,7 +929,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                     className={`p-2 rounded-lg transition-all ${
                       activeFormatting.italic
                         ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        : 'hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300'
                     }`}
                     title="Italique (Ctrl+I)"
                   >
@@ -944,7 +944,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                     className={`p-2 rounded-lg transition-all ${
                       activeFormatting.underline
                         ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        : 'hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300'
                     }`}
                     title="Souligné (Ctrl+U)"
                   >
@@ -966,7 +966,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                     className={`p-2 rounded-lg transition-all ${
                       activeFormatting.list
                         ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        : 'hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300'
                     }`}
                     title="Liste à puces"
                     onMouseDown={(e) => {
@@ -987,7 +987,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                     className={`p-2 rounded-lg transition-all ${
                       activeFormatting.orderedList
                         ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        : 'hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300'
                     }`}
                     title="Liste numérotée"
                     onMouseDown={(e) => {
@@ -1019,7 +1019,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                     className={`p-2 rounded-lg transition-all ${
                       showEmojiPicker
                         ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        : 'hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300'
                     }`}
                     title="Ajouter un emoji"
                   >
@@ -1038,16 +1038,16 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                           savedSelectionRef.current = null;
                         }}
                       ></div>
-                      <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 w-96 overflow-hidden">
+                      <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 w-96 overflow-hidden">
                         {/* Header avec recherche */}
-                        <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                        <div className="p-3 border-b border-gray-200 dark:border-slate-800">
                           <div className="relative">
                             <input
                               type="text"
                               value={emojiSearch}
                               onChange={(e) => setEmojiSearch(e.target.value)}
                               placeholder="Rechercher un emoji..."
-                              className="w-full px-3 py-2 pl-9 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              className="w-full px-3 py-2 pl-9 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-600 rounded-full text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                               autoFocus
                             />
                             <Smile className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -1055,7 +1055,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                         </div>
                         
                         {/* Catégories */}
-                        <div className="flex items-center gap-1 px-2 py-2 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-none">
+                        <div className="flex items-center gap-1 px-2 py-2 border-b border-gray-200 dark:border-slate-800 overflow-x-auto scrollbar-none">
                           {Object.keys(emojiCategories).map((categoryKey) => {
                             const category = emojiCategories[categoryKey as keyof typeof emojiCategories];
                             return (
@@ -1066,7 +1066,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                                 className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                                   selectedEmojiCategory === categoryKey
                                     ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800'
                                 }`}
                               >
                                 {category.name}
@@ -1217,7 +1217,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                     }, 0);
                   }
                 }}
-                className="w-full min-h-[300px] px-4 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-b-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all scrollbar-visible outline-none"
+                className="w-full min-h-[300px] px-4 py-4 border-2 border-gray-200 dark:border-slate-800 rounded-b-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white transition-all scrollbar-visible outline-none"
                 style={{
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word'
@@ -1258,7 +1258,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
 
             {/* Pièces jointes */}
             {attachments.length > 0 && (
-              <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+              <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                     <Paperclip className="w-4 h-4" />
@@ -1274,7 +1274,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                     return (
                       <div
                         key={index}
-                        className="relative group bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-xl p-3 border-2 border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-all flex items-center gap-3 min-w-[200px]"
+                        className="relative group bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-3 border-2 border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-all flex items-center gap-3 min-w-[200px]"
                       >
                         {isImage ? (
                           <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-600 flex-shrink-0">
@@ -1313,7 +1313,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
 
             {/* Options de planification */}
             {showSchedule && (
-              <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700 animate-in fade-in slide-in-from-top-2">
+              <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-slate-800 animate-in fade-in slide-in-from-top-2">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <Clock className="w-4 h-4" />
                   Programmer l'envoi
@@ -1326,7 +1326,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                       onChange={(e) => setScheduledDate(e.target.value)}
                       min={format(new Date(), 'yyyy-MM-dd')}
                       placeholder="jj/mm/aaaa"
-                      className="w-full px-3 py-3 sm:px-3 sm:py-2 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all min-h-[44px] sm:min-h-0"
+                      className="w-full px-3 py-3 sm:px-3 sm:py-2 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-200 dark:border-slate-800 rounded-full sm:rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white transition-all min-h-[44px] sm:min-h-0"
                     />
                   </div>
                   <div>
@@ -1334,7 +1334,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                       type="time"
                       value={scheduledTime}
                       onChange={(e) => setScheduledTime(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all"
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-800 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white transition-all"
                     />
                   </div>
                 </div>
@@ -1342,7 +1342,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
             )}
 
             {/* Email externe - Info */}
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-2 border-t border-gray-200 dark:border-slate-800">
               <div className="flex items-start gap-3">
                 <Mail className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
@@ -1362,7 +1362,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                     type="checkbox"
                     checked={sendExternal}
                     onChange={(e) => setSendExternal(e.target.checked)}
-                    className="w-5 h-5 rounded border-2 border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    className="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500"
                   />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Ajouter des destinataires externes supplémentaires
@@ -1374,7 +1374,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
                       type="text"
                       value={externalRecipients}
                       onChange={(e) => setExternalRecipients(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all text-sm"
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-800 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white transition-all text-sm"
                       placeholder="email1@exemple.com, email2@exemple.com"
                     />
                     <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -1388,12 +1388,12 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
         </div>
 
         {/* Footer avec actions */}
-        <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex-shrink-0 bg-gray-50 dark:bg-slate-950 border-t border-gray-200 dark:border-slate-800 px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="p-3 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600 disabled:opacity-50 transition-all shadow-sm hover:shadow-md"
+              className="p-3 rounded-full bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-800 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600 disabled:opacity-50 transition-all shadow-sm hover:shadow-md"
               title="Joindre un fichier"
             >
               <Paperclip className="w-5 h-5" />
@@ -1410,7 +1410,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
               className={`p-3 rounded-full border-2 transition-all shadow-sm hover:shadow-md ${
                 showSchedule
                   ? 'bg-blue-500 text-white border-blue-600'
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600'
+                  : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600'
               }`}
               title="Programmer l'envoi"
             >
@@ -1421,7 +1421,7 @@ export default function EmailComposer({ onClose, replyTo, draft, onSent, onDraft
             <button
               onClick={handleSaveDraft}
               disabled={sending}
-              className="px-4 sm:px-5 py-2.5 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-all font-medium text-xs sm:text-sm shadow-sm hover:shadow-md flex items-center gap-2"
+              className="px-4 sm:px-5 py-2.5 rounded-full bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-all font-medium text-xs sm:text-sm shadow-sm hover:shadow-md flex items-center gap-2"
             >
               <Save className="w-4 h-4" />
               <span>Brouillon</span>

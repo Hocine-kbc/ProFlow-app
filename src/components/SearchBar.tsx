@@ -22,7 +22,7 @@ export default function SearchBar({
 
   return (
     <div className="relative w-full">
-      <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full px-4 shadow-inner border border-gray-300 dark:border-gray-600 hover:shadow-md transition-shadow" style={{ height: '42px', minHeight: '42px', maxHeight: '42px' }}>
+      <div className="flex items-center bg-gray-100 dark:bg-slate-800 rounded-full px-4 shadow-inner border border-gray-300 dark:border-gray-600 hover:shadow-md transition-shadow" style={{ height: '42px', minHeight: '42px', maxHeight: '42px' }}>
         <Search className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0 mr-2" />
         <input
           type="text"

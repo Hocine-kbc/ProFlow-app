@@ -25,7 +25,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
-    
+
+    // Teinter la barre de statut mobile (heure/réseau) pour qu'elle suive le thème
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDark ? '#020617' : '#ffffff');
+
     // Sauvegarder dans localStorage
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   }, [isDark]);

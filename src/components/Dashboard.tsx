@@ -413,7 +413,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
       </div>
 
       {/* Actions rapides */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:gap-4">
           <div>
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1">Actions rapides</h2>
@@ -453,7 +453,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
 
       {/* Stats cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">CA Mensuel</p>
@@ -472,7 +472,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Clients</p>
@@ -493,7 +493,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Heures ce mois</p>
@@ -510,7 +510,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Factures en attente</p>
@@ -533,7 +533,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
       {/* Objectifs & Indicateurs */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {/* Objectif mensuel CA */}
-        <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 sm:p-4">
+        <div className="relative bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-3 sm:p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-gray-900 dark:text-white whitespace-nowrap">Objectif CA mensuel</h3>
             <TrendingUp className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
@@ -545,7 +545,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
                 type="number"
                 value={goalInput}
                 onChange={(e) => setGoalInput(e.target.value)}
-                className="w-full min-w-0 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full min-w-0 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Objectif en €"
                 min="0"
                 step="100"
@@ -597,7 +597,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
         </div>
 
         {/* Taux de facturation */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 sm:p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-3 sm:p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-gray-900 dark:text-white">Taux de facturation</h3>
             <FileText className="w-3.5 h-3.5 text-blue-500" />
@@ -621,7 +621,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
         </div>
 
         {/* CA moyen par client */}
-        <div className="col-span-2 lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 sm:p-4">
+        <div className="col-span-2 lg:col-span-1 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-3 sm:p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-gray-900 dark:text-white">CA moyen / client</h3>
             <Users className="w-3.5 h-3.5 text-purple-500" />
@@ -653,7 +653,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
       {/* Graphiques et analyses */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Graphique CA mensuel */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
           <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center space-x-2">
@@ -665,19 +665,19 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
                   type="button"
                   onClick={goToPreviousYear}
                   disabled={selectedYear <= Math.min(...availableYears)}
-                  className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
+                  className="p-1.5 sm:p-2 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
                   title="Année précédente"
                 >
                   <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-300" />
                 </button>
-                <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 rounded-lg min-w-[50px] sm:min-w-[60px] text-center">
+                <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-slate-800 rounded-lg min-w-[50px] sm:min-w-[60px] text-center">
                   {selectedYear}
                 </span>
                 <button
                   type="button"
                   onClick={goToNextYear}
                   disabled={selectedYear >= Math.max(...availableYears)}
-                  className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
+                  className="p-1.5 sm:p-2 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
                   title="Année suivante"
                 >
                   <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-300" />
@@ -721,7 +721,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
         </div>
 
         {/* Graphique heures mensuelles */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
           <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center space-x-2">
@@ -733,19 +733,19 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
                   type="button"
                   onClick={goToPreviousYear}
                   disabled={selectedYear <= Math.min(...availableYears)}
-                  className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
+                  className="p-1.5 sm:p-2 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
                   title="Année précédente"
                 >
                   <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-300" />
                 </button>
-                <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 rounded-lg min-w-[50px] sm:min-w-[60px] text-center">
+                <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-slate-800 rounded-lg min-w-[50px] sm:min-w-[60px] text-center">
                   {selectedYear}
                 </span>
                 <button
                   type="button"
                   onClick={goToNextYear}
                   disabled={selectedYear >= Math.max(...availableYears)}
-                  className="p-1.5 sm:p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
+                  className="p-1.5 sm:p-2 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all"
                   title="Année suivante"
                 >
                   <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-300" />
@@ -789,7 +789,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
         </div>
 
         {/* Graphique en secteurs des statuts */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
           <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
             <div className="flex items-center space-x-2">
               <PieChart className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
@@ -818,7 +818,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
         </div>
 
         {/* Top clients */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
           <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
             <div className="flex items-center space-x-2">
               <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
@@ -853,7 +853,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
       </div>
 
       {/* Résumé financier */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
         <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
           <div className="flex items-center space-x-2">
             <Euro className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -900,14 +900,14 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
 
       {/* Activité récente */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col">
           <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Prestations récentes</h3>
           </div>
           <div className="divide-y divide-gray-200 dark:divide-gray-600 flex-1 flex flex-col">
             {services.length === 0 ? (
               <div className="p-6 sm:p-8 text-center flex-1 flex flex-col justify-center">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                   <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                 </div>
                 <h4 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-2">Aucune prestation</h4>
@@ -969,14 +969,14 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col">
           <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Factures récentes</h3>
           </div>
           <div className="divide-y divide-gray-200 dark:divide-gray-600 flex-1 flex flex-col">
             {invoices.length === 0 ? (
               <div className="p-6 sm:p-8 text-center flex-1 flex flex-col justify-center">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                   <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                 </div>
                 <h4 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-2">Aucune facture</h4>
@@ -1014,7 +1014,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
                               ? 'bg-green-100 text-green-800'
                               : invoice.status === 'sent'
                               ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                              : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200'
                           }`}>
                             {invoice.status === 'paid' ? 'Payée' : 
                              invoice.status === 'sent' ? 'Envoyée' : 'Brouillon'}

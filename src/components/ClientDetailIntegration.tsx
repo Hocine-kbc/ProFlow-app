@@ -25,7 +25,7 @@ export default function ClientDetailIntegration({ clientId, onBack }: ClientDeta
 
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       <ClientDetailView
         clientId={clientId}
         onBack={onBack}

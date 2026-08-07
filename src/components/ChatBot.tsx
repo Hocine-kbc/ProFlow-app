@@ -329,9 +329,9 @@ Posez-moi une question plus spécifique ! 😊`;
 
       {/* Interface du chat */}
       {chatState.isOpen && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 lg:top-auto lg:left-auto lg:bottom-20 lg:right-6 lg:transform-none lg:w-96 lg:h-[500px] z-40 w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col">
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 lg:top-auto lg:left-auto lg:bottom-20 lg:right-6 lg:transform-none lg:w-96 lg:h-[500px] z-40 w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl">
+          <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-slate-800 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-2xl">
             <div className="flex items-center space-x-2">
               <div className="p-1.5 sm:p-2 bg-white/20 rounded-full">
                 <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -371,7 +371,7 @@ Posez-moi une question plus spécifique ! 😊`;
                     type="button"
                       key={suggestion.id}
                       onClick={() => handleSuggestion(suggestion)}
-                      className="w-full text-left p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors text-xs sm:text-sm"
+                      className="w-full text-left p-2.5 sm:p-3 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors text-xs sm:text-sm"
                     >
                       <div className="flex items-center space-x-2">
                         <span className="text-base sm:text-lg">{suggestion.icon}</span>
@@ -392,7 +392,7 @@ Posez-moi une question plus spécifique ! 😊`;
                   className={`max-w-[85%] sm:max-w-[80%] p-2.5 sm:p-3 rounded-2xl ${
                     message.sender === 'user'
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                      : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white'
                   }`}
                 >
                   <div className="flex items-start space-x-1.5 sm:space-x-2">
@@ -420,7 +420,7 @@ Posez-moi une question plus spécifique ! 😊`;
 
             {chatState.isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 dark:bg-gray-700 p-2.5 sm:p-3 rounded-2xl max-w-[85%] sm:max-w-[80%]">
+                <div className="bg-gray-100 dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl max-w-[85%] sm:max-w-[80%]">
                   <div className="flex items-center space-x-1.5 sm:space-x-2">
                     <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <div className="flex space-x-1">
@@ -437,13 +437,13 @@ Posez-moi une question plus spécifique ! 😊`;
           </div>
 
           {/* Input */}
-          <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-slate-800">
             <form onSubmit={handleSubmit} className="flex space-x-1.5 sm:space-x-2">
               <input
                 ref={inputRef}
                 type="text"
                 placeholder="Tapez votre message..."
-                className="flex-1 px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="flex-1 px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:text-white"
                 disabled={chatState.isLoading}
               />
               <button

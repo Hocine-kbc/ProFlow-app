@@ -755,7 +755,7 @@ export default function EmailInboxPage() {
 
   return (
     <div
-      className="email-inbox-container flex flex-col md:flex-row h-full min-h-[420px] bg-gray-100 dark:bg-gray-900 overflow-hidden overflow-x-hidden gap-3 rounded-2xl"
+      className="email-inbox-container flex flex-col md:flex-row h-full min-h-[420px] bg-gray-100 dark:bg-slate-950 overflow-hidden overflow-x-hidden gap-3 rounded-2xl"
     >
       {/* Sidebar desktop / tablette large - même style que le menu principal */}
       <div className="hidden md:block flex-none w-72 max-w-xs h-full">
@@ -793,7 +793,7 @@ export default function EmailInboxPage() {
           />
           {/* Panneau latéral similaire au menu principal, qui glisse depuis la gauche sans couvrir le header */}
           <div
-            className="fixed z-50 md:hidden w-72 max-w-full h-full shadow-2xl bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-r border-gray-200 dark:border-gray-800"
+            className="fixed z-50 md:hidden w-72 max-w-full h-full shadow-2xl bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:to-slate-950 border-r border-gray-200 dark:border-slate-900"
             style={{
               top: '64px',
               left: 0,
@@ -845,9 +845,9 @@ export default function EmailInboxPage() {
       </style>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800 shadow-lg rounded-2xl min-w-0 mt-3 md:mt-0 relative z-0">
+      <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-slate-900 shadow-lg rounded-2xl min-w-0 mt-3 md:mt-0 relative z-0">
         {/* Header */}
-        <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-3">
+        <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 py-3">
           {/* Desktop Layout */}
           <div className="hidden sm:flex sm:items-center sm:px-6">
             <div className="flex items-center gap-2.5 mr-4">
@@ -902,7 +902,7 @@ export default function EmailInboxPage() {
           const someSelected = selectedMessages.size > 0 && selectedMessages.size < filtered.length;
           
           return (
-            <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800">
               <div className="px-3 sm:px-6 py-2 flex flex-row items-center justify-between gap-2 sm:gap-3">
                 {/* Checkbox à gauche - Caché sur desktop */}
                 <div className="flex items-center gap-2 sm:gap-3 sm:hidden">
@@ -915,7 +915,7 @@ export default function EmailInboxPage() {
                       }
                     }}
                     onChange={toggleSelectAll}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer"
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-full focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-900 focus:ring-2 dark:bg-slate-800 dark:border-gray-600 cursor-pointer"
                     title={allSelected ? 'Désélectionner tout' : 'Sélectionner tout'}
                   />
                   {hasSelection && (
@@ -932,7 +932,7 @@ export default function EmailInboxPage() {
                 <div className={`flex items-center gap-1 sm:gap-2 transition-opacity duration-200 ${hasSelection ? 'opacity-100' : 'opacity-30'}`}>
                 <button
                   onClick={() => loadMessages(currentFolder)}
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors"
                   title="Actualiser"
                 >
                   <RefreshCw className="w-4 h-4 text-gray-600 dark:text-gray-300" />
@@ -958,7 +958,7 @@ export default function EmailInboxPage() {
                     <button
                       onClick={handleClick}
                       disabled={!hasSelection || !hasReceivableMessages}
-                      className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all ${
+                      className={`p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-all ${
                         hasSelection && hasReceivableMessages ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
                       }`}
                       title={hasReceivableMessages 
@@ -977,7 +977,7 @@ export default function EmailInboxPage() {
                 <button
                   onClick={handleBulkSnooze}
                   disabled={!hasSelection}
-                  className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all ${
+                  className={`p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-all ${
                     hasSelection ? 'cursor-pointer' : 'cursor-not-allowed'
                   }`}
                   title="Mettre en attente"
@@ -987,7 +987,7 @@ export default function EmailInboxPage() {
                 <button
                   onClick={handleBulkArchive}
                   disabled={!hasSelection}
-                  className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all ${
+                  className={`p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-all ${
                     hasSelection ? 'cursor-pointer' : 'cursor-not-allowed'
                   }`}
                   title={currentFolder === 'archive' ? 'Désarchiver' : 'Archiver'}
@@ -1001,7 +1001,7 @@ export default function EmailInboxPage() {
                 <button
                   onClick={handleBulkDelete}
                   disabled={!hasSelection}
-                  className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all ${
+                  className={`p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-all ${
                     hasSelection ? 'cursor-pointer' : 'cursor-not-allowed'
                   }`}
                   title="Supprimer"
@@ -1016,9 +1016,9 @@ export default function EmailInboxPage() {
 
         {/* Messages List or View - Scrollable */}
         {!selectedMessage ? (
-          <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800">
+          <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-slate-900">
             {/* Table Header - Fixe (desktop) */}
-            <div className="hidden sm:block flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800">
+            <div className="hidden sm:block flex-shrink-0 border-b border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-gradient-to-r dark:from-slate-950 dark:to-slate-900">
               <div className="grid grid-cols-[32px_32px_minmax(0,2fr)_minmax(0,3fr)_120px_auto] lg:grid-cols-[40px_40px_280px_1fr_140px_auto] gap-3 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 items-center text-xs sm:text-sm">
                 {/* Colonne checkbox */}
                 <div className="flex items-center justify-center relative" ref={selectionMenuRef}>
@@ -1028,7 +1028,7 @@ export default function EmailInboxPage() {
                         e.stopPropagation();
                         toggleSelectAll();
                       }}
-                      className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                      className="p-0.5 hover:bg-gray-200 dark:hover:bg-slate-800 rounded transition-colors"
                       title="Sélectionner tout"
                     >
                       <div className={`w-4 h-4 border-2 rounded-full transition-all flex items-center justify-center ${
@@ -1054,7 +1054,7 @@ export default function EmailInboxPage() {
                         e.stopPropagation();
                         setShowSelectionMenu(!showSelectionMenu);
                       }}
-                      className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                      className="p-0.5 hover:bg-gray-200 dark:hover:bg-slate-800 rounded transition-colors"
                       title="Filtres de sélection"
                     >
                       <ChevronDown className={`w-3 h-3 text-gray-500 dark:text-gray-400 transition-transform ${showSelectionMenu ? 'rotate-180' : ''}`} />
@@ -1063,10 +1063,10 @@ export default function EmailInboxPage() {
                   
                   {/* Menu déroulant */}
                   {showSelectionMenu && (
-                    <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-800 z-50 overflow-hidden">
                       <button
                         onClick={() => handleSelectByFilter('all')}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
                       >
                         <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${
                           selectionFilter === 'all' ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' : 'border-gray-300 dark:border-gray-600'
@@ -1081,7 +1081,7 @@ export default function EmailInboxPage() {
                       </button>
                       <button
                         onClick={() => handleSelectByFilter('unread')}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
                       >
                         <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${
                           selectionFilter === 'unread' ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' : 'border-gray-300 dark:border-gray-600'
@@ -1097,7 +1097,7 @@ export default function EmailInboxPage() {
                       </button>
                       <button
                         onClick={() => handleSelectByFilter('read')}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
                       >
                         <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${
                           selectionFilter === 'read' ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' : 'border-gray-300 dark:border-gray-600'
@@ -1113,7 +1113,7 @@ export default function EmailInboxPage() {
                       </button>
                       <button
                         onClick={() => handleSelectByFilter('starred')}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
                       >
                         <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${
                           selectionFilter === 'starred' ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' : 'border-gray-300 dark:border-gray-600'
@@ -1129,7 +1129,7 @@ export default function EmailInboxPage() {
                       </button>
                       <button
                         onClick={() => handleSelectByFilter('unstarred')}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
                       >
                         <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${
                           selectionFilter === 'unstarred' ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500' : 'border-gray-300 dark:border-gray-600'
@@ -1197,9 +1197,9 @@ export default function EmailInboxPage() {
                 }
 
                 return (
-                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                  <div className="divide-y divide-gray-100 dark:divide-slate-800">
                     {filteredMessages.map((message, index) => (
-                      <div key={message.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors">
+                      <div key={message.id} className="hover:bg-gray-50 dark:hover:bg-slate-900/60 transition-colors">
                         <MessageItem
                           message={message}
                           isSelected={selectedMessages.has(message.id)}
@@ -1234,7 +1234,7 @@ export default function EmailInboxPage() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-hidden bg-white dark:bg-gray-800">
+          <div className="flex-1 overflow-hidden bg-white dark:bg-slate-900">
             <MessageView
               message={selectedMessage}
               messageIndex={messages.findIndex(m => m.id === selectedMessage.id)}

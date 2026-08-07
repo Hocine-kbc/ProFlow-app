@@ -65,28 +65,28 @@ export default function MessageView({
   const isFromMe = message.sender_id === currentUserId;
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
+    <div className="h-full flex flex-col bg-white dark:bg-slate-950 overflow-hidden">
       {/* Header fixe avec navigation */}
-      <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <div className="flex-shrink-0 border-b border-gray-200 dark:border-slate-900 bg-white dark:bg-slate-950">
         {/* Barre de navigation supérieure */}
-        <div className="px-3 sm:px-4 md:px-6 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-800">
+        <div className="px-3 sm:px-4 md:px-6 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-950 border-b border-gray-200 dark:border-slate-900">
           {/* Navigation gauche */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={onBack}
-              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-700 dark:text-gray-300"
+              className="p-2 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-full transition-colors text-gray-700 dark:text-gray-300"
               title="Retour à la liste"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             
-            <div className="h-6 w-px bg-gray-300 dark:bg-gray-700"></div>
+            <div className="h-6 w-px bg-gray-300 dark:bg-slate-800"></div>
             
             <div className="flex items-center gap-2">
               <button
                 onClick={onPrevious}
                 disabled={!onPrevious}
-                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400"
+                className="p-1.5 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400"
                 title="Message précédent"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -95,14 +95,14 @@ export default function MessageView({
               <button
                 onClick={onNext}
                 disabled={!onNext}
-                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400"
+                className="p-1.5 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400"
                 title="Message suivant"
               >
                 <ArrowRight className="w-4 h-4" />
               </button>
               
               {messageIndex !== undefined && totalMessages !== undefined && (
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-1 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-1 bg-white dark:bg-slate-900 rounded border border-gray-200 dark:border-slate-800">
                   {messageIndex + 1} / {totalMessages}
                 </span>
               )}
@@ -116,7 +116,7 @@ export default function MessageView({
                 onClick={() => onMarkRead(!message.read)}
                 className={`p-2 rounded-full transition-all ${
                   message.read
-                    ? 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400'
+                    ? 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-900 dark:text-gray-400'
                     : 'text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                 }`}
                 title={message.read ? 'Marquer comme non lu' : 'Marquer comme lu'}
@@ -134,7 +134,7 @@ export default function MessageView({
               className={`p-2 rounded-full transition-all ${
                 message.is_starred 
                   ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30' 
-                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400'
+                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-900 dark:text-gray-400'
               }`}
               title="Marquer comme favori"
             >
@@ -143,7 +143,7 @@ export default function MessageView({
             
             <button
               onClick={onArchive}
-              className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 rounded-full transition-colors"
+              className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-900 dark:text-gray-400 rounded-full transition-colors"
               title={isArchived ? 'Désarchiver' : 'Archiver'}
             >
               {isArchived ? (
@@ -189,7 +189,7 @@ export default function MessageView({
                   <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded-full flex-shrink-0 ${
                     message.priority === 'urgent' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
                     message.priority === 'high' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
-                    'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300'
                   }`}>
                     {message.priority === 'urgent' ? 'Urgent' : message.priority === 'high' ? 'Important' : 'Faible'}
                   </span>
@@ -216,7 +216,7 @@ export default function MessageView({
 
           {/* Pièces jointes - prévisualisation compacte */}
           {hasAttachments && (
-            <div className="flex items-center gap-1.5 pt-2 border-t border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-1.5 pt-2 border-t border-gray-200 dark:border-slate-900">
               <Paperclip className="w-3 h-3 text-gray-400 dark:text-gray-500" />
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 {message.attachments!.length} pièce{message.attachments!.length > 1 ? 's' : ''} jointe{message.attachments!.length > 1 ? 's' : ''}
@@ -227,10 +227,10 @@ export default function MessageView({
       </div>
 
       {/* Contenu du message - Scrollable */}
-      <div className="flex-1 overflow-y-auto scrollbar-visible bg-gray-50 dark:bg-gray-900/50">
+      <div className="flex-1 overflow-y-auto scrollbar-visible bg-gray-50 dark:bg-slate-950/50">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
           {/* Contenu principal dans une carte */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 border border-gray-200 dark:border-slate-800 shadow-sm">
             <div className="prose prose-gray dark:prose-invert max-w-none">
               <div className="whitespace-pre-wrap text-gray-900 dark:text-gray-100 text-base leading-relaxed">
                 {message.content || <span className="text-gray-400 italic">Aucun contenu</span>}
@@ -262,11 +262,11 @@ export default function MessageView({
                   return (
                     <div
                       key={index}
-                      className="group relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-200 cursor-pointer"
+                      className="group relative bg-white dark:bg-slate-900 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-200 cursor-pointer"
                       onClick={() => handleDownloadAttachment(attachment)}
                     >
                       {isImage ? (
-                        <div className="aspect-video overflow-hidden bg-gray-100 dark:bg-gray-700">
+                        <div className="aspect-video overflow-hidden bg-gray-100 dark:bg-slate-800">
                           <img
                             src={attachment.url}
                             alt={attachment.name}
@@ -277,7 +277,7 @@ export default function MessageView({
                           />
                         </div>
                       ) : (
-                        <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
+                        <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900">
                           {isPdf ? (
                             <div className="text-center">
                               <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mx-auto mb-2">

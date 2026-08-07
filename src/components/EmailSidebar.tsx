@@ -58,7 +58,7 @@ export default function EmailSidebar({
   };
 
   return (
-    <div className="w-full md:w-72 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shadow-xl md:rounded-none rounded-2xl overflow-hidden flex-shrink-0 h-auto md:h-full">
+    <div className="w-full md:w-72 bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:to-slate-950 border-r border-gray-200 dark:border-slate-900 flex flex-col shadow-xl md:rounded-none rounded-2xl overflow-hidden flex-shrink-0 h-auto md:h-full">
       {/* Compose Button */}
       <div className="px-4 py-4">
         <button
@@ -99,7 +99,7 @@ export default function EmailSidebar({
                   w-full flex items-center justify-between px-3 py-2 rounded-full text-xs transition-all duration-200 font-medium relative overflow-hidden group
                   ${isActive 
                     ? `${colorClasses.activeBg} ${colorClasses.activeText} shadow-md` 
-                    : `text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 ${colorClasses.inactiveHover}`
+                    : `text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800/50 ${colorClasses.inactiveHover}`
                   }
                 `}
               >
@@ -107,7 +107,7 @@ export default function EmailSidebar({
                   <div className={`p-1.5 rounded-full transition-colors ${
                     isActive 
                       ? colorClasses.activeIconBg
-                      : 'bg-gray-100 dark:bg-gray-700 group-hover:bg-opacity-80'
+                      : 'bg-gray-100 dark:bg-slate-800 group-hover:bg-opacity-80'
                   }`}>
                     <Icon className={`w-4 h-4 transition-colors ${
                       isActive 
@@ -133,7 +133,7 @@ export default function EmailSidebar({
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                       isActive 
                         ? colorClasses.badgeBg + ' ' + colorClasses.badgeText
-                        : 'text-gray-600 dark:text-gray-400 bg-gray-200 dark:bg-gray-700'
+                        : 'text-gray-600 dark:text-gray-400 bg-gray-200 dark:bg-slate-800'
                     }`}>
                       {inboxFolder.count}
                     </span>
@@ -150,12 +150,12 @@ export default function EmailSidebar({
               w-full flex items-center justify-between px-3 py-2 rounded-full text-xs transition-all duration-200 font-medium relative overflow-hidden group
               ${currentFolder === 'starred'
                 ? 'bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40 text-amber-900 dark:text-amber-300 shadow-md' 
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800/50'
               }
             `}
           >
             <div className="flex items-center gap-2 relative z-10">
-              <div className={`p-1.5 rounded-full ${currentFolder === 'starred' ? 'bg-amber-200 dark:bg-amber-800' : 'bg-gray-100 dark:bg-gray-700 group-hover:bg-amber-50 dark:group-hover:bg-amber-900/30'}`}>
+              <div className={`p-1.5 rounded-full ${currentFolder === 'starred' ? 'bg-amber-200 dark:bg-amber-800' : 'bg-gray-100 dark:bg-slate-800 group-hover:bg-amber-50 dark:group-hover:bg-amber-900/30'}`}>
                 <Star className={`w-4 h-4 ${currentFolder === 'starred' ? 'fill-amber-600 dark:fill-amber-400 text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`} />
               </div>
               <span className="font-medium">Favoris</span>
@@ -164,7 +164,7 @@ export default function EmailSidebar({
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full min-w-[22px] text-center relative z-10 ${
                 currentFolder === 'starred' 
                   ? 'bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-300' 
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  : 'bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-300'
               }`}>
                 {stats.starred_count}
               </span>
@@ -204,7 +204,7 @@ export default function EmailSidebar({
                 badgeText: 'text-emerald-900 dark:text-emerald-300'
               },
               gray: {
-                activeBg: 'bg-gradient-to-r from-slate-100 to-gray-100 dark:from-slate-800/40 dark:to-gray-800/40',
+                activeBg: 'bg-gradient-to-r from-slate-100 to-gray-100 dark:from-slate-800/40 dark:to-slate-900/40',
                 activeText: 'text-slate-900 dark:text-slate-200',
                 activeIconBg: 'bg-slate-200 dark:bg-slate-700',
                 iconColor: 'text-slate-600 dark:text-slate-400',
@@ -251,7 +251,7 @@ export default function EmailSidebar({
                   w-full flex items-center justify-between px-3 py-2 rounded-full text-xs transition-all duration-200 font-medium relative overflow-hidden group
                   ${isActive 
                     ? `${colors.activeBg} ${colors.activeText} shadow-md` 
-                    : `text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 ${colors.inactiveHover}`
+                    : `text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800/50 ${colors.inactiveHover}`
                   }
                 `}
               >
@@ -259,7 +259,7 @@ export default function EmailSidebar({
                   <div className={`p-1.5 rounded-full transition-colors ${
                     isActive 
                       ? colors.activeIconBg
-                      : 'bg-gray-100 dark:bg-gray-700 group-hover:bg-opacity-80'
+                      : 'bg-gray-100 dark:bg-slate-800 group-hover:bg-opacity-80'
                   }`}>
                     <Icon className={`w-4 h-4 transition-colors ${
                       isActive 
@@ -285,7 +285,7 @@ export default function EmailSidebar({
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                       isActive 
                         ? colors.badgeBg + ' ' + colors.badgeText
-                        : 'text-gray-600 dark:text-gray-400 bg-gray-200 dark:bg-gray-700'
+                        : 'text-gray-600 dark:text-gray-400 bg-gray-200 dark:bg-slate-800'
                     }`}>
                       {folder.count}
                     </span>

@@ -153,7 +153,7 @@ export default function CustomSelect({
             rounded-full
             ${className.includes('focus:ring-0') ? '' : 'focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}
             transition-colors
-            bg-white dark:bg-gray-700
+            bg-white dark:bg-slate-800
             text-gray-900 dark:text-white
             text-sm sm:text-base
             flex items-center justify-between
@@ -174,7 +174,7 @@ export default function CustomSelect({
         {isOpen && dropdownPosition && createPortal(
           <div
             ref={dropdownRef}
-            className="fixed z-[9999] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-hidden"
+            className="fixed z-[9999] bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-hidden"
             style={{
               left: dropdownPosition.left,
               width: dropdownPosition.width,
@@ -192,12 +192,12 @@ export default function CustomSelect({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
               />
             </div>
 
             {/* Liste des options */}
-            <div className="max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+            <div className="max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-slate-900">
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((option) => (
                   <button

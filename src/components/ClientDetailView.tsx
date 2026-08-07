@@ -1458,7 +1458,7 @@ export default function ClientDetailView({
           <div className="flex items-center space-x-4">
             <button
               onClick={onBack}
-              className="group p-3 rounded-full bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              className="group p-3 rounded-full bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
               title="Retour à la liste des clients"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100 group-hover:-translate-x-0.5 transition-all duration-200" />
@@ -1476,7 +1476,7 @@ export default function ClientDetailView({
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={handleEditClient}
-              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-900 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
             >
               <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 group-hover:scale-110 transition-transform duration-200" />
               <span className="hidden sm:inline">Modifier</span>
@@ -1484,7 +1484,7 @@ export default function ClientDetailView({
             </button>
             <button
               onClick={() => onCreateInvoice(clientId)}
-              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transform hover:scale-105"
+              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transform hover:scale-105"
               title={`Créer une nouvelle facture pour ${client?.name || 'ce client'}`}
             >
               <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 group-hover:rotate-90 transition-transform duration-200" />
@@ -1493,7 +1493,7 @@ export default function ClientDetailView({
             </button>
             <button
               onClick={handleCreateServiceLocal}
-              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-green-600 rounded-full hover:bg-green-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transform hover:scale-105"
+              className="group flex items-center px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-green-600 rounded-full hover:bg-green-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transform hover:scale-105"
               title={`Créer une nouvelle prestation pour ${client?.name || 'ce client'}`}
             >
               <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 group-hover:rotate-12 transition-transform duration-200" />
@@ -1506,7 +1506,7 @@ export default function ClientDetailView({
         {/* Informations générales */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Informations générales
               </h3>
@@ -1555,7 +1555,7 @@ export default function ClientDetailView({
 
           <div className="space-y-6">
             {/* Statut */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Statut</h3>
               <div className="flex items-center space-x-3">
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusColor(client.status)}`}>
@@ -1566,7 +1566,7 @@ export default function ClientDetailView({
 
             {/* Notes */}
             {client.notes && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+              <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Notes</h3>
                 <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">{client.notes}</p>
               </div>
@@ -1576,7 +1576,7 @@ export default function ClientDetailView({
 
         {/* Chiffres clés */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">Chiffre d'affaires</p>
@@ -1590,7 +1590,7 @@ export default function ClientDetailView({
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">Factures</p>
@@ -1604,7 +1604,7 @@ export default function ClientDetailView({
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">Payé</p>
@@ -1618,7 +1618,7 @@ export default function ClientDetailView({
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">En attente</p>
@@ -1634,7 +1634,7 @@ export default function ClientDetailView({
         </div>
 
         {/* Onglets */}
-        <div className="border-b border-gray-200 dark:border-gray-700 mb-4 sm:mb-6">
+        <div className="border-b border-gray-200 dark:border-slate-800 mb-4 sm:mb-6">
           <nav className="-mb-px flex flex-wrap gap-2 sm:gap-8 overflow-x-auto">
             {[
               { id: 'overview', label: 'Vue d\'ensemble', icon: BarChart3 },
@@ -1663,7 +1663,7 @@ export default function ClientDetailView({
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Graphique des revenus */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -1738,7 +1738,7 @@ export default function ClientDetailView({
                     </div>
                     
                     {/* Graphique identique au Dashboard */}
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                    <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4">
                       <div className="h-40">
                         <div className="flex items-end justify-between gap-1 h-32 px-2">
                           {monthlyRevenue.map((month, index) => (
@@ -1778,7 +1778,7 @@ export default function ClientDetailView({
                     
                     {/* Tendance */}
                     {monthlyRevenue.length >= 2 && (
-                      <div className="flex items-center justify-center space-x-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                      <div className="flex items-center justify-center space-x-2 pt-2 border-t border-gray-100 dark:border-slate-800">
                         {(() => {
                           const lastMonth = monthlyRevenue[monthlyRevenue.length - 1].revenue;
                           const previousMonth = monthlyRevenue[monthlyRevenue.length - 2].revenue;
@@ -1825,7 +1825,7 @@ export default function ClientDetailView({
             </div>
 
             {/* Dernières activités */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Dernières activités
               </h3>
@@ -1870,7 +1870,7 @@ export default function ClientDetailView({
                 return (
                   <div className="space-y-3">
                     {activities.map((activity, index) => (
-                      <div key={`${activity.type}-${activity.date}-${index}`} className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                      <div key={`${activity.type}-${activity.date}-${index}`} className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-slate-800/50">
                         <div className={`p-2 rounded-full ${
                           activity.color === 'blue' ? 'bg-blue-100 text-blue-600' :
                           activity.color === 'green' ? 'bg-green-100 text-green-600' :
@@ -1902,8 +1902,8 @@ export default function ClientDetailView({
         )}
 
         {activeTab === 'invoices' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800">
+            <div className="p-6 border-b border-gray-200 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -1922,7 +1922,7 @@ export default function ClientDetailView({
                       placeholder="Rechercher..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
                   <CustomSelect
@@ -1960,7 +1960,7 @@ export default function ClientDetailView({
               ) : (
                 <div className="p-4 space-y-4">
                   {currentInvoices.map((invoice) => (
-                    <div key={invoice.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                    <div key={invoice.id} className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <h4 className="font-semibold text-gray-900 dark:text-white">
@@ -1980,7 +1980,7 @@ export default function ClientDetailView({
                             : invoice.status === 'overdue'
                             ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
                             : invoice.status === 'draft'
-                            ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                            ? 'bg-gray-100 text-gray-800 dark:bg-slate-950/20 dark:text-gray-400'
                             : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
                         }`}>
                           {invoice.status === 'paid' ? 'Payée' : 
@@ -2048,7 +2048,7 @@ export default function ClientDetailView({
             
             {/* Pagination mobile pour les factures */}
             {invoicesTotalPages > 0 && (
-              <div className="block lg:hidden px-4 py-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="block lg:hidden px-4 py-4 border-t border-gray-200 dark:border-slate-800">
                 <div className="flex items-center justify-center">
                   <div className="flex items-center space-x-1">
                     {/* Bouton Première page */}
@@ -2133,7 +2133,7 @@ export default function ClientDetailView({
             {/* Vue desktop - Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full" style={{ minWidth: '800px' }}>
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-slate-800">
                   <tr>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Facture
@@ -2158,7 +2158,7 @@ export default function ClientDetailView({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
                   {currentInvoices.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-6 py-12 text-center">
@@ -2177,7 +2177,7 @@ export default function ClientDetailView({
                     </tr>
                   ) : (
                     currentInvoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <div className="font-medium text-gray-900 dark:text-white">
                           {invoice.number || 'N/A'}
@@ -2225,7 +2225,7 @@ export default function ClientDetailView({
                           )}
                           <button
                             onClick={() => handleViewInvoiceLocal(invoice)}
-                            className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full transition-colors"
+                            className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-full transition-colors"
                             title="Aperçu"
                           >
                             <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -2285,7 +2285,7 @@ export default function ClientDetailView({
             
             {/* Pagination pour les factures - Desktop uniquement */}
             {invoicesTotalPages > 0 && (
-              <div className="hidden lg:block px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="hidden lg:block px-6 py-4 border-t border-gray-200 dark:border-slate-800">
                 <div className="flex items-center justify-center">
                   <div className="flex items-center space-x-1">
                     {/* Bouton Première page */}
@@ -2370,8 +2370,8 @@ export default function ClientDetailView({
         )}
 
         {activeTab === 'services' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800">
+            <div className="p-6 border-b border-gray-200 dark:border-slate-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Historique des prestations
               </h3>
@@ -2389,7 +2389,7 @@ export default function ClientDetailView({
               ) : (
                 <div className="p-4 space-y-4">
                   {currentServices.map((service) => (
-                    <div key={service.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                    <div key={service.id} className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <h4 className="font-semibold text-gray-900 dark:text-white">
@@ -2404,7 +2404,7 @@ export default function ClientDetailView({
                             ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                             : service.status === 'in_progress'
                             ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                            : 'bg-gray-100 text-gray-800 dark:bg-slate-950/20 dark:text-gray-400'
                         }`}>
                           {service.status === 'completed' ? 'Terminé' : service.status === 'in_progress' ? 'En cours' : 'Planifié'}
                         </span>
@@ -2432,7 +2432,7 @@ export default function ClientDetailView({
             
             {/* Pagination mobile pour les prestations */}
             {servicesTotalPages > 0 && (
-              <div className="block lg:hidden px-4 py-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="block lg:hidden px-4 py-4 border-t border-gray-200 dark:border-slate-800">
                 <div className="flex items-center justify-center">
                   <div className="flex items-center space-x-1">
                     {/* Bouton Première page */}
@@ -2517,7 +2517,7 @@ export default function ClientDetailView({
             {/* Vue desktop - Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full" style={{ minWidth: '800px' }}>
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-slate-800">
                   <tr>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Date
@@ -2539,9 +2539,9 @@ export default function ClientDetailView({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
                   {currentServices.map((service) => (
-                    <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white">
                         {formatDate(service.date)}
                       </td>
@@ -2577,7 +2577,7 @@ export default function ClientDetailView({
             
             {/* Pagination pour les prestations - Desktop uniquement */}
             {servicesTotalPages > 0 && (
-              <div className="hidden lg:block px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="hidden lg:block px-6 py-4 border-t border-gray-200 dark:border-slate-800">
                 <div className="flex items-center justify-center">
                   <div className="flex items-center space-x-1">
                     {/* Bouton Première page */}
@@ -2663,7 +2663,7 @@ export default function ClientDetailView({
 
         {activeTab === 'payments' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Informations de paiement
               </h3>
@@ -2705,7 +2705,7 @@ export default function ClientDetailView({
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Pipeline
               </h3>
@@ -2742,7 +2742,7 @@ export default function ClientDetailView({
         {activeTab === 'notes' && (
           <div className="space-y-6">
             {/* Formulaire d'ajout de note */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                   Ajouter une note
@@ -2758,7 +2758,7 @@ export default function ClientDetailView({
               </div>
               
               {isAddingNote && (
-                <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+                <div className="space-y-4 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-gray-600">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Type de note
@@ -2777,7 +2777,7 @@ export default function ClientDetailView({
                           className={`inline-flex items-center justify-center space-x-1 sm:space-x-2 px-3 py-2 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-medium rounded-full border-2 transition-all duration-200 hover:scale-105 ${
                             noteType === type.value
                               ? `${type.activeColor} ${type.textColor} border-transparent shadow-lg`
-                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                              : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800'
                           }`}
                         >
                           <span className="text-sm sm:text-lg">{type.icon}</span>
@@ -2796,7 +2796,7 @@ export default function ClientDetailView({
                       onChange={(e) => setNewNote(e.target.value)}
                       placeholder="Saisissez votre note..."
                       rows={3}
-                      className="w-full px-3 py-3 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none text-sm sm:text-base"
+                      className="w-full px-3 py-3 sm:px-4 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none text-sm sm:text-base"
                     />
                   </div>
                   
@@ -2825,7 +2825,7 @@ export default function ClientDetailView({
                         setIsAddingNote(false);
                         setNewNote('');
                       }}
-                      className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
+                      className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
                     >
                       Annuler
                     </button>
@@ -2835,7 +2835,7 @@ export default function ClientDetailView({
             </div>
 
             {/* Liste des notes */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                   Historique des notes
@@ -2847,7 +2847,7 @@ export default function ClientDetailView({
               
               {notesLoading ? (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                     <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                   </div>
                   <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -2859,7 +2859,7 @@ export default function ClientDetailView({
                 </div>
               ) : notes.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                     <MessageSquare className="w-8 h-8 text-gray-400" />
                   </div>
                   <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -2872,7 +2872,7 @@ export default function ClientDetailView({
               ) : (
                 <div className="space-y-3">
                   {notes.map((note) => (
-                    <div key={note.id} className="group relative bg-gray-50 dark:bg-gray-700/30 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all duration-200">
+                    <div key={note.id} className="group relative bg-gray-50 dark:bg-slate-800/30 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-slate-800/50 transition-all duration-200">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0 mb-3">
@@ -2921,7 +2921,7 @@ export default function ClientDetailView({
       {/* Invoice Preview Modal */}
       {previewInvoice && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-300 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300 transform transition-all flex flex-col">
             {/* Header with gradient */}
             <div className="flex-shrink-0 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-4 sm:p-6 text-white relative overflow-hidden">
               {/* Decorative lines - consistent with other page headers */}
@@ -2989,9 +2989,9 @@ export default function ClientDetailView({
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
               <div className="p-4 sm:p-8">
                 {/* Invoice Content */}
-                <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl sm:rounded-3xl p-3 sm:p-6 lg:p-10 max-w-4xl xl:max-w-5xl mx-auto shadow-2xl hover:shadow-3xl transition-all duration-300">
+                <div className="bg-gradient-to-br from-gray-50 to-white dark:from-slate-900 dark:to-slate-950 border border-gray-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-3 sm:p-6 lg:p-10 max-w-4xl xl:max-w-5xl mx-auto shadow-2xl hover:shadow-3xl transition-all duration-300">
                   {/* Header */}
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-8 sm:mb-12 pb-6 sm:pb-8 border-b-2 border-gray-200 dark:border-gray-700 space-y-4 sm:space-y-0">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-8 sm:mb-12 pb-6 sm:pb-8 border-b-2 border-gray-200 dark:border-slate-800 space-y-4 sm:space-y-0">
                     <div className="flex items-center space-x-3 sm:space-x-6">
                       {(() => {
                         // Get business settings from localStorage
@@ -3123,7 +3123,7 @@ export default function ClientDetailView({
                         <div className="block lg:hidden space-y-3">
                           {invoiceServices.length > 0 ? (
                             invoiceServices.map((service: any, index: number) => (
-                              <div key={service.id || index} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                              <div key={service.id || index} className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 shadow-sm">
                                 <div className="flex justify-between items-start mb-2">
                                   <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
                                     {service.description || 'N/A'}
@@ -3150,7 +3150,7 @@ export default function ClientDetailView({
                             ))
                           ) : (
                             <div className="text-center py-8">
-                              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <div className="w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -3162,7 +3162,7 @@ export default function ClientDetailView({
                         </div>
 
                         {/* Vue desktop - Table */}
-                        <div className="hidden sm:block overflow-x-auto rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800">
+                        <div className="hidden sm:block overflow-x-auto rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-800 shadow-lg bg-white dark:bg-slate-900">
                           <table className="w-full border-0 rounded-xl sm:rounded-2xl overflow-hidden">
                           <thead className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
                             <tr>
@@ -3173,10 +3173,10 @@ export default function ClientDetailView({
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 last:rounded-tr-xl sm:last:rounded-tr-2xl">Total</th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-600">
+                          <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-100 dark:divide-gray-600">
                             {invoiceServices.length > 0 ? (
                               invoiceServices.map((service: any, index: number) => (
-                                <tr key={service.id || index} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${index === invoiceServices.length - 1 ? 'last:rounded-b-xl sm:last:rounded-b-2xl' : ''}`}>
+                                <tr key={service.id || index} className={`hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors ${index === invoiceServices.length - 1 ? 'last:rounded-b-xl sm:last:rounded-b-2xl' : ''}`}>
                                     <td className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 dark:text-white font-medium ${index === invoiceServices.length - 1 ? 'first:rounded-bl-xl sm:first:rounded-bl-2xl' : ''}`}>{service.description || 'N/A'}</td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{new Date(service.date).toLocaleDateString('fr-FR')}</td>
                                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300">{service.hours}h</td>
@@ -3188,7 +3188,7 @@ export default function ClientDetailView({
                               <tr>
                                 <td colSpan={5} className="px-3 sm:px-6 py-8 sm:py-12 text-center rounded-b-xl sm:rounded-b-2xl">
                                   <div className="flex flex-col items-center">
-                                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                                    <div className="w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
                                       <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                       </svg>
@@ -3224,7 +3224,7 @@ export default function ClientDetailView({
                               <span className="text-xs sm:text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">Sous-total :</span>
                               <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{calculateInvoiceAmount(previewInvoice).toFixed(2)}€</span>
                             </div>
-                            <div className="flex justify-between items-center py-3 sm:py-4 bg-white dark:bg-gray-800 rounded-lg px-3 sm:px-4 border-2 border-blue-200 dark:border-blue-700">
+                            <div className="flex justify-between items-center py-3 sm:py-4 bg-white dark:bg-slate-900 rounded-lg px-3 sm:px-4 border-2 border-blue-200 dark:border-blue-700">
                               <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Total à payer :</span>
                               <span className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{calculateInvoiceAmount(previewInvoice).toFixed(2)}€</span>
                             </div>
@@ -3237,7 +3237,7 @@ export default function ClientDetailView({
             </div>
             
             {/* Footer with metadata */}
-            <div className="bg-gray-50 dark:bg-gray-700 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
+            <div className="bg-gray-50 dark:bg-slate-800 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
               <div className="flex items-center justify-center">
                 <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 text-xs sm:text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   <div>
@@ -3270,7 +3270,7 @@ export default function ClientDetailView({
         </section>
       ) : (
         <section className="mt-8 sm:mt-12 md:mt-16">
-          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl">
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-slate-900 bg-white dark:bg-slate-950 shadow-xl">
           <div className="absolute inset-0 pointer-events-none">
               <div className="absolute -top-24 right-8 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl"></div>
               <div className="absolute bottom-0 -left-10 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl"></div>
@@ -3306,7 +3306,7 @@ export default function ClientDetailView({
 
               <div className="px-4 sm:px-6 md:px-10 py-6 sm:py-8 space-y-6 sm:space-y-8">
                 <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-                  <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-4 sm:p-5 shadow-sm">
+                  <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/70 p-4 sm:p-5 shadow-sm">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-2 sm:space-y-3 min-w-0 flex-1">
                         <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total facturé</p>
@@ -3318,7 +3318,7 @@ export default function ClientDetailView({
                   </div>
                 </div>
               </div>
-                  <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-4 sm:p-5 shadow-sm">
+                  <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/70 p-4 sm:p-5 shadow-sm">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-2 sm:space-y-3 min-w-0 flex-1">
                         <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Total encaissé</p>
@@ -3334,7 +3334,7 @@ export default function ClientDetailView({
                     className={`rounded-xl sm:rounded-2xl border p-4 sm:p-5 shadow-sm ${
                       attestationSummary.totalOutstanding > 0
                         ? 'border-rose-200 dark:border-rose-500/40 bg-rose-50/80 dark:bg-rose-500/10'
-                        : 'border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70'
+                        : 'border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/70'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -3366,7 +3366,7 @@ export default function ClientDetailView({
                       </div>
                     </div>
                   </div>
-                  <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-4 sm:p-5 shadow-sm">
+                  <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/70 p-4 sm:p-5 shadow-sm">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-2 sm:space-y-3 min-w-0 flex-1">
                         <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Factures retenues</p>
@@ -3393,7 +3393,7 @@ export default function ClientDetailView({
                       setAttestationYear(Number.isNaN(next) ? null : next);
                     }}
                     disabled={attestationAvailableYears.length === 0}
-                        className="mt-2 w-full appearance-none rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="mt-2 w-full appearance-none rounded-full border border-gray-300 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {attestationAvailableYears.length === 0 ? (
                       <option value="">Aucune donnée disponible</option>
@@ -3419,7 +3419,7 @@ export default function ClientDetailView({
                       {attestationSummary.recentNumbers.map((ref) => (
                         <span
                           key={ref}
-                              className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800/80 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-200"
+                              className="inline-flex items-center rounded-full bg-gray-100 dark:bg-slate-900/80 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-200"
                         >
                           {ref}
                         </span>
@@ -3428,7 +3428,7 @@ export default function ClientDetailView({
                   </div>
                 )}
 
-                    <div className="rounded-xl sm:rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/50 px-4 sm:px-5 py-3 sm:py-4">
+                    <div className="rounded-xl sm:rounded-2xl border border-dashed border-gray-300 dark:border-slate-800 bg-white/60 dark:bg-slate-950/50 px-4 sm:px-5 py-3 sm:py-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
                         Comment ça marche ?
                       </p>
@@ -3471,7 +3471,7 @@ export default function ClientDetailView({
                   </div>
 
                   <div className="space-y-3 sm:space-y-4">
-                    <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
+                    <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/70 p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
                       <div className="space-y-1">
                         <p className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                           Prêt à générer l"attestation {effectiveAttestationYear ?? ''}
@@ -3484,7 +3484,7 @@ export default function ClientDetailView({
                   type="button"
                   onClick={handleExportFiscalAttestation}
                   disabled={attestationAvailableYears.length === 0 || attestationLoading}
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                 >
                   {attestationLoading ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
@@ -3516,7 +3516,7 @@ export default function ClientDetailView({
                       )}
             </div>
 
-                    <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/60 px-4 sm:px-5 py-3 sm:py-4 text-[10px] sm:text-xs md:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-800 bg-white/60 dark:bg-slate-950/60 px-4 sm:px-5 py-3 sm:py-4 text-[10px] sm:text-xs md:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
               <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">Rappel administratif</p>
               <p>
                         Ce document atteste des revenus commerciaux {effectiveAttestationYear ?? 'en cours'}. Pour une attestation de régularité
@@ -3534,7 +3534,7 @@ export default function ClientDetailView({
       {/* Email Modal */}
       {emailModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 p-6 text-white rounded-t-2xl">
               <div className="flex items-center justify-between">
@@ -3575,7 +3575,7 @@ export default function ClientDetailView({
                     value={emailData.to}
                     onChange={(e) => setEmailData({ ...emailData, to: e.target.value })}
                     placeholder="client@example.com"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                     required
                   />
                 </div>
@@ -3590,7 +3590,7 @@ export default function ClientDetailView({
                     value={emailData.subject}
                     onChange={(e) => setEmailData({ ...emailData, subject: e.target.value })}
                     placeholder={`Facture N° ${emailModal.invoice_number} - ${new Date(emailModal.date).toLocaleDateString('fr-FR')}`}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                   />
                 </div>
 
@@ -3604,13 +3604,13 @@ export default function ClientDetailView({
                     onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
                     placeholder="Bonjour, veuillez trouver ci-joint votre facture..."
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                   />
                 </div>
             </div>
 
             {/* Footer with buttons - always visible */}
-            <div className="flex-shrink-0 p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+            <div className="flex-shrink-0 p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-900">
               <div className="flex space-x-4">
                 <button
                   type="button"
@@ -3652,7 +3652,7 @@ export default function ClientDetailView({
       {/* Service Creation Modal */}
       {showServiceModal && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-4 sm:p-6 text-white relative overflow-hidden">
               {/* Decorative lines */}
@@ -3728,7 +3728,7 @@ export default function ClientDetailView({
                         value={serviceFormData.date}
                         onChange={(e) => setServiceFormData({ ...serviceFormData, date: e.target.value })}
                         placeholder="jj/mm/aaaa"
-                        className="w-full px-3 py-3 sm:px-3 sm:py-2 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                        className="w-full px-3 py-3 sm:px-3 sm:py-2 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                       />
                     </div>
                   </div>
@@ -3744,7 +3744,7 @@ export default function ClientDetailView({
                       required
                       value={serviceFormData.hours || ''}
                       onChange={(e) => setServiceFormData({ ...serviceFormData, hours: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -3760,7 +3760,7 @@ export default function ClientDetailView({
                       required
                       value={serviceFormData.hourly_rate || ''}
                       onChange={(e) => setServiceFormData({ ...serviceFormData, hourly_rate: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                     />
                   </div>
                   
@@ -3775,14 +3775,14 @@ export default function ClientDetailView({
                     value={serviceFormData.description}
                     onChange={(e) => setServiceFormData({ ...serviceFormData, description: e.target.value })}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                     placeholder="Détails de la prestation..."
                   />
                 </div>
                   
                 {/* Preview calculation */}
                 {serviceFormData.hours > 0 && serviceFormData.hourly_rate > 0 && (
-                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
                     <div className="flex justify-between text-xs sm:text-sm font-semibold text-green-600 dark:text-green-400">
                       <span>Montant total:</span>
                       <span>
@@ -3794,12 +3794,12 @@ export default function ClientDetailView({
             </div>
 
             {/* Footer with buttons - always visible */}
-            <div className="flex-shrink-0 p-4 sm:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+            <div className="flex-shrink-0 p-4 sm:p-6 pt-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-900">
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <button
                   type="button"
                   onClick={resetServiceForm}
-                  className="flex-1 px-4 py-2.5 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm font-medium"
+                  className="flex-1 px-4 py-2.5 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors text-xs sm:text-sm font-medium"
                 >
                   Annuler
                 </button>
@@ -3819,7 +3819,7 @@ export default function ClientDetailView({
       {/* Invoice Edit Modal */}
       {showInvoiceEditModal && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 sm:p-6 text-white relative overflow-hidden">
               <div className="absolute inset-0 opacity-20">
@@ -3860,7 +3860,7 @@ export default function ClientDetailView({
             {/* Scrollable content */}
             <div className="overflow-y-auto flex-1 min-h-0 p-4 sm:p-6 space-y-6 sm:space-y-8">
                 {/* Client and Invoice Number Section */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 sm:p-6">
+                <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-4 sm:p-6">
                   <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
                       <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3878,7 +3878,7 @@ export default function ClientDetailView({
                         type="text"
                         value={invoiceFormData.invoice_number}
                         onChange={(e) => setInvoiceFormData({ ...invoiceFormData, invoice_number: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                       />
                     </div>
                     
@@ -3904,7 +3904,7 @@ export default function ClientDetailView({
                 </div>
 
                 {/* Dates Section */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 sm:p-6">
+                <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-4 sm:p-6">
                   <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-3">
                       <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 dark:text-green-400" />
@@ -3935,7 +3935,7 @@ export default function ClientDetailView({
                             });
                           }}
                           placeholder="jj/mm/aaaa"
-                          className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                          className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full sm:rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                         />
                       </div>
                     </div>
@@ -3956,7 +3956,7 @@ export default function ClientDetailView({
                           value={invoiceFormData.due_date}
                           onChange={(e) => setInvoiceFormData({ ...invoiceFormData, due_date: e.target.value })}
                           placeholder="jj/mm/aaaa"
-                          className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                          className="w-full px-3 py-3 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full sm:rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                         />
                       </div>
                     </div>
@@ -3964,7 +3964,7 @@ export default function ClientDetailView({
                 </div>
 
                 {/* Services selection */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
+                <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-6">
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3">
                       <svg className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3973,10 +3973,10 @@ export default function ClientDetailView({
                     </div>
                     Prestations à facturer *
                   </h4>
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 max-h-80 overflow-y-auto">
+                  <div className="border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-slate-900 max-h-80 overflow-y-auto">
                     {services.filter(s => s.client_id === clientId).length === 0 ? (
                       <div className="p-8 text-center">
-                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                           <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
@@ -3987,7 +3987,7 @@ export default function ClientDetailView({
                     ) : (
                       <div className="divide-y divide-gray-100 dark:divide-gray-600">
                         {services.filter(s => s.client_id === clientId).map((service) => (
-                          <label key={service.id} className="flex items-center space-x-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                          <label key={service.id} className="flex items-center space-x-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                             <input
                               type="checkbox"
                               checked={selectedServicesForInvoice.includes(service.id)}
@@ -4041,7 +4041,7 @@ export default function ClientDetailView({
                       Récapitulatif
                     </h4>
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center py-3 bg-white dark:bg-gray-800 rounded-lg px-4 border-t-2 border-blue-200 dark:border-blue-600">
+                      <div className="flex justify-between items-center py-3 bg-white dark:bg-slate-900 rounded-lg px-4 border-t-2 border-blue-200 dark:border-blue-600">
                         <span className="text-lg font-bold text-gray-900 dark:text-white">Total:</span>
                         <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                           {(() => {
@@ -4064,12 +4064,12 @@ export default function ClientDetailView({
             </div>
             
             {/* Footer with buttons - always visible */}
-            <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
+            <div className="flex-shrink-0 bg-gray-50 dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
                   type="button"
                   onClick={resetInvoiceForm}
-                  className="flex-1 px-4 sm:px-6 py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium text-xs sm:text-sm sm:text-base"
+                  className="flex-1 px-4 sm:px-6 py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 font-medium text-xs sm:text-sm sm:text-base"
                 >
                   Annuler
                 </button>
@@ -4099,7 +4099,7 @@ export default function ClientDetailView({
       />
 
       <div className="space-y-4 mt-6 sm:mt-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Historique des paiements</h3>
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200">
@@ -4108,7 +4108,7 @@ export default function ClientDetailView({
           </div>
           {client.payments.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CreditCard className="w-8 h-8 text-gray-400" />
               </div>
               <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -4123,7 +4123,7 @@ export default function ClientDetailView({
               {client.payments.slice(0, 8).map((payment) => (
                 <div
                   key={payment.invoiceId}
-                  className="border border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-xl p-4 bg-gray-50 dark:bg-gray-700/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
+                  className="border border-gray-200 dark:border-slate-800 rounded-lg sm:rounded-xl p-4 bg-gray-50 dark:bg-slate-800/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
                 >
                   <div>
                     <div className="flex items-center gap-3">
@@ -4137,7 +4137,7 @@ export default function ClientDetailView({
                           ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
                           : payment.status === 'overdue'
                           ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                          : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}
+                          : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-gray-300'}`}
                       >
                         {formatPaymentStatus(payment.status)}
                       </span>
@@ -4151,17 +4151,17 @@ export default function ClientDetailView({
                     <span className="font-semibold text-gray-900 dark:text-white">
                       {formatCurrency(payment.amount)}
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-600">
                       <Clock className="w-3 h-3" />
                       {payment.paidDate ? `Payée le ${formatDate(payment.paidDate)}` : 'Paiement en attente'}
                     </span>
                     {typeof payment.delayInDays === 'number' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-600">
                         <TrendingUp className="w-3 h-3" />
                         {`${payment.delayInDays} j`}
                       </span>
                     )}
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-600">
                       <CreditCard className="w-3 h-3" />
                       {formatPaymentMethod(payment.method)}
                     </span>
@@ -4177,7 +4177,7 @@ export default function ClientDetailView({
           )}
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Pipeline
           </h3>

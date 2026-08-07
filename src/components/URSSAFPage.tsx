@@ -405,10 +405,10 @@ export default function URSSAFPage() {
       </div>
 
       {/* Navigation de période - juste sous le header */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 sm:p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-3 sm:p-4 sm:p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
           {/* Onglets pour le type de période avec effet de glissement */}
-          <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 inline-grid grid-cols-2 relative gap-0.5 w-full md:w-auto">
+          <div className="bg-gray-100 dark:bg-slate-800 rounded-full p-1 inline-grid grid-cols-2 relative gap-0.5 w-full md:w-auto">
             {/* Indicateur de glissement */}
             <div 
               className={`absolute top-1 bottom-1 bg-red-600 rounded-full shadow-md transition-all duration-300 ease-in-out ${
@@ -443,7 +443,7 @@ export default function URSSAFPage() {
 
           {/* Navigation de période */}
           {periodType === 'mensuelle' ? (
-            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-2 sm:px-3 h-[42px] sm:h-[44px] w-full md:w-auto justify-center md:justify-start">
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 dark:bg-slate-800 rounded-full px-2 sm:px-3 h-[42px] sm:h-[44px] w-full md:w-auto justify-center md:justify-start">
               <button
                 type="button"
                 onClick={() => {
@@ -475,7 +475,7 @@ export default function URSSAFPage() {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-2 sm:px-3 h-[42px] sm:h-[44px] w-full md:w-auto flex-wrap justify-center md:justify-start">
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 dark:bg-slate-800 rounded-full px-2 sm:px-3 h-[42px] sm:h-[44px] w-full md:w-auto flex-wrap justify-center md:justify-start">
               {/* Navigation année */}
               <button
                 type="button"
@@ -486,7 +486,7 @@ export default function URSSAFPage() {
               </button>
               
               {/* Sélection trimestre avec effet de glissement */}
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 inline-flex relative gap-0.5 flex-1 sm:flex-none min-w-0 h-full flex items-center">
+              <div className="bg-gray-100 dark:bg-slate-800 rounded-full p-1 inline-flex relative gap-0.5 flex-1 sm:flex-none min-w-0 h-full flex items-center">
                 {/* Indicateur de glissement */}
                 <div 
                   className="absolute top-1 bottom-1 bg-red-600 rounded-full shadow-md transition-all duration-300 ease-in-out"
@@ -578,7 +578,7 @@ export default function URSSAFPage() {
       </div>
 
       {/* Calculateur de cotisations */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-4 sm:p-6 overflow-hidden">
         <div className="flex items-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
           <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Calculateur de Cotisations</h2>
@@ -615,7 +615,7 @@ export default function URSSAFPage() {
                 setQuarterlyRevenue(value);
               }
             }}
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent text-base sm:text-lg font-semibold"
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent text-base sm:text-lg font-semibold"
             placeholder="0"
           />
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -629,7 +629,7 @@ export default function URSSAFPage() {
 
           {/* Affichage détaillé du trimestre avec progression */}
           {periodType === 'trimestrielle' && quarterlyMonthlyBreakdown.total > 0 && (
-            <div className="mt-4 sm:mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden transition-all duration-500 ease-out hover:shadow-xl min-w-0">
+            <div className="mt-4 sm:mt-6 bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-lg overflow-hidden transition-all duration-500 ease-out hover:shadow-xl min-w-0">
               {/* En-tête */}
               <div className="bg-gradient-to-r from-teal-500 to-cyan-500 dark:from-teal-600 dark:to-cyan-600 px-4 sm:px-6 py-3 sm:py-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
@@ -712,7 +712,7 @@ export default function URSSAFPage() {
                 </div>
 
                 {/* Barre de progression visuelle améliorée */}
-                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700">
+                <div className="bg-gray-50 dark:bg-slate-950/50 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-slate-800">
                   <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
                     <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 truncate">
                       Progression du trimestre
@@ -727,7 +727,7 @@ export default function URSSAFPage() {
                         : 0}% complété
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden shadow-inner">
+                  <div className="w-full bg-gray-200 dark:bg-slate-800 rounded-full h-4 overflow-hidden shadow-inner">
                     <div className="flex h-full">
                       <div
                         className="bg-gradient-to-r from-teal-400 to-teal-500 dark:from-teal-500 dark:to-teal-600 transition-all duration-1000 ease-out flex items-center justify-center relative overflow-hidden"
@@ -812,7 +812,7 @@ export default function URSSAFPage() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Graphique en barres */}
-            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 hover:shadow-xl transition-all duration-300 min-w-0">
+            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-slate-950 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-slate-800 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 hover:shadow-xl transition-all duration-300 min-w-0">
               <style>{`
                 .recharts-tooltip-cursor {
                   fill: transparent !important;
@@ -913,7 +913,7 @@ export default function URSSAFPage() {
             </div>
 
             {/* Jauges de progression et indicateurs */}
-            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 hover:shadow-xl transition-all duration-300 min-w-0">
+            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-slate-950 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-gray-200 dark:border-slate-800 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 hover:shadow-xl transition-all duration-300 min-w-0">
               <h4 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 animate-in fade-in slide-in-from-left duration-500">Répartition du CA</h4>
               
               {/* Jauge pour le revenu net */}
@@ -927,7 +927,7 @@ export default function URSSAFPage() {
                     {revenue > 0 ? ((netRevenue / revenue) * 100).toFixed(1).replace('.', ',') : '0,0'}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden shadow-inner">
+                <div className="w-full bg-gray-200 dark:bg-slate-800 rounded-full h-4 overflow-hidden shadow-inner">
                   <div 
                     className="h-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 rounded-full transition-all duration-1500 ease-out flex items-center justify-end pr-2 animate-in slide-in-from-left duration-1000 delay-300 relative overflow-hidden"
                     style={{ width: `${revenue > 0 ? (netRevenue / revenue) * 100 : 0}%` }}
@@ -956,7 +956,7 @@ export default function URSSAFPage() {
                     {revenue > 0 ? ((contributions / revenue) * 100).toFixed(1).replace('.', ',') : '0,0'}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden shadow-inner">
+                <div className="w-full bg-gray-200 dark:bg-slate-800 rounded-full h-4 overflow-hidden shadow-inner">
                   <div 
                     className="h-full bg-gradient-to-r from-red-500 via-red-600 to-red-700 rounded-full transition-all duration-1500 ease-out flex items-center justify-end pr-2 animate-in slide-in-from-left duration-1000 delay-400 relative overflow-hidden"
                     style={{ width: `${revenue > 0 ? (contributions / revenue) * 100 : 0}%` }}
@@ -975,7 +975,7 @@ export default function URSSAFPage() {
               </div>
 
               {/* Indicateurs visuels */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700 animate-in fade-in slide-in-from-bottom duration-500 delay-700">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200 dark:border-slate-800 animate-in fade-in slide-in-from-bottom duration-500 delay-700">
                 <div className="text-center transform transition-transform duration-300 hover:scale-105">
                   <div className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-400 mb-1 animate-in fade-in zoom-in duration-500 delay-900 truncate">
                     {revenue.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
@@ -1001,7 +1001,7 @@ export default function URSSAFPage() {
           </h3>
           {/* Vue mobile - Cartes */}
           <div className="md:hidden space-y-3">
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 p-4">
               <div className="flex items-center mb-3">
                 <div className="w-2 h-2 rounded-full bg-blue-500 mr-3 flex-shrink-0"></div>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">Chiffre d'affaires {periodType === 'mensuelle' ? 'mensuel' : 'trimestriel'}</span>
@@ -1013,7 +1013,7 @@ export default function URSSAFPage() {
                 <p className="text-xs text-gray-600 dark:text-gray-400">100,00 %</p>
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 p-4">
               <div className="flex items-center mb-3">
                 <div className="w-2 h-2 rounded-full bg-red-500 mr-3 flex-shrink-0"></div>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">Cotisations URSSAF ({rate.toFixed(2)}%)</span>
@@ -1027,7 +1027,7 @@ export default function URSSAFPage() {
                 </p>
               </div>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl border-2 border-gray-300 dark:border-gray-600 p-4">
+            <div className="bg-gray-50 dark:bg-slate-950/50 rounded-xl border-2 border-gray-300 dark:border-gray-600 p-4">
               <div className="flex items-center mb-3">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 mr-3 flex-shrink-0"></div>
                 <span className="text-base font-bold text-gray-900 dark:text-white">Revenu net</span>
@@ -1044,17 +1044,17 @@ export default function URSSAFPage() {
           </div>
           
           {/* Vue desktop - Tableau */}
-          <div className="hidden md:block bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden overflow-x-auto">
+          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 overflow-hidden overflow-x-auto">
             <table className="w-full min-w-[500px]">
               <thead>
-                <tr className="bg-gray-100 dark:bg-gray-700">
+                <tr className="bg-gray-100 dark:bg-slate-800">
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Élément</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">Montant</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">Pourcentage</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                <tr className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
+                <tr className="bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                     <div className="flex items-center">
                       <div className="w-2 h-2 rounded-full bg-blue-500 mr-3"></div>
@@ -1066,7 +1066,7 @@ export default function URSSAFPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-right text-gray-600 dark:text-gray-400">100,00 %</td>
                 </tr>
-                <tr className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <tr className="bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                     <div className="flex items-center">
                       <div className="w-2 h-2 rounded-full bg-red-500 mr-3"></div>
@@ -1080,7 +1080,7 @@ export default function URSSAFPage() {
                     {revenue > 0 ? ((contributions / revenue) * 100).toFixed(2).replace('.', ',') : '0,00'} %
                   </td>
                 </tr>
-                <tr className="bg-gray-50 dark:bg-gray-900/50 border-t-2 border-gray-300 dark:border-gray-600">
+                <tr className="bg-gray-50 dark:bg-slate-950/50 border-t-2 border-gray-300 dark:border-gray-600">
                   <td className="px-6 py-4 text-base font-bold text-gray-900 dark:text-white">
                     <div className="flex items-center">
                       <div className="w-2 h-2 rounded-full bg-emerald-500 mr-3"></div>
@@ -1101,7 +1101,7 @@ export default function URSSAFPage() {
 
         {/* Cartes récapitulatives */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 dark:border-slate-800">
             <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
               <span className="text-[10px] sm:text-xs md:text-sm font-medium text-gray-600 dark:text-gray-300 min-w-0 flex-1">Taux de cotisation</span>
               <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
@@ -1112,7 +1112,7 @@ export default function URSSAFPage() {
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 dark:border-slate-800">
             <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
               <span className="text-[10px] sm:text-xs md:text-sm font-medium text-gray-600 dark:text-gray-300 min-w-0 flex-1">Cotisations à payer</span>
               <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
@@ -1125,7 +1125,7 @@ export default function URSSAFPage() {
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 dark:border-gray-700 sm:col-span-2 md:col-span-1">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-3 sm:p-4 md:p-5 border border-gray-200 dark:border-slate-800 sm:col-span-2 md:col-span-1">
             <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
               <span className="text-[10px] sm:text-xs md:text-sm font-medium text-gray-600 dark:text-gray-300 min-w-0 flex-1">Revenu net</span>
               <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
@@ -1141,7 +1141,7 @@ export default function URSSAFPage() {
       </div>
 
       {/* Prochaines échéances */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 overflow-hidden">
         <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4 md:mb-6">
           <CalendarDays className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
           <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate">Prochaines Échéances</h2>
@@ -1199,7 +1199,7 @@ export default function URSSAFPage() {
       </div>
 
       {/* Calendrier complet des échéances */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 overflow-hidden">
         <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
             <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
@@ -1208,7 +1208,7 @@ export default function URSSAFPage() {
         </div>
 
         {/* Onglets pour mensuel/trimestriel */}
-        <div className="flex space-x-1 sm:space-x-2 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
+        <div className="flex space-x-1 sm:space-x-2 mb-4 sm:mb-6 border-b border-gray-200 dark:border-slate-800 overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
           <button
             type="button"
             onClick={() => setPeriodType('trimestrielle')}
@@ -1234,7 +1234,7 @@ export default function URSSAFPage() {
         </div>
 
         {/* Tableau des échéances */}
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800 shadow-sm">
+        <div className="rounded-xl border border-gray-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
           {/* Vue desktop - Tableau */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full">
@@ -1254,7 +1254,7 @@ export default function URSSAFPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
                 {(periodType === 'mensuelle' ? declarationDates : quarterlyDeadlines).map((date, index) => {
                   const [day, month, year] = date.declarationDate.split('/').map(Number);
                   const deadlineDate = new Date(year, month - 1, day);
@@ -1270,12 +1270,12 @@ export default function URSSAFPage() {
                       key={index}
                       className={`${
                         isPast
-                          ? 'bg-gray-50/50 dark:bg-gray-900/30'
+                          ? 'bg-gray-50/50 dark:bg-slate-950/30'
                           : isToday
                           ? 'bg-amber-50 dark:bg-amber-900/20'
                           : isUpcoming
                           ? 'bg-blue-50 dark:bg-blue-900/20'
-                          : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                          : 'bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800/50'
                       } transition-colors`}
                     >
                       <td className="px-5 py-3.5 text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">
@@ -1285,7 +1285,7 @@ export default function URSSAFPage() {
                         <span
                           className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                             isPast
-                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                              ? 'bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-400'
                               : isToday
                               ? 'bg-amber-500 text-white'
                               : isUpcoming
@@ -1300,7 +1300,7 @@ export default function URSSAFPage() {
                         <span
                           className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                             isPast
-                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                              ? 'bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-400'
                               : isToday
                               ? 'bg-amber-500 text-white'
                               : isUpcoming
@@ -1338,12 +1338,12 @@ export default function URSSAFPage() {
                   key={index}
                   className={`p-3 sm:p-4 rounded-lg border ${
                     isPast
-                      ? 'bg-gray-50/50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700'
+                      ? 'bg-gray-50/50 dark:bg-slate-950/30 border-gray-200 dark:border-slate-800'
                       : isToday
                       ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
                       : isUpcoming
                       ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2 sm:mb-3">
@@ -1352,13 +1352,13 @@ export default function URSSAFPage() {
                       <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{date.description}</p>
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 sm:pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 sm:pt-3 border-t border-gray-200 dark:border-slate-800">
                     <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                       <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Déclaration:</span>
                       <span
                         className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap ${
                           isPast
-                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                            ? 'bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-400'
                             : isToday
                             ? 'bg-amber-500 text-white'
                             : isUpcoming
@@ -1374,7 +1374,7 @@ export default function URSSAFPage() {
                       <span
                         className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap ${
                           isPast
-                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                            ? 'bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-400'
                             : isToday
                             ? 'bg-amber-500 text-white'
                             : isUpcoming
@@ -1394,11 +1394,11 @@ export default function URSSAFPage() {
       </div>
 
       {/* Informations légales et règles - Collapsible */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-4 sm:p-6">
         <button
           type="button"
           onClick={() => setShowRules(!showRules)}
-          className="w-full flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-2 -m-2 transition-colors"
+          className="w-full flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-lg p-2 -m-2 transition-colors"
         >
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
           <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />

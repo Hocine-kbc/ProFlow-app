@@ -187,7 +187,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ onNavigate }) => {
             onNavigate('messages');
           }
         }}
-        className="relative p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="relative p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
         title="Messages"
       >
         <MessageCircle className="w-5 h-5" />
@@ -208,11 +208,11 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ onNavigate }) => {
           />
           
           {/* Panel */}
-          <div className="absolute right-0 top-12 w-[480px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[50] max-h-[700px] flex flex-col">
+          <div className="absolute right-0 top-12 w-[480px] max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-800 z-[50] max-h-[700px] flex flex-col">
             {!selectedConversation ? (
               /* Liste des conversations */
               <>
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-800">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Messages
                   </h3>
@@ -247,7 +247,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ onNavigate }) => {
                 </div>
                 
                 {/* Barre de recherche */}
-                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="p-3 border-b border-gray-200 dark:border-slate-800">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -255,7 +255,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ onNavigate }) => {
                       placeholder="Rechercher une conversation..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-600 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -289,13 +289,13 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ onNavigate }) => {
                       </button>
                     </div>
                   ) : (
-                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                    <div className="divide-y divide-gray-200 dark:divide-slate-800">
                       {filteredConversations.map((conversation) => (
                         <button
                           key={conversation.id}
                           type="button"
                           onClick={() => setSelectedConversation(conversation)}
-                          className="w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors relative"
+                          className="w-full p-4 text-left hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors relative"
                         >
                           <div className="flex items-start gap-3">
                             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -337,7 +337,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ onNavigate }) => {
               /* Vue de conversation */
               <>
                 {/* Header de conversation */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-800">
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -363,7 +363,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ onNavigate }) => {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-slate-950/50">
                   {loading && messages.length === 0 ? (
                     <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                       Chargement...
@@ -385,7 +385,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ onNavigate }) => {
                             className={`max-w-[75%] rounded-lg p-3 ${
                               isOwn
                                 ? 'bg-blue-500 text-white'
-                                : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
+                                : 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white'
                             }`}
                           >
                             {message.subject && (
@@ -421,13 +421,13 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ onNavigate }) => {
                 </div>
 
                 {/* Formulaire d'envoi */}
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <div className="p-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                   <input
                     type="text"
                     placeholder="Sujet (optionnel)"
                     value={messageSubject}
                     onChange={(e) => setMessageSubject(e.target.value)}
-                    className="w-full mb-2 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mb-2 px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-600 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <div className="flex items-end gap-2">
                     <textarea
@@ -441,7 +441,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ onNavigate }) => {
                         }
                       }}
                       rows={2}
-                      className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      className="flex-1 px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                     />
                     <button
                       type="button"

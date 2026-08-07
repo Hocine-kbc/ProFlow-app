@@ -376,7 +376,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
   return (
     <div className="space-y-6 scrollbar-hide w-full max-w-full overflow-x-hidden">
       {/* En-tête */}
-      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-gray-600 via-gray-600 to-gray-700 dark:from-gray-700 dark:via-gray-700 dark:to-gray-800 text-white shadow-lg overflow-hidden">
+      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-gray-600 via-gray-600 to-gray-700 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 text-white shadow-lg overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
           <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
@@ -399,9 +399,9 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
       </div>
 
       {/* Conteneur principal */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-800 overflow-hidden">
         {/* Onglets */}
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="border-b border-gray-200 dark:border-slate-800">
           <nav className="flex flex-col sm:flex-row sm:space-x-8 space-y-2 sm:space-y-0 px-4 sm:px-6">
             <button
               type="button"
@@ -431,7 +431,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
         </div>
 
         {/* Filtres et recherche */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800">
           <div className="p-4 lg:p-6">
             <div className="flex flex-wrap items-center gap-3">
               {/* Barre de recherche */}
@@ -443,7 +443,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                     placeholder={activeTab === 'invoices' ? 'Rechercher...' : 'Rechercher...'}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                   {searchTerm && (
                     <button
@@ -459,7 +459,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
               </div>
 
               {/* Filtre période */}
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2.5">
+              <div className="bg-gray-100 dark:bg-slate-800 rounded-full px-4 py-2.5">
                 <CustomSelect
                   value={dateFilter}
                   onChange={(value) => setDateFilter(value)}
@@ -478,7 +478,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
 
               {/* Filtre statut pour les factures */}
               {activeTab === 'invoices' && (
-                <div className="bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2.5">
+                <div className="bg-gray-100 dark:bg-slate-800 rounded-full px-4 py-2.5">
                   <CustomSelect
                     value={statusFilter}
                     onChange={(value) => setStatusFilter(value)}
@@ -504,7 +504,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                     setStatusFilter('');
                     setCurrentPage(1);
                   }}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-700 rounded-full transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-slate-800 rounded-full transition-colors"
                   title="Réinitialiser"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -515,21 +515,29 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
           </div>
         </div>
 
-        {/* Sélection multiple */}
-        {isSelectionMode && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center">
-                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  {selectedItems.size} élément(s) sélectionné(s)
+        {/* Actions de sélection à l'emplacement du bouton */}
+        {filteredData.length > 0 && (
+          <div className="flex justify-end items-center px-4 sm:px-6 pt-4 sm:pt-5">
+            {!isSelectionMode ? (
+              <button
+                key="mode-selection"
+                type="button"
+                onClick={toggleSelectionMode}
+                className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm animate-in fade-in zoom-in-95 duration-300 ease-out"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Mode sélection
+              </button>
+            ) : (
+              <div key="selection-actions" className="flex items-center gap-3 animate-in fade-in zoom-in-95 slide-in-from-right-2 duration-300 ease-out">
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300 whitespace-nowrap">
+                  {selectedItems.size} élément{selectedItems.size !== 1 ? 's' : ''} sélectionné{selectedItems.size !== 1 ? 's' : ''}
                 </span>
-              </div>
-              <div className="flex space-x-2">
                 <button
                   type="button"
                   onClick={handleBulkDelete}
                   disabled={selectedItems.size === 0}
-                  className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
+                  className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm whitespace-nowrap"
                 >
                   <Trash className="w-4 h-4 mr-2" />
                   Supprimer sélection
@@ -537,26 +545,12 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                 <button
                   type="button"
                   onClick={toggleSelectionMode}
-                  className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+                  className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm whitespace-nowrap"
                 >
                   Annuler
                 </button>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Bouton pour activer le mode sélection */}
-        {!isSelectionMode && filteredData.length > 0 && (
-          <div className="flex justify-end px-4 sm:px-6 pt-4 sm:pt-5">
-            <button
-              type="button"
-              onClick={toggleSelectionMode}
-              className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm"
-            >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Mode sélection
-            </button>
+            )}
           </div>
         )}
 
@@ -565,7 +559,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
           {/* Vue desktop - Table */}
           <div className="hidden lg:block overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
             <table className="w-full min-w-[900px] divide-y divide-gray-200 dark:divide-gray-600">
-              <thead className="bg-gray-50 dark:bg-gray-700">
+              <thead className="bg-gray-50 dark:bg-slate-800">
                 <tr>
                   {isSelectionMode && (
                     <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
@@ -637,7 +631,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                   )}
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
                 {currentData.length === 0 ? (
                   <tr>
                     <td colSpan={isSelectionMode ? (activeTab === 'invoices' ? 9 : 8) : (activeTab === 'invoices' ? 8 : 7)} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
@@ -657,7 +651,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                   </tr>
                 ) : (
                   currentData.map((item) => (
-                    <tr key={item.id as string} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={item.id as string} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                       {isSelectionMode && (
                         <td className="px-2 py-4 whitespace-nowrap w-12">
                           <button
@@ -697,9 +691,9 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                               (item.status as string) === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
                               (item.status as string) === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                              (item.status as string) === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
+                              (item.status as string) === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-slate-950/20 dark:text-gray-400' :
                               (item.status as string) === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
-                              'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                              'bg-gray-100 text-gray-800 dark:bg-slate-950/20 dark:text-gray-400'
                             }`}>
                               {(item.status as string) === 'paid' ? 'Payée' :
                                (item.status as string) === 'sent' ? 'Envoyée' :
@@ -791,9 +785,9 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                           <td className="px-3 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                               (item.status as string) === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                              (item.status as string) === 'inactive' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
+                              (item.status as string) === 'inactive' ? 'bg-gray-100 text-gray-800 dark:bg-slate-950/20 dark:text-gray-400' :
                               (item.status as string) === 'prospect' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                              'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                              'bg-gray-100 text-gray-800 dark:bg-slate-950/20 dark:text-gray-400'
                             }`}>
                               {(item.status as string) === 'active' ? 'Actif' :
                                (item.status as string) === 'inactive' ? 'Inactif' :
@@ -837,7 +831,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
           <div className="hidden md:block lg:hidden">
             <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
               <table className="w-full min-w-[640px] divide-y divide-gray-200 dark:divide-gray-600">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-slate-800">
                   <tr>
                     {isSelectionMode && (
                       <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-10">
@@ -891,7 +885,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                     )}
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
+                <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-gray-600">
                   {currentData.length === 0 ? (
                     <tr>
                       <td colSpan={activeTab === 'invoices' ? (isSelectionMode ? 6 : 5) : (isSelectionMode ? 5 : 4)} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
@@ -904,7 +898,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                     </tr>
                   ) : (
                     currentData.map((item) => (
-                      <tr key={item.id as string} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <tr key={item.id as string} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                         {isSelectionMode && (
                           <td className="px-2 py-4 whitespace-nowrap w-10">
                             <button
@@ -938,9 +932,9 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                 (item.status as string) === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
                                 (item.status as string) === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                                (item.status as string) === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
+                                (item.status as string) === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-slate-950/20 dark:text-gray-400' :
                                 (item.status as string) === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
-                                'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                                'bg-gray-100 text-gray-800 dark:bg-slate-950/20 dark:text-gray-400'
                               }`}>
                                 {(item.status as string) === 'paid' ? 'Payée' :
                                  (item.status as string) === 'sent' ? 'Envoyée' :
@@ -989,9 +983,9 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                             <td className="px-2 py-4 whitespace-nowrap">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                 (item.status as string) === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                                (item.status as string) === 'inactive' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
+                                (item.status as string) === 'inactive' ? 'bg-gray-100 text-gray-800 dark:bg-slate-950/20 dark:text-gray-400' :
                                 (item.status as string) === 'prospect' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                                'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                                'bg-gray-100 text-gray-800 dark:bg-slate-950/20 dark:text-gray-400'
                               }`}>
                                 {(item.status as string) === 'active' ? 'Actif' :
                                  (item.status as string) === 'inactive' ? 'Inactif' :
@@ -1064,7 +1058,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
               </div>
             ) : (
               currentData.map((item) => (
-              <div key={item.id as string} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+              <div key={item.id as string} className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-800 p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-3">
                   {isSelectionMode && (
                     <button
@@ -1260,7 +1254,7 @@ export default function ArchivePage({ onPageChange: _onPageChange }: ArchivePage
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-full">
+                <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-slate-800 rounded-full">
                   {currentPage} / {totalPages}
                 </span>
                 <button

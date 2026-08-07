@@ -1385,8 +1385,8 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
 
       {/* Message si aucune donnée - Vérifier les données globales, pas la période */}
       {!loading && !hasGlobalPaidInvoices && (
-        <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center">
-          <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center animate-bounce">
+        <div className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-8 text-center">
+          <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center animate-bounce">
             <FileX className="w-10 h-10 text-gray-400 dark:text-gray-500" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 animate-pulse">
@@ -1421,7 +1421,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       )}
 
       {/* Filtre de période pour les KPI */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 sm:p-5 lg:p-6 mb-4">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-3 sm:p-5 lg:p-6 mb-4">
         <div className="flex flex-col gap-3 sm:gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Période d'analyse</h3>
@@ -1437,7 +1437,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                 >
                   <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
-                <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
+                <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
                   <span className="text-xs sm:text-base font-bold text-gray-900 dark:text-white min-w-[40px] sm:min-w-[80px] text-center block">
                     {selectedKpiYear}
                   </span>
@@ -1477,7 +1477,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                   >
                     <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
+                  <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
                     <span className="text-xs sm:text-base font-bold text-gray-900 dark:text-white min-w-[28px] sm:min-w-[60px] text-center block">
                       T{selectedKpiQuarter}
                     </span>
@@ -1504,7 +1504,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
               <div
                 className={`flex items-center flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
                   kpiPeriodFilter === 'month'
-                    ? 'max-w-[220px] opacity-100 gap-1.5 sm:gap-2 ml-1 sm:ml-1.5'
+                    ? 'max-w-[190px] sm:max-w-[290px] opacity-100 gap-1.5 sm:gap-2 ml-1 sm:ml-1.5'
                     : 'max-w-0 opacity-0 gap-0 ml-0 pointer-events-none'
                 }`}
                 aria-hidden={kpiPeriodFilter !== 'month'}
@@ -1525,7 +1525,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                   >
                     <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
+                  <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0">
                     <select
                       value={selectedKpiMonth}
                       onChange={(e) => setSelectedKpiMonth(Number(e.target.value))}
@@ -1566,7 +1566,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           </div>
           {/* Boutons de type de période - alignés à gauche */}
           <div className="flex justify-start">
-            <div className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full">
+            <div className="relative inline-flex items-center bg-gray-100 dark:bg-slate-800/50 p-1 rounded-full">
               {kpiIndicatorStyle.width > 0 && (
                 <div
                   className="absolute h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 shadow-md z-0"
@@ -1621,7 +1621,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
 
       {/* KPI Cards Principales */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
           <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
             <DollarSign className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
           </div>
@@ -1637,7 +1637,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
           <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-green-100 dark:bg-green-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
             <Euro className="w-4 h-4 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
           </div>
@@ -1652,7 +1652,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
           <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-red-100 dark:bg-red-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
             <Calculator className="w-4 h-4 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
           </div>
@@ -1668,7 +1668,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
           <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
             <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
@@ -1686,7 +1686,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
 
       {/* KPI Cards Supplémentaires - Revenus et Paiements */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
           <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-purple-100 dark:bg-purple-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
             <Receipt className="w-4 h-4 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
           </div>
@@ -1698,7 +1698,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
           <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-green-100 dark:bg-green-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
             <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
           </div>
@@ -1710,7 +1710,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
           <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-orange-100 dark:bg-orange-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
             <AlertCircle className="w-4 h-4 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400" />
           </div>
@@ -1726,7 +1726,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
           <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
             <AlertCircle className="w-4 h-4 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />
           </div>
@@ -1752,7 +1752,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         </h2>
 
       {/* Graphique Principal - Évolution Complète CA Brut, Net et Cotisations */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6 min-w-0">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-4 sm:p-5 lg:p-6 min-w-0">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white leading-tight">
             Évolution mensuelle du chiffre d'affaires
@@ -1766,7 +1766,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             >
               <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-            <div className="px-4 sm:px-5 py-2 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm relative min-w-[88px] text-center">
+            <div className="px-4 sm:px-5 py-2 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm relative min-w-[88px] text-center">
               {isUpdatingYear && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
@@ -1789,7 +1789,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         {monthlyRevenue.length > 0 ? (
           <div className="relative h-[260px] sm:h-[340px] lg:h-96 w-full min-w-0">
             {!monthlyRevenue.some(m => m.revenueBrut > 0) && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg">
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-lg">
                 <BarChart3 className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4 animate-pulse" />
                 <p className="text-gray-500 dark:text-gray-400 text-sm animate-pulse">Aucune donnée disponible</p>
               </div>
@@ -2029,12 +2029,12 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       {/* Graphiques Comparatifs */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Comparaison Trimestrielle */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6 min-w-0">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:p-6 min-w-0">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Comparaison Trimestrielle</h3>
           {quarterlyRevenue.length > 0 ? (
             <div className="relative h-[240px] sm:h-[300px] lg:h-80 w-full min-w-0">
               {!quarterlyRevenue.some(q => q.revenueBrut > 0) && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg">
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-lg">
                   <BarChart3 className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4 animate-pulse" />
                   <p className="text-gray-500 dark:text-gray-400 text-sm animate-pulse">Aucune donnée disponible</p>
                 </div>
@@ -2129,7 +2129,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         </div>
 
         {/* Répartition CA Brut / Cotisations / CA Net */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6 min-w-0">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:p-6 min-w-0">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Répartition Globale</h3>
           {kpiData.annualRevenueBrut > 0 ? (
             <div className="h-[240px] sm:h-[300px] lg:h-80 w-full min-w-0">
@@ -2246,7 +2246,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       </div>
 
       {/* Tableau détaillé par période */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6 min-w-0">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:p-6 min-w-0">
         <div className="flex flex-col gap-4 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Statistiques détaillées par période</h3>
@@ -2259,7 +2259,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
               >
                 <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
-              <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm relative flex-shrink-0">
+              <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm relative flex-shrink-0">
                 {isUpdatingYear && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
@@ -2280,7 +2280,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             </div>
           </div>
           <div className="flex justify-start">
-            <div className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full">
+            <div className="relative inline-flex items-center bg-gray-100 dark:bg-slate-800/50 p-1 rounded-full">
               {indicatorStyle.width > 0 && (
                 <div
                   className="absolute h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 shadow-md z-0"
@@ -2370,14 +2370,14 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
               {chartData.map((item, index) => (
                 <tr 
                   key={index} 
                   className={`${
                     index % 2 === 0 
-                      ? 'bg-gray-100 dark:bg-gray-700/60' 
-                      : 'bg-white dark:bg-gray-800'
+                      ? 'bg-gray-100 dark:bg-slate-800/60' 
+                      : 'bg-white dark:bg-slate-900'
                   } hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-600/70 dark:hover:to-gray-600/50 transition-all duration-200 ease-out group cursor-pointer hover:shadow-md hover:-translate-y-0.5`}
                 >
                   <td className="py-2.5 px-3">
@@ -2404,7 +2404,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                     </span>
                   </td>
                   <td className="py-2.5 px-3 text-right">
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
                       {item.invoices}
                     </span>
                   </td>
@@ -2462,7 +2462,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             return (
               <div
                 key={`${'contributionRate' in item ? 'quarter' : 'month'}-${index}`}
-                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 shadow-sm"
+                className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg px-3 py-2 shadow-sm"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -2506,7 +2506,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         </h2>
 
       {/* 💳 Détails Paiements */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:p-6">
         <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
           <span className="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
             <CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -2541,11 +2541,11 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Montant total encaissé ce mois-ci</p>
             <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(kpiData.monthlyCollectedAmount)}</p>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Montant des avoirs/remboursements</p>
             <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(kpiData.refundsAmount)}</p>
           </div>
@@ -2553,7 +2553,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       </div>
 
       {/* 👥 Statistiques Clients */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:p-6">
         <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
           <span className="flex-shrink-0 w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
             <Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
@@ -2561,19 +2561,19 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           Statistiques Clients
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Nombre total de clients actifs</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.activeClients}</p>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Nouveaux clients ce mois</p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{kpiData.newClientsThisMonth}</p>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Clients inactifs (90+ jours)</p>
             <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{kpiData.inactiveClientsCount}</p>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Taux de fidélisation</p>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatPercent(kpiData.clientRetentionRate)}</p>
           </div>
@@ -2581,7 +2581,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       </div>
 
       {/* 🧾 Statistiques Factures */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:p-6">
         <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
           <span className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
             <Receipt className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
@@ -2589,19 +2589,19 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           Statistiques Factures
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Factures émises ce mois</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.invoicesThisMonth}</p>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Temps moyen de paiement</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(kpiData.averagePaymentTime)} jours</p>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Factures récurrentes</p>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{kpiData.recurringInvoices}</p>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Factures uniques</p>
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{kpiData.uniqueInvoices}</p>
           </div>
@@ -2720,7 +2720,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             </div>
           </div>
         ) : (
-          <div className="relative h-[240px] sm:h-[300px] lg:h-80 w-full min-w-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+          <div className="relative h-[240px] sm:h-[300px] lg:h-80 w-full min-w-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-800/30 rounded-lg">
             <BarChart3 className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4 animate-pulse" />
             <p className="text-gray-500 dark:text-gray-400 text-sm animate-pulse">Aucune donnée disponible pour {selectedYear}</p>
           </div>
@@ -2728,7 +2728,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       </div>
 
       {/* 🧰 Statistiques Prestations / Services */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:p-6">
         <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
           <span className="flex-shrink-0 w-7 h-7 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
             <Briefcase className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
@@ -2736,11 +2736,11 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           Statistiques Prestations / Services
         </h3>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-3 sm:p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-3 sm:p-4 rounded-lg">
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Prestations réalisées</p>
             <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalServices}</p>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-3 sm:p-4 rounded-lg">
+          <div className="bg-gray-50 dark:bg-slate-800/50 p-3 sm:p-4 rounded-lg">
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Prestations ce mois</p>
             <p className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{kpiData.servicesThisMonth}</p>
           </div>
@@ -2760,7 +2760,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                   return (
                     <div
                       key={index}
-                      className="flex flex-col items-center text-center gap-1 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 p-3 sm:p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                      className="flex flex-col items-center text-center gap-1 rounded-xl bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-800 p-3 sm:p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
                     >
                       <p className="w-full text-[11px] sm:text-xs font-medium text-gray-600 dark:text-gray-400 truncate" title={service.name}>
                         {service.name}
@@ -2792,7 +2792,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
 
       {/* 📅 Statistiques Temporelles - Comparaison */}
       {comparisonData && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6 min-w-0">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:p-6 min-w-0">
           <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
             <span className="flex-shrink-0 w-7 h-7 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
               <Calendar className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
@@ -2804,12 +2804,12 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">Année {selectedYear}</p>
               <p className="text-lg sm:text-3xl font-bold text-blue-600 dark:text-blue-400 truncate">{formatCurrency(comparisonData.current)}</p>
             </div>
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700/20 dark:to-gray-800/20 p-3 sm:p-6 rounded-lg">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-800/20 dark:to-slate-900/20 p-3 sm:p-6 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">Année {selectedYear - 1}</p>
               <p className="text-lg sm:text-3xl font-bold text-gray-600 dark:text-gray-400 truncate">{formatCurrency(comparisonData.previous)}</p>
             </div>
           </div>
-          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Évolution</span>
               <div className="flex flex-wrap items-center gap-2">
@@ -2832,7 +2832,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
 
       {/* Top Clients par CA */}
       {clientRevenue.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Top clients par CA Brut</h3>
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-4">
             {(() => {
@@ -2844,7 +2844,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                 return (
                   <div
                     key={index}
-                    className="flex flex-col items-center text-center gap-1 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 p-3 sm:p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                    className="flex flex-col items-center text-center gap-1 rounded-xl bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-800 p-3 sm:p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
                   >
                     <p className="w-full text-[11px] sm:text-xs font-medium text-gray-600 dark:text-gray-400 truncate" title={client.name}>
                       {client.name}
@@ -2868,7 +2868,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
 
       {/* Actions d'export */}
       <div className="flex flex-col xl:flex-row gap-3">
-        <div className="flex-1 min-w-[240px] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800/80 shadow-sm p-4">
+        <div className="flex-1 min-w-[240px] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-900/80 shadow-sm p-4">
           <div className="flex flex-col sm:flex-row items-center sm:items-start justify-center sm:justify-between gap-3 text-center sm:text-left">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200">
@@ -2912,7 +2912,7 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
           </div>
         </div>
 
-        <div className="flex-1 min-w-[240px] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800/80 shadow-sm p-4">
+        <div className="flex-1 min-w-[240px] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-900/80 shadow-sm p-4">
           <div className="flex flex-col sm:flex-row items-center sm:items-start justify-center sm:justify-between gap-3 text-center sm:text-left">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-200">

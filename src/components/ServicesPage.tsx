@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { CheckCircle, ChevronLeft, ChevronRight, Circle, Clock, Edit2, Filter, Plus, Search, Trash, Trash2, X, Package, Calendar, List } from 'lucide-react';
+import { CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Edit2, Filter, Plus, Search, Trash, Trash2, X, Package, Calendar, List } from 'lucide-react';
 import { useApp } from '../contexts/AppContext.tsx';
 import { useSettings } from '../hooks/useSettings.ts';
 import { createService, updateService as updateServiceApi, deleteService as deleteServiceApi } from '../lib/api.ts';
@@ -315,6 +315,7 @@ export default function ServicesPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
   const [clientFilter, setClientFilter] = useState<string>('');
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   
   // États pour le système de glissement des prestations
   const [slidingStates, setSlidingStates] = useState<{[key: string]: {currentIndex: number, isSliding: boolean}}>({});
@@ -842,26 +843,6 @@ export default function ServicesPage() {
   return (
     <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 text-white shadow-lg overflow-hidden">
-        {/* Bouton Articles - coin haut droit du header */}
-        {currentTab === 'services' ? (
-          <button
-            type="button"
-            onClick={() => setCurrentTab('articles')}
-            title="Gérer les articles"
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur transition-colors border border-white/25"
-          >
-            <Package className="w-4 h-4" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setCurrentTab('services')}
-            title="Retour aux prestations"
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur transition-colors border border-white/25"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-        )}
         {/* Traits qui traversent tout le header */}
         <div className="absolute inset-0 opacity-20">
           {/* Traits horizontaux qui traversent */}
@@ -883,7 +864,7 @@ export default function ServicesPage() {
             <h1 className="text-xl sm:text-2xl font-bold">Prestations</h1>
             <p className="text-white/80 mt-1 text-sm sm:text-base">Suivi et facturation de vos prestations professionnelles</p>
           </div>
-          <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end">
+          <div className="mt-4 sm:mt-0 flex justify-center sm:justify-end items-center gap-2">
             <button
               type="button"
               onClick={() => currentTab === 'services' ? setShowModal(true) : setShowArticleModal(true)}
@@ -897,18 +878,37 @@ export default function ServicesPage() {
                 {currentTab === 'services' ? 'Nouvelle' : 'Nouveau'}
               </span>
             </button>
+            {currentTab === 'services' ? (
+              <button
+                type="button"
+                onClick={() => setCurrentTab('articles')}
+                title="Gérer les articles"
+                className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur transition-colors border border-white/25 flex-shrink-0"
+              >
+                <Package className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCurrentTab('services')}
+                title="Retour aux prestations"
+                className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur transition-colors border border-white/25 flex-shrink-0"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Boutons de vue pour les prestations */}
       {currentTab === 'services' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Vue des prestations
             </h3>
-            <div className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full">
+            <div className="relative inline-flex items-center bg-gray-100 dark:bg-slate-800/50 p-1 rounded-full">
               {/* Indicateur animé qui glisse */}
               {indicatorStyle.width > 0 && (
                 <div
@@ -957,39 +957,64 @@ export default function ServicesPage() {
         <>
           {currentView === 'list' ? (
             <>
-              {/* Filtres et recherche modernes */}
-              <div className="bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-3 sm:p-6 shadow-lg">
-                <div className="flex items-center justify-between mb-3 sm:mb-6">
+              {/* Filtres et recherche modernes - repliés par défaut */}
+              <div className="bg-gradient-to-r from-white to-gray-50 dark:from-slate-900 dark:to-slate-950 rounded-2xl border border-gray-200 dark:border-slate-800 p-3 sm:p-6 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => setFiltersExpanded(prev => !prev)}
+                  className="w-full flex items-center justify-between"
+                  aria-expanded={filtersExpanded}
+                >
                   <div className="flex items-center">
                     <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-2 sm:mr-3">
                       <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <div>
+                    <div className="text-left">
                       <h3 className="text-sm sm:text-lg font-bold text-gray-900 dark:text-white">Filtres et recherche</h3>
-                      <p className="hidden sm:block text-sm text-gray-500 dark:text-gray-400">Affinez vos résultats</p>
+                      <p className="hidden sm:block text-sm text-gray-500 dark:text-gray-400">
+                        {(query || clientFilter || sortBy !== 'date' || sortDir !== 'desc')
+                          ? `${sortedServices.length} prestation${sortedServices.length !== 1 ? 's' : ''} · filtres actifs`
+                          : 'Affinez vos résultats'}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Bouton de réinitialisation */}
-                  {(query || clientFilter || sortBy !== 'date' || sortDir !== 'desc') && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQuery('');
-                        setClientFilter('');
-                        setSortBy('date');
-                        setSortDir('desc');
-                      }}
-                      className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
-                      Réinitialiser
-                    </button>
-                  )}
-                </div>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    {/* Bouton de réinitialisation */}
+                    {(query || clientFilter || sortBy !== 'date' || sortDir !== 'desc') && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setQuery('');
+                          setClientFilter('');
+                          setSortBy('date');
+                          setSortDir('desc');
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.stopPropagation();
+                            setQuery('');
+                            setClientFilter('');
+                            setSortBy('date');
+                            setSortDir('desc');
+                          }
+                        }}
+                        className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
+                        Réinitialiser
+                      </span>
+                    )}
+                    <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500 flex-shrink-0 transition-transform duration-300 ${filtersExpanded ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
 
+                <div className={`grid transition-all duration-300 ease-in-out ${filtersExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                  <div className="overflow-hidden">
                 {/* Champs de filtre - largeur contenue, pas étirés sur toute la largeur */}
-                <div className="flex flex-col md:flex-row md:flex-wrap gap-2.5 sm:gap-4">
+                <div className="flex flex-col md:flex-row md:flex-wrap gap-2.5 sm:gap-4 pt-3 sm:pt-6">
                   {/* Recherche */}
                   <div className="space-y-1 sm:space-y-2 w-full md:w-auto md:flex-1 md:min-w-[220px] md:max-w-sm">
                     <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
@@ -1002,7 +1027,7 @@ export default function ServicesPage() {
                         placeholder="Client, description..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        className="w-full pl-9 sm:pl-10 pr-9 sm:pr-10 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base transition-all duration-200"
+                        className="w-full pl-9 sm:pl-10 pr-9 sm:pr-10 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm sm:text-base transition-all duration-200"
                       />
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                       {query && (
@@ -1082,6 +1107,8 @@ export default function ServicesPage() {
                     <div className="flex items-center space-x-2 mt-3 sm:mt-0"></div>
                   </div>
                 </div>
+                  </div>
+                </div>
               </div>
 
       {/* Sélection multiple: panneau supprimé, actions déplacées à l'emplacement du bouton */}
@@ -1102,7 +1129,7 @@ export default function ServicesPage() {
               </p>
               <div className="space-y-2">
                 {orphanedServices.map(service => (
-                  <div key={service.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 rounded-lg border border-yellow-200 dark:border-yellow-600">
+                  <div key={service.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-yellow-200 dark:border-yellow-600">
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">{service.description || 'Sans description'}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1239,15 +1266,16 @@ export default function ServicesPage() {
       <div className="flex justify-end mb-4">
         {!isSelectionMode ? (
           <button
+            key="mode-selection"
             type="button"
             onClick={toggleSelectionMode}
-            className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm"
+            className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm animate-in fade-in zoom-in-95 duration-300 ease-out"
           >
             <CheckCircle className="w-4 h-4 mr-2" />
             Mode sélection
           </button>
         ) : (
-          <div className="flex items-center space-x-2">
+          <div key="selection-actions" className="flex items-center space-x-2 animate-in fade-in zoom-in-95 slide-in-from-right-2 duration-300 ease-out">
             <button
               type="button"
               onClick={handleBulkDelete}
@@ -1260,7 +1288,7 @@ export default function ServicesPage() {
             <button
               type="button"
               onClick={toggleSelectionMode}
-              className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+              className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
             >
               Annuler
             </button>
@@ -1270,7 +1298,7 @@ export default function ServicesPage() {
     )}
 
       {/* Tableau des prestations */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-800 overflow-hidden">
         {/* Vue mobile - Cards */}
         <div className="block lg:hidden">
           {/* Bouton Tout sélectionner pour mobile */}
@@ -1349,7 +1377,7 @@ export default function ServicesPage() {
                           <button
                             type="button"
                             onClick={() => handleEdit(service)}
-                            className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
+                            className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-slate-800/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
                             title="Modifier"
                           >
                             <Edit2 className="w-3 h-3" />
@@ -1357,7 +1385,7 @@ export default function ServicesPage() {
                           <button
                             type="button"
                             onClick={() => handleDelete(service.id)}
-                            className="p-2 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all"
+                            className="p-2 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-slate-800/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all"
                             title="Supprimer"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -1375,7 +1403,7 @@ export default function ServicesPage() {
         {/* Vue desktop - Table */}
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full table-auto">
-            <thead className="bg-gray-50 dark:bg-gray-700">
+            <thead className="bg-gray-50 dark:bg-slate-800">
               <tr>
                 {isSelectionMode && (
                   <th className="w-14 px-3 py-3 text-left">
@@ -1439,7 +1467,7 @@ export default function ServicesPage() {
                 const amount = calculateAmount(service.hours, service.hourly_rate);
                 
                 return (
-                  <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                  <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                     {isSelectionMode && (
                       <td className="w-14 px-3 py-3 whitespace-nowrap">
                         <button
@@ -1532,7 +1560,7 @@ export default function ServicesPage() {
                         <button
                           type="button"
                           onClick={() => handleEdit(service)}
-                          className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
+                          className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-slate-800/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                         >
                           <Edit2 className="w-3 h-3 mr-1" />
                           Modifier
@@ -1540,7 +1568,7 @@ export default function ServicesPage() {
                         <button
                           type="button"
                           onClick={() => handleDelete(service.id)}
-                          className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
+                          className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-slate-800/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -1555,7 +1583,7 @@ export default function ServicesPage() {
         
         {/* Pagination */}
         {(
-          <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+          <div className="bg-gray-50 dark:bg-slate-800 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-1">
                 {/* Bouton Première page */}
@@ -1652,7 +1680,7 @@ export default function ServicesPage() {
           ) : (
             /* Vue Calendrier */
             <div 
-              className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden w-full"
+              className="bg-white dark:bg-slate-950 rounded-xl sm:rounded-3xl border border-gray-200 dark:border-slate-800 shadow-2xl overflow-hidden w-full"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -1744,7 +1772,7 @@ export default function ServicesPage() {
                       <div key={day} className={`p-1 sm:p-2 md:p-3 text-center text-xs sm:text-sm font-bold rounded-lg sm:rounded-xl transition-all duration-300 ${
                         index === 5 || index === 6 
                           ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' 
-                          : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800'
+                          : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-900'
                       }`}>
                         <span className="hidden sm:inline">{day}</span>
                         <span className="sm:hidden">{day.charAt(0)}</span>
@@ -1770,8 +1798,8 @@ export default function ServicesPage() {
                               ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-indigo-400 shadow-xl ring-4 ring-indigo-200/50'
                               : isWeekend
                               ? 'bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 border-rose-200 dark:border-rose-700 hover:shadow-rose-200/50'
-                              : 'bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 border-gray-200 dark:border-gray-600 hover:shadow-gray-200/50'
-                            : 'bg-gradient-to-br from-gray-100/50 to-gray-200/50 dark:from-gray-700/30 dark:to-gray-600/30 border-gray-300/50 dark:border-gray-500/50'
+                              : 'bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-slate-800 border-gray-200 dark:border-gray-600 hover:shadow-gray-200/50'
+                            : 'bg-gradient-to-br from-gray-100/50 to-gray-200/50 dark:from-slate-800/30 dark:to-gray-600/30 border-gray-300/50 dark:border-gray-500/50'
                         } ${!isCurrentMonth ? 'opacity-60' : ''}`}
                       >
                         {/* Numéro du jour - Design moderne */}
@@ -1943,7 +1971,7 @@ export default function ServicesPage() {
                                   e.stopPropagation();
                                   slideToPrev(date, dayServices);
                                 }}
-                                className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-white/90 dark:bg-gray-700/90 hover:bg-white dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors shadow-md border border-gray-200 dark:border-gray-600"
+                                className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors shadow-md border border-gray-200 dark:border-gray-600"
                                 title="Prestation précédente"
                               >
                                 <ChevronLeft className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-gray-600 dark:text-gray-300" />
@@ -1954,7 +1982,7 @@ export default function ServicesPage() {
                                   e.stopPropagation();
                                   slideToNext(date, dayServices);
                                 }}
-                                className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-white/90 dark:bg-gray-700/90 hover:bg-white dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors shadow-md border border-gray-200 dark:border-gray-600"
+                                className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors shadow-md border border-gray-200 dark:border-gray-600"
                                 title="Prestation suivante"
                               >
                                 <ChevronRight className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 text-gray-600 dark:text-gray-300" />
@@ -1985,7 +2013,7 @@ export default function ServicesPage() {
               </div>
 
               {/* Légende des couleurs */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-gray-600 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-600">
                 <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 rounded-md bg-emerald-500 border border-emerald-600"></div>
@@ -2008,7 +2036,7 @@ export default function ServicesPage() {
         /* Section Articles */
         <div className="space-y-6">
           {/* Articles list */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
             {articles.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="mx-auto h-12 w-12 text-gray-400" />
@@ -2036,7 +2064,7 @@ export default function ServicesPage() {
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                             article.is_active 
                               ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                              : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200'
                           }`}>
                             {article.is_active ? 'Actif' : 'Inactif'}
                           </span>
@@ -2085,7 +2113,7 @@ export default function ServicesPage() {
                 {/* Vue desktop - Table */}
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full divide-y divide-gray-200 dark:divide-gray-600">
-                    <thead className="bg-gray-50 dark:bg-gray-700">
+                    <thead className="bg-gray-50 dark:bg-slate-800">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                           Nom
@@ -2107,9 +2135,9 @@ export default function ServicesPage() {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
+                    <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-gray-600">
                       {articles.map((article) => (
-                        <tr key={article.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <tr key={article.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                             {article.name}
                           </td>
@@ -2126,7 +2154,7 @@ export default function ServicesPage() {
                             <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                               article.is_active 
                                 ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                                : 'bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-gray-200'
                             }`}>
                               {article.is_active ? 'Actif' : 'Inactif'}
                             </span>
@@ -2164,7 +2192,7 @@ export default function ServicesPage() {
 
       {showModal && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[85vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 px-3 py-3 sm:p-4 md:p-6 text-white relative overflow-hidden flex-shrink-0">
               {/* Decorative lines - consistent with other page headers */}
@@ -2203,7 +2231,7 @@ export default function ServicesPage() {
             
             <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Scrollable content area */}
-            <div className="overflow-y-auto flex-1 min-h-0 p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-blue-600">
+            <div className="overflow-y-auto flex-1 min-h-0 p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-slate-800 hover:scrollbar-thumb-blue-600">
               <CustomSelect
                 label="Client *"
                 value={formData.client_id}
@@ -2280,7 +2308,7 @@ export default function ServicesPage() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                   placeholder="Détails de la prestation..."
                 />
               </div>
@@ -2302,7 +2330,7 @@ export default function ServicesPage() {
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                       placeholder="jj/mm/aaaa"
-                      className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                      className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                     />
                   </div>
                 </div>
@@ -2323,7 +2351,7 @@ export default function ServicesPage() {
                           value={dailyEndDate}
                           onChange={(e) => setDailyEndDate(e.target.value)}
                           placeholder="jj/mm/aaaa"
-                          className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
+                          className="w-full min-w-0 px-3 py-3 sm:px-2.5 sm:py-2 md:px-3 md:py-2.5 text-base sm:text-sm border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white min-h-[44px] sm:min-h-0 relative"
                         />
                       </div>
                     </div>
@@ -2358,7 +2386,7 @@ export default function ServicesPage() {
                       setHoursInputValue(h === 0 ? '' : String(h).replace('.', ','));
                     }}
                     readOnly={formData.pricing_type === 'daily'}
-                    className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formData.pricing_type === 'daily' ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed' : ''}`}
+                    className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white ${formData.pricing_type === 'daily' ? 'bg-gray-50 dark:bg-slate-900 cursor-not-allowed' : ''}`}
                   />
                   {formData.pricing_type === 'daily' && (
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Calculé automatiquement à partir des dates.</p>
@@ -2384,7 +2412,7 @@ export default function ServicesPage() {
                         hourly_rate: rawValue === '' ? 0 : Number.isNaN(parsedValue) ? 0 : parsedValue,
                       });
                     }}
-                    className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                   />
                 </div>
                 <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-4 flex flex-col justify-center">
@@ -2406,12 +2434,12 @@ export default function ServicesPage() {
             </div>
 
             {/* Footer with buttons - always visible */}
-            <div className="flex-shrink-0 p-4 sm:p-5 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+            <div className="flex-shrink-0 p-4 sm:p-5 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-900">
               <div className="flex flex-row space-x-3">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="flex-1 px-3 py-2.5 sm:px-4 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm font-medium"
+                  className="flex-1 px-3 py-2.5 sm:px-4 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors text-xs sm:text-sm font-medium"
                 >
                   Annuler
                 </button>
@@ -2432,7 +2460,7 @@ export default function ServicesPage() {
       {showArticleModal && (
         <div className="space-y-6">
           {/* Liste des articles */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-800 overflow-hidden">
             {/* Vue mobile - Cards */}
             <div className="block lg:hidden">
               {articles.map((article) => (
@@ -2465,7 +2493,7 @@ export default function ServicesPage() {
                           <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
                             article.is_active 
                               ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                              : 'bg-gray-100 text-gray-800 dark:bg-slate-950/20 dark:text-gray-400'
                           }`}>
                             {article.is_active ? 'Actif' : 'Inactif'}
                           </span>
@@ -2473,7 +2501,7 @@ export default function ServicesPage() {
                             <button
                               type="button"
                               onClick={() => handleEditArticle(article)}
-                              className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
+                              className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-slate-800/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
                               title="Modifier"
                             >
                               <Edit2 className="w-3 h-3" />
@@ -2481,7 +2509,7 @@ export default function ServicesPage() {
                             <button
                               type="button"
                               onClick={() => handleDeleteArticle(article.id)}
-                              className="p-2 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all"
+                              className="p-2 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-slate-800/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all"
                               title="Supprimer"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -2498,7 +2526,7 @@ export default function ServicesPage() {
             {/* Vue desktop - Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-slate-800">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Article
@@ -2522,7 +2550,7 @@ export default function ServicesPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                   {articles.map((article) => (
-                    <tr key={article.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <tr key={article.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="w-8 h-8 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center mr-3">
@@ -2554,7 +2582,7 @@ export default function ServicesPage() {
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           article.is_active
                             ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-                            : 'bg-gray-100 dark:bg-gray-900/20 text-gray-800 dark:text-gray-300'
+                            : 'bg-gray-100 dark:bg-slate-950/20 text-gray-800 dark:text-gray-300'
                         }`}>
                           {article.is_active ? 'Actif' : 'Inactif'}
                         </span>
@@ -2564,7 +2592,7 @@ export default function ServicesPage() {
                           <button
                             type="button"
                             onClick={() => handleEditArticle(article)}
-                            className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs"
+                            className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-slate-800/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs"
                           >
                             <Edit2 className="w-3 h-3 mr-1" />
                             Modifier
@@ -2572,7 +2600,7 @@ export default function ServicesPage() {
                           <button
                             type="button"
                             onClick={() => handleDeleteArticle(article.id)}
-                            className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs"
+                            className="inline-flex items-center px-3 py-1.5 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-slate-800/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -2601,7 +2629,7 @@ export default function ServicesPage() {
       {/* Modal de création/édition d'article */}
       {showArticleModal && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
               <div className="absolute inset-0 opacity-20">
@@ -2638,7 +2666,7 @@ export default function ServicesPage() {
             
             <form onSubmit={handleArticleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Contenu scrollable */}
-            <div className="overflow-y-auto flex-1 min-h-0 p-4 sm:p-6 space-y-4 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-blue-600">
+            <div className="overflow-y-auto flex-1 min-h-0 p-4 sm:p-6 space-y-4 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100 dark:scrollbar-track-slate-800 hover:scrollbar-thumb-blue-600">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -2649,7 +2677,7 @@ export default function ServicesPage() {
                       required
                       value={articleFormData.name}
                       onChange={(e) => setArticleFormData({ ...articleFormData, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                       placeholder="Ex: Développement web, Conseil..."
                     />
                   </div>
@@ -2662,7 +2690,7 @@ export default function ServicesPage() {
                       value={articleFormData.description}
                       onChange={(e) => setArticleFormData({ ...articleFormData, description: e.target.value })}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                       placeholder="Description détaillée de la prestation..."
                     />
                   </div>
@@ -2688,7 +2716,7 @@ export default function ServicesPage() {
                       required
                       value={articleFormData.hourly_rate || ''}
                       onChange={(e) => setArticleFormData({ ...articleFormData, hourly_rate: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                     />
                   </div>
                   
@@ -2700,7 +2728,7 @@ export default function ServicesPage() {
                       type="text"
                       value={articleFormData.category}
                       onChange={(e) => setArticleFormData({ ...articleFormData, category: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                       placeholder="Ex: Développement, Design..."
                     />
                   </div>
@@ -2712,7 +2740,7 @@ export default function ServicesPage() {
                     id="is_active"
                     checked={articleFormData.is_active}
                     onChange={(e) => setArticleFormData({ ...articleFormData, is_active: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-full focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-900 focus:ring-2 dark:bg-slate-800 dark:border-gray-600"
                   />
                   <label htmlFor="is_active" className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Article actif
@@ -2721,12 +2749,12 @@ export default function ServicesPage() {
             </div>
 
             {/* Footer with buttons - always visible */}
-            <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+            <div className="flex-shrink-0 p-4 sm:p-6 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-900">
               <div className="flex flex-row space-x-3">
                 <button
                   type="button"
                   onClick={resetArticleForm}
-                  className="flex-1 px-4 py-2.5 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2.5 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium"
                 >
                   Annuler
                 </button>
@@ -2748,7 +2776,7 @@ export default function ServicesPage() {
       {/* Modal mobile pour afficher les prestations d'un jour */}
       {selectedDateForModal && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setSelectedDateForModal(null)}>
-          <div className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md max-h-[85vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md max-h-[85vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="flex-shrink-0 bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 rounded-t-3xl sm:rounded-t-2xl">
               <div className="flex items-center justify-between">
@@ -2815,7 +2843,7 @@ export default function ServicesPage() {
 
       {selectedDayServices.length > 0 && (
         <div className="modal-overlay bg-black/60 backdrop-blur-sm flex items-center justify-center pt-4 pb-12 sm:p-4 sm:p-6 px-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg lg:max-w-2xl max-h-[70vh] sm:max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="flex-shrink-0 bg-gradient-to-r from-orange-600 via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-700 dark:to-orange-800 p-4 md:p-6 lg:p-8 text-white relative overflow-hidden">
               <div className="absolute inset-0 opacity-20">
@@ -2897,7 +2925,7 @@ export default function ServicesPage() {
                 </div>
                 
                 {/* Total du jour */}
-                <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-xl border border-gray-200 dark:border-gray-600">
+                <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-gray-600 rounded-xl border border-gray-200 dark:border-gray-600">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold text-gray-900 dark:text-white">Total du jour:</span>
                     <span className="text-2xl font-bold text-gray-900 dark:text-white">

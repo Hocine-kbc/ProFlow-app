@@ -359,15 +359,15 @@ export default function MessagesPage() {
 
 
   return (
-    <div className="flex flex-col lg:flex-row w-full h-full min-h-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden backdrop-blur-sm">
+    <div className="flex flex-col lg:flex-row w-full h-full min-h-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-950 dark:to-slate-900 rounded-xl shadow-2xl border border-gray-200/50 dark:border-slate-800/50 overflow-hidden backdrop-blur-sm">
       {/* Sidebar des conversations - Design moderne */}
       <div
-        className={`w-full lg:w-80 xl:w-96 border-r border-gray-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg flex-shrink-0 flex flex-col ${
+        className={`w-full lg:w-80 xl:w-96 border-r border-gray-200/50 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg flex-shrink-0 flex flex-col ${
           isMobileListView ? 'flex' : 'hidden'
         } lg:flex`}
       >
         {/* Header sidebar avec gradient */}
-        <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 dark:from-blue-600 dark:via-blue-700 dark:to-indigo-700">
+        <div className="p-6 border-b border-gray-200/50 dark:border-slate-800/50 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 dark:from-blue-600 dark:via-blue-700 dark:to-indigo-700">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -406,7 +406,7 @@ export default function MessagesPage() {
               placeholder="Rechercher une conversation..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-[52px] pr-11 py-3.5 bg-white/10 hover:bg-white/15 focus:bg-white/20 backdrop-blur-md border-2 border-white/10 hover:border-white/20 focus:border-white/30 rounded-2xl text-sm font-medium text-white placeholder-white/40 focus:placeholder-white/50 focus:outline-none transition-all duration-300 shadow-md hover:shadow-lg focus:shadow-xl"
+              className="w-full pl-[52px] pr-11 py-3.5 bg-white/10 hover:bg-white/15 focus:bg-white/20 backdrop-blur-md border-2 border-white/10 hover:border-white/20 focus:border-white/30 rounded-full text-sm font-medium text-white placeholder-white/40 focus:placeholder-white/50 focus:outline-none transition-all duration-300 shadow-md hover:shadow-lg focus:shadow-xl"
             />
             {searchQuery && (
               <button
@@ -458,7 +458,7 @@ export default function MessagesPage() {
                 className={`group w-full p-4 rounded-xl transition-all duration-200 ${
                   selectedConversation?.id === conversation.id
                     ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 shadow-md border-2 border-blue-300 dark:border-blue-600 transform scale-[1.02]'
-                    : 'bg-white/50 dark:bg-gray-700/30 hover:bg-white/80 dark:hover:bg-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 hover:shadow-md hover:scale-[1.01]'
+                    : 'bg-white/50 dark:bg-slate-800/30 hover:bg-white/80 dark:hover:bg-slate-800/50 border border-gray-200/50 dark:border-gray-600/50 hover:shadow-md hover:scale-[1.01]'
                 }`}
               >
                 <div className="flex items-start gap-4">
@@ -478,7 +478,7 @@ export default function MessagesPage() {
                         <User className="w-7 h-7 text-white" />
                       </div>
                       {conversation.unread_count > 0 && (
-                        <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-gray-800">
+                        <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900">
                           {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
                         </span>
                       )}
@@ -544,14 +544,14 @@ export default function MessagesPage() {
       </div>
 
       <div
-        className={`flex-1 flex flex-col bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm min-h-0 mt-2 lg:mt-0 ${
+        className={`flex-1 flex flex-col bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm min-h-0 mt-2 lg:mt-0 ${
           isMobileListView ? 'hidden' : 'flex'
         } lg:flex`}
       >
         {selectedConversation ? (
           <>
             {/* Header de conversation avec gradient */}
-            <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900/50 backdrop-blur-lg">
+            <div className="p-6 border-b border-gray-200/50 dark:border-slate-800/50 bg-gradient-to-r from-white to-gray-50 dark:from-slate-900 dark:to-slate-950/50 backdrop-blur-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   {/* Bouton retour mobile */}
@@ -561,7 +561,7 @@ export default function MessagesPage() {
                       setSelectedConversation(null);
                       setIsMobileListView(true);
                     }}
-                    className="md:hidden mr-1 p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    className="md:hidden mr-1 p-2 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                     title="Retour aux conversations"
                   >
                     <ArrowLeft className="w-5 h-5" />
@@ -595,7 +595,7 @@ export default function MessagesPage() {
             </div>
 
             {/* Messages - Design moderne avec bulles */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-gradient-to-b from-gray-50/50 to-transparent dark:from-gray-900/30 dark:to-transparent min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-gradient-to-b from-gray-50/50 to-transparent dark:from-slate-950/30 dark:to-transparent min-h-0">
               {loading && messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
@@ -626,7 +626,7 @@ export default function MessagesPage() {
                       <div className={`flex items-start gap-3 max-w-[85%] sm:max-w-[75%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                         {/* Avatar pour les messages reçus */}
                         {!isOwn && (
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center flex-shrink-0 shadow-md">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-slate-800 flex items-center justify-center flex-shrink-0 shadow-md">
                             <User className="w-5 h-5 text-white" />
                           </div>
                         )}
@@ -642,7 +642,7 @@ export default function MessagesPage() {
                             className={`rounded-2xl px-5 py-4 shadow-lg ${
                               isOwn
                                 ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-br-md'
-                                : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 rounded-bl-md'
+                                : 'bg-white dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 rounded-bl-md'
                             }`}
                           >
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
@@ -723,7 +723,7 @@ export default function MessagesPage() {
             </div>
 
             {/* Formulaire d'envoi - Design moderne */}
-            <div className="p-4 sm:p-6 border-t border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900/50 backdrop-blur-lg">
+            <div className="p-4 sm:p-6 border-t border-gray-200/50 dark:border-slate-800/50 bg-gradient-to-r from-white to-gray-50 dark:from-slate-900 dark:to-slate-950/50 backdrop-blur-lg">
               {/* Pièces jointes uploadées */}
               {uploadedAttachments.length > 0 && (
                 <div className="mb-4 flex flex-wrap gap-2">
@@ -758,7 +758,7 @@ export default function MessagesPage() {
                 placeholder="Sujet (optionnel)"
                 value={messageSubject}
                 onChange={(e) => setMessageSubject(e.target.value)}
-                className="w-full mb-3 px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                className="w-full mb-3 px-5 py-3 bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-gray-600 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
               />
               <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
                 <input
@@ -771,7 +771,7 @@ export default function MessagesPage() {
                 />
                 <label
                   htmlFor="file-upload"
-                  className="p-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                  className="p-3 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all cursor-pointer shadow-sm hover:shadow-md"
                   title="Ajouter des pièces jointes"
                 >
                   {uploading ? (
@@ -792,7 +792,7 @@ export default function MessagesPage() {
                     }
                   }}
                   rows={3}
-                  className="flex-1 px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-2xl sm:rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-sm"
+                  className="flex-1 px-5 py-3 bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-sm"
                 />
                 <button
                   type="button"
@@ -809,12 +809,12 @@ export default function MessagesPage() {
                 </button>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-                💡 Appuyez sur <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Entrée</kbd> pour envoyer, <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Shift+Entrée</kbd> pour une nouvelle ligne
+                💡 Appuyez sur <kbd className="px-2 py-1 bg-gray-200 dark:bg-slate-800 rounded text-xs font-mono">Entrée</kbd> pour envoyer, <kbd className="px-2 py-1 bg-gray-200 dark:bg-slate-800 rounded text-xs font-mono">Shift+Entrée</kbd> pour une nouvelle ligne
               </p>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50/50 to-transparent dark:from-gray-900/30 dark:to-transparent">
+          <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50/50 to-transparent dark:from-slate-950/30 dark:to-transparent">
             <div className="text-center p-8">
               <div className="w-32 h-32 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 dark:from-blue-900/30 dark:via-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center shadow-xl">
                 <MessageCircle className="w-16 h-16 text-blue-500 dark:text-blue-400 opacity-60" />
@@ -842,11 +842,11 @@ export default function MessagesPage() {
       {showDeleteConfirm.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowDeleteConfirm({ isOpen: false, messageId: null, type: 'message' })}>
           <div 
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 transform transition-all"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-slate-800 transform transition-all"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-xl">
                   <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
@@ -858,7 +858,7 @@ export default function MessagesPage() {
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm({ isOpen: false, messageId: null, type: 'message' })}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -874,11 +874,11 @@ export default function MessagesPage() {
             </div>
 
             {/* Footer fixe */}
-            <div className="flex-shrink-0 flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex-shrink-0 flex gap-3 p-6 border-t border-gray-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm({ isOpen: false, messageId: null, type: 'message' })}
-                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-medium"
+                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-medium"
               >
                 Annuler
               </button>
@@ -898,11 +898,11 @@ export default function MessagesPage() {
       {showNewMessageModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowNewMessageModal(false)}>
           <div 
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 transform transition-all"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-slate-800 transform transition-all"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
                   <Plus className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -918,7 +918,7 @@ export default function MessagesPage() {
                   setRecipientEmail('');
                   setRecipientId('');
                 }}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -942,7 +942,7 @@ export default function MessagesPage() {
                         handleNewConversation();
                       }
                     }}
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-600 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     autoFocus
                   />
                 </div>
@@ -963,7 +963,7 @@ export default function MessagesPage() {
             </div>
 
             {/* Footer fixe */}
-            <div className="flex-shrink-0 p-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex-shrink-0 p-6 border-t border-gray-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={handleNewConversation}

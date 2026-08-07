@@ -374,12 +374,12 @@ export default function ProfilePage() {
 
       <form id="profile-form" onSubmit={handleSave} className="space-y-4 sm:space-y-6">
         {/* Company Logo Section - Version améliorée et responsive */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-5 lg:p-6">
           <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
             {/* Logo et informations */}
             <div className="flex items-center space-x-3 sm:space-x-4">
               {/* Logo */}
-              <div className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 flex-shrink-0">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-gray-600 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 flex-shrink-0">
                 {settings.logoUrl ? (
                   <img src={settings.logoUrl} alt="Logo entreprise" className="w-full h-full object-cover" />
                 ) : (
@@ -411,7 +411,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={handleLogoEdit}
-                    className="flex items-center space-x-1 sm:space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-all duration-200 font-medium text-xs sm:text-sm"
+                    className="flex items-center space-x-1 sm:space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-all duration-200 font-medium text-xs sm:text-sm"
                   >
                     <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">Modifier</span>
@@ -419,7 +419,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={handleLogoDelete}
-                    className="flex items-center space-x-1 sm:space-x-2 px-3 py-2 bg-gray-100 hover:bg-red-50 dark:bg-gray-700 dark:hover:bg-red-900/20 text-gray-600 hover:text-red-600 dark:text-gray-300 dark:hover:text-red-400 rounded-lg transition-all duration-200 font-medium text-xs sm:text-sm"
+                    className="flex items-center space-x-1 sm:space-x-2 px-3 py-2 bg-gray-100 hover:bg-red-50 dark:bg-slate-800 dark:hover:bg-red-900/20 text-gray-600 hover:text-red-600 dark:text-gray-300 dark:hover:text-red-400 rounded-lg transition-all duration-200 font-medium text-xs sm:text-sm"
                   >
                     <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">Supprimer</span>
@@ -429,7 +429,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={handleLogoEdit}
-                  className="flex items-center space-x-1 sm:space-x-2 px-4 py-2 bg-gray-100 hover:bg-indigo-50 dark:bg-gray-700 dark:hover:bg-indigo-900/20 text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 rounded-lg transition-all duration-200 font-medium text-xs sm:text-sm"
+                  className="flex items-center space-x-1 sm:space-x-2 px-4 py-2 bg-gray-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-indigo-900/20 text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 rounded-lg transition-all duration-200 font-medium text-xs sm:text-sm"
                 >
                   <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">Ajouter un logo</span>
@@ -441,7 +441,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Company Information - Version améliorée et responsive */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-4 sm:p-5 lg:p-6">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center">
             <Building2 className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
             Informations de l'entreprise
@@ -455,7 +455,7 @@ export default function ProfilePage() {
               </label>
               <input 
                 type="text" 
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white" 
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white" 
                 value={settings.companyName} 
                 onChange={(e) => handleInputChange('companyName', e.target.value)}
                 placeholder="Nom de votre entreprise"
@@ -470,7 +470,7 @@ export default function ProfilePage() {
                 </label>
                 <input 
                   type="text" 
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white" 
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white" 
                   value={settings.ownerFirstName} 
                   onChange={(e) => handleInputChange('ownerFirstName', e.target.value)}
                   placeholder="Votre prénom"
@@ -483,7 +483,7 @@ export default function ProfilePage() {
                 </label>
                 <input 
                   type="text" 
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white" 
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white" 
                   value={settings.ownerLastName} 
                   onChange={(e) => handleInputChange('ownerLastName', e.target.value)}
                   placeholder="Votre nom de famille"
@@ -494,7 +494,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Contact Information - Version améliorée et responsive */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-4 sm:p-5 lg:p-6">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center">
             <Mail className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
             Coordonnées de contact
@@ -508,7 +508,7 @@ export default function ProfilePage() {
               </label>
               <input 
                 type="email" 
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white" 
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white" 
                 value={settings.email} 
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="contact@votre-entreprise.fr"
@@ -522,7 +522,7 @@ export default function ProfilePage() {
               </label>
               <input 
                 type="tel" 
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white" 
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white" 
                 value={settings.phone} 
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="06 12 34 56 78"
@@ -535,7 +535,7 @@ export default function ProfilePage() {
                 Adresse complète
               </label>
               <textarea 
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white" 
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors resize-none bg-white dark:bg-slate-800 text-gray-900 dark:text-white" 
                 rows={3} 
                 value={settings.address} 
                 onChange={(e) => handleInputChange('address', e.target.value)}
@@ -546,7 +546,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Legal Information - Version améliorée et responsive */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-4 sm:p-5 lg:p-6">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center">
             <Hash className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
             Informations légales
@@ -560,7 +560,7 @@ export default function ProfilePage() {
               </label>
               <input 
                 type="text" 
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white" 
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white" 
                 value={settings.siret} 
                 onChange={(e) => handleInputChange('siret', e.target.value)}
                 placeholder="12345678901234"
@@ -571,7 +571,7 @@ export default function ProfilePage() {
         </div>
 
         {/* URSSAF Information - Nouvelle section */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-4 sm:p-5 lg:p-6">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center">
             <Scale className="w-5 h-5 mr-2 text-red-600 dark:text-red-400" />
             Type d'activité URSSAF
@@ -587,7 +587,7 @@ export default function ProfilePage() {
                 Type d'activité *
               </label>
               <select
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
                 value={settings.urssafActivity}
                 onChange={(e) => handleInputChange('urssafActivity', e.target.value)}
               >
@@ -609,7 +609,7 @@ export default function ProfilePage() {
       </form>
 
       {/* Section de modification de mot de passe - EN DEHORS du formulaire principal */}
-      <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 lg:p-8">
+      <div className="bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-slate-950 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 dark:border-slate-800 p-4 sm:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 lg:mb-8 space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
@@ -641,7 +641,7 @@ export default function ProfilePage() {
             {/* Effet de fond animé */}
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl animate-pulse"></div>
             
-            <form onSubmit={handlePasswordChange} className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl sm:rounded-2xl border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6 lg:p-8 shadow-xl">
+            <form onSubmit={handlePasswordChange} className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl sm:rounded-2xl border border-gray-200/50 dark:border-slate-800/50 p-4 sm:p-6 lg:p-8 shadow-xl">
               <div className="flex items-center space-x-3 mb-4 sm:mb-6">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
                   <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -668,7 +668,7 @@ export default function ProfilePage() {
                     <div className="relative group">
                       <input
                         type={showPasswords.current ? 'text' : 'password'}
-                        className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-10 sm:pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-indigo-300 dark:group-hover:border-indigo-500 text-sm sm:text-base"
+                        className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-10 sm:pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-full sm:rounded-full focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-indigo-300 dark:group-hover:border-indigo-500 text-sm sm:text-base"
                         value={passwordData.currentPassword}
                         onChange={(e) => handlePasswordInputChange('currentPassword', e.target.value)}
                         placeholder="Saisissez votre mot de passe actuel"
@@ -699,7 +699,7 @@ export default function ProfilePage() {
                   <div className="relative group">
                     <input
                       type={showPasswords.new ? 'text' : 'password'}
-                      className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-10 sm:pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-green-300 dark:group-hover:border-green-500 text-sm sm:text-base"
+                      className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-10 sm:pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-full sm:rounded-full focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-green-300 dark:group-hover:border-green-500 text-sm sm:text-base"
                       value={passwordData.newPassword}
                       onChange={(e) => handlePasswordInputChange('newPassword', e.target.value)}
                       placeholder="Saisissez votre nouveau mot de passe"
@@ -755,7 +755,7 @@ export default function ProfilePage() {
                   <div className="relative group">
                     <input
                       type={showPasswords.confirm ? 'text' : 'password'}
-                      className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-10 sm:pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-purple-300 dark:group-hover:border-purple-500 text-sm sm:text-base"
+                      className="w-full px-3 py-3 sm:px-4 sm:py-4 pr-10 sm:pr-12 border-2 border-gray-200 dark:border-gray-600 rounded-full sm:rounded-full focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-purple-300 dark:group-hover:border-purple-500 text-sm sm:text-base"
                       value={passwordData.confirmPassword}
                       onChange={(e) => handlePasswordInputChange('confirmPassword', e.target.value)}
                       placeholder="Confirmez votre nouveau mot de passe"
@@ -778,11 +778,11 @@ export default function ProfilePage() {
                 </div>
 
               {/* Boutons d'action en pilule */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700 justify-center">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 dark:border-slate-800 justify-center">
                 <button
                   type="button"
                   onClick={cancelPasswordChange}
-                  className="px-4 py-2.5 sm:px-6 sm:py-2.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full font-semibold transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 text-xs sm:text-sm"
+                  className="px-4 py-2.5 sm:px-6 sm:py-2.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full font-semibold transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 text-xs sm:text-sm"
                 >
                   <div className="flex items-center justify-center space-x-2">
                     <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
@@ -827,7 +827,7 @@ export default function ProfilePage() {
       {/* Modal de suppression personnalisée */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-slate-800">
             {/* Header avec icône d'alerte */}
             <div className="text-center mb-6">
               <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
@@ -875,14 +875,14 @@ export default function ProfilePage() {
               {/* Champ de confirmation */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
-                  Pour confirmer, tapez <span className="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-red-600 dark:text-red-400 font-bold">supprimer</span>
+                  Pour confirmer, tapez <span className="font-mono bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full text-red-600 dark:text-red-400 font-bold">supprimer</span>
                 </label>
                 <input
                   type="text"
                   value={deleteConfirmation}
                   onChange={(e) => setDeleteConfirmation(e.target.value)}
                   placeholder="Tapez 'supprimer' ici"
-                  className="w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center font-medium transition-all duration-200"
+                  className="w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-center font-medium transition-all duration-200"
                 />
               </div>
             </div>
@@ -895,7 +895,7 @@ export default function ProfilePage() {
                   setShowDeleteModal(false);
                   setDeleteConfirmation('');
                 }}
-                className="flex-1 px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                className="flex-1 px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 Annuler
               </button>

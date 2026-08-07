@@ -178,7 +178,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
         onClick={() => setIsOpen(!isOpen)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="relative p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="relative p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
         title="Notifications"
       >
         <Bell 
@@ -207,7 +207,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
           {/* Panel */}
           <div className="fixed inset-x-0 top-[76px] px-4 pb-6 md:inset-x-auto md:px-0 md:pb-0 md:fixed md:right-6 md:left-auto md:top-[72px] z-[110]">
             <div 
-              className="mx-auto md:mx-0 w-full md:w-[420px] max-w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[85vh] md:max-h-[700px] flex flex-col overflow-hidden"
+              className="mx-auto md:mx-0 w-full md:w-[420px] max-w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 max-h-[85vh] md:max-h-[700px] flex flex-col overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header avec gradient et traits décoratifs */}
@@ -262,7 +262,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
               </div>
 
               {/* Liste des notifications */}
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-50/50 dark:bg-gray-900/50 relative z-0">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-50/50 dark:bg-slate-950/50 relative z-0">
                 {loading ? (
                   <div className="p-12 text-center">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mb-3"></div>
@@ -270,7 +270,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
                   </div>
                 ) : notifications.length === 0 ? (
                   <div className="p-12 text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-slate-900 flex items-center justify-center">
                       <Bell className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                     </div>
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Aucune notification</p>
@@ -284,8 +284,8 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
                         onClick={() => handleNotificationClick(notification)}
                         className={`group relative p-4 rounded-xl cursor-pointer transition-all duration-200 border-l-4 ${
                           !notification.read 
-                            ? 'bg-white dark:bg-gray-800 shadow-sm border-r border-t border-b border-blue-200 dark:border-blue-800/50' 
-                            : 'bg-white/80 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-800 border-r border-t border-b border-gray-200 dark:border-gray-700'
+                            ? 'bg-white dark:bg-slate-900 shadow-sm border-r border-t border-b border-blue-200 dark:border-blue-800/50' 
+                            : 'bg-white/80 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 border-r border-t border-b border-gray-200 dark:border-slate-800'
                         } ${getNotificationColor(notification.type)}`}
                       >
                         
@@ -294,7 +294,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
                           <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xl ${
                             !notification.read 
                               ? 'bg-blue-100 dark:bg-blue-900/30' 
-                              : 'bg-gray-100 dark:bg-gray-700'
+                              : 'bg-gray-100 dark:bg-slate-800'
                           }`}>
                             {getNotificationIcon(notification.type)}
                           </div>

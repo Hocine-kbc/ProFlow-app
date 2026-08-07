@@ -481,7 +481,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
       </div>
 
       {/* Search and filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-4 sm:p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-800 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -493,7 +493,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm sm:text-base"
             />
           </div>
           <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
@@ -502,35 +502,29 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
         </div>
       </div>
 
-      {/* Bouton pour activer le mode sélection */}
-      {!isSelectionMode && clients.length > 0 && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={toggleSelectionMode}
-            className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm"
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Mode sélection
-          </button>
-        </div>
-      )}
-
-      {/* Sélection multiple */}
-      {isSelectionMode && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center">
-              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                {selectedClients.size} client(s) sélectionné(s)
+      {/* Actions de sélection à l'emplacement du bouton */}
+      {clients.length > 0 && (
+        <div className="flex justify-end items-center">
+          {!isSelectionMode ? (
+            <button
+              key="mode-selection"
+              type="button"
+              onClick={toggleSelectionMode}
+              className="inline-flex items-center px-4 py-2 rounded-full text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 transition-colors text-sm animate-in fade-in zoom-in-95 duration-300 ease-out"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Mode sélection
+            </button>
+          ) : (
+            <div key="selection-actions" className="flex items-center gap-3 animate-in fade-in zoom-in-95 slide-in-from-right-2 duration-300 ease-out">
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300 whitespace-nowrap">
+                {selectedClients.size} client{selectedClients.size !== 1 ? 's' : ''} sélectionné{selectedClients.size !== 1 ? 's' : ''}
               </span>
-            </div>
-            <div className="flex space-x-2">
               <button
                 type="button"
                 onClick={handleBulkDelete}
                 disabled={selectedClients.size === 0}
-                className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
+                className="inline-flex items-center px-4 py-2 rounded-full text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm whitespace-nowrap"
               >
                 <Trash className="w-4 h-4 mr-2" />
                 Supprimer sélection
@@ -538,18 +532,18 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
               <button
                 type="button"
                 onClick={toggleSelectionMode}
-                className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+                className="inline-flex items-center px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm whitespace-nowrap"
               >
                 <X className="w-4 h-4 mr-2" />
                 Annuler
               </button>
             </div>
-          </div>
+          )}
         </div>
       )}
 
       {/* Clients - Mobile Cards / Desktop Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-800 overflow-hidden">
 
       {/* Mobile Cards View */}
       <div className="block lg:hidden">
@@ -650,7 +644,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                     <button
                       type="button"
                       onClick={() => handleOpenClientDetail(client.id)}
-                      className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
+                      className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-slate-800/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
                       title="Tableau de bord client"
                     >
                       <Eye className="w-4 h-4" />
@@ -658,7 +652,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                     <button
                       type="button"
                       onClick={() => handleEdit(client)}
-                      className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
+                      className="p-2 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-slate-800/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all"
                       title="Modifier"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -666,7 +660,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                     <button
                       type="button"
                       onClick={() => handleArchive(client.id)}
-                      className="p-2 rounded-full text-gray-500 hover:text-orange-600 bg-gray-50/50 hover:bg-orange-50/50 dark:text-gray-400 dark:hover:text-orange-400 dark:bg-gray-700/30 dark:hover:bg-orange-900/20 border border-gray-200/50 hover:border-orange-200/50 dark:border-gray-600/50 dark:hover:border-orange-700/50 shadow-sm hover:shadow-md transition-all"
+                      className="p-2 rounded-full text-gray-500 hover:text-orange-600 bg-gray-50/50 hover:bg-orange-50/50 dark:text-gray-400 dark:hover:text-orange-400 dark:bg-slate-800/30 dark:hover:bg-orange-900/20 border border-gray-200/50 hover:border-orange-200/50 dark:border-gray-600/50 dark:hover:border-orange-700/50 shadow-sm hover:shadow-md transition-all"
                       title="Archiver"
                     >
                       <Archive className="w-4 h-4" />
@@ -674,7 +668,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                     <button
                       type="button"
                       onClick={() => handleDelete(client.id)}
-                      className="p-2 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all"
+                      className="p-2 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-slate-800/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all"
                       title="Supprimer"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -689,7 +683,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
         {/* Desktop Table View */}
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full min-w-[640px]">
-            <thead className="bg-gray-50 dark:bg-gray-700">
+            <thead className="bg-gray-50 dark:bg-slate-800">
               <tr>
                 {isSelectionMode && (
                   <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -743,7 +737,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
               {currentClients.map((client) => (
-                <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                   {isSelectionMode && (
                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <button
@@ -840,7 +834,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                       <button
                         type="button"
                         onClick={() => handleOpenClientDetail(client.id)}
-                        className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
+                        className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-slate-800/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                       >
                         <Eye className="w-3 h-3 mr-1" />
                         <span className="hidden sm:inline">Dashboard</span>
@@ -848,7 +842,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                       <button
                         type="button"
                         onClick={() => handleEdit(client)}
-                        className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-gray-700/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
+                        className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-blue-600 bg-gray-50/50 hover:bg-blue-50/50 dark:text-gray-400 dark:hover:text-blue-400 dark:bg-slate-800/30 dark:hover:bg-blue-900/20 border border-gray-200/50 hover:border-blue-200/50 dark:border-gray-600/50 dark:hover:border-blue-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                       >
                         <Edit2 className="w-3 h-3 mr-1" />
                         <span className="hidden sm:inline">Modifier</span>
@@ -856,14 +850,14 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
                       <button
                         type="button"
                         onClick={() => handleArchive(client.id)}
-                        className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-orange-600 bg-gray-50/50 hover:bg-orange-50/50 dark:text-gray-400 dark:hover:text-orange-400 dark:bg-gray-700/30 dark:hover:bg-orange-900/20 border border-gray-200/50 hover:border-orange-200/50 dark:border-gray-600/50 dark:hover:border-orange-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
+                        className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-orange-600 bg-gray-50/50 hover:bg-orange-50/50 dark:text-gray-400 dark:hover:text-orange-400 dark:bg-slate-800/30 dark:hover:bg-orange-900/20 border border-gray-200/50 hover:border-orange-200/50 dark:border-gray-600/50 dark:hover:border-orange-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                       >
                         <Archive className="w-3 h-3" />
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDelete(client.id)}
-                        className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-gray-700/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
+                        className="inline-flex items-center px-2 py-1 rounded-full text-gray-500 hover:text-red-600 bg-gray-50/50 hover:bg-red-50/50 dark:text-gray-400 dark:hover:text-red-400 dark:bg-slate-800/30 dark:hover:bg-red-900/20 border border-gray-200/50 hover:border-red-200/50 dark:border-gray-600/50 dark:hover:border-red-700/50 shadow-sm hover:shadow-md transition-all font-medium text-xs opacity-70 hover:opacity-100"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -877,7 +871,7 @@ export default function ClientsPage({ onPageChange }: ClientsPageProps) {
 
         {/* Pagination */}
         {(
-          <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
+          <div className="bg-gray-50 dark:bg-slate-800 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-1">
                 {/* Bouton Première page */}
