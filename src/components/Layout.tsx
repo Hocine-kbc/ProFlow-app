@@ -260,7 +260,7 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                     onPageChange(item.id);
                     setSidebarOpen(false);
                   }}
-                  className={`relative rounded-xl group overflow-hidden transition-all duration-300 ease-in-out ${
+                  className={`relative rounded-full group overflow-hidden transition-all duration-300 ease-in-out ${
                     sidebarCollapsed ? 'w-12' : 'w-full'
                   } ${
                     isActive
@@ -275,11 +275,11 @@ export default function Layout({ children, currentPage, onPageChange }: LayoutPr
                 >
                   {/* Conteneur de l'icône - position absolue fixe, jamais de mouvement */}
                   <div 
-                    className={`rounded-lg ${
-                      isActive 
-                        ? 'bg-white/20' 
+                    className={`rounded-full ${
+                      isActive
+                        ? 'bg-white/20'
                         : `${colors.icon} ${colors.iconHover}`
-                    }`} 
+                    }`}
                     style={{ 
                       width: '38px',
                       height: '38px',

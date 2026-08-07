@@ -1451,7 +1451,7 @@ export default function ClientDetailView({
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6">
+    <div>
       {/* En-tête */}
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
@@ -1575,59 +1575,59 @@ export default function ClientDetailView({
         </div>
 
         {/* Chiffres clés */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Chiffre d'affaires</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">Chiffre d'affaires</p>
+                <p className="text-base sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
                   {formatCurrency(client.kpis.totalRevenue)}
                 </p>
               </div>
-              <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-green-600" />
+              <div className="p-1.5 sm:p-3 bg-green-100 dark:bg-green-900/20 rounded-lg flex-shrink-0">
+                <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Factures</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">Factures</p>
+                <p className="text-base sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
                   {client.kpis.totalInvoices}
                 </p>
               </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                <FileText className="w-6 h-6 text-blue-600" />
+              <div className="p-1.5 sm:p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex-shrink-0">
+                <FileText className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Payé</p>
-                <p className="text-2xl font-bold text-green-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">Payé</p>
+                <p className="text-base sm:text-2xl font-bold text-green-600 truncate">
                   {formatCurrency(client.kpis.paidAmount)}
                 </p>
               </div>
-              <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="p-1.5 sm:p-3 bg-green-100 dark:bg-green-900/20 rounded-lg flex-shrink-0">
+                <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">En attente</p>
-                <p className="text-2xl font-bold text-yellow-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">En attente</p>
+                <p className="text-base sm:text-2xl font-bold text-yellow-600 truncate">
                   {formatCurrency(client.kpis.pendingAmount)}
                 </p>
               </div>
-              <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                <Clock className="w-6 h-6 text-yellow-600" />
+              <div className="p-1.5 sm:p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex-shrink-0">
+                <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-yellow-600" />
               </div>
             </div>
           </div>
@@ -1716,7 +1716,7 @@ export default function ClientDetailView({
                 return (
                   <div className="space-y-6">
                     {/* Statistiques rapides */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4">
                       <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                           {totalRevenue.toFixed(0)}€
@@ -3305,7 +3305,7 @@ export default function ClientDetailView({
             </div>
 
               <div className="px-4 sm:px-6 md:px-10 py-6 sm:py-8 space-y-6 sm:space-y-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
                   <div className="rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/70 p-4 sm:p-5 shadow-sm">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-2 sm:space-y-3 min-w-0 flex-1">
@@ -4098,7 +4098,7 @@ export default function ClientDetailView({
         cancelText="Annuler"
       />
 
-      <div className="space-y-4">
+      <div className="space-y-4 mt-6 sm:mt-8">
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Historique des paiements</h3>

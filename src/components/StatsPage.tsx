@@ -17,7 +17,12 @@ import {
   FileX,
   FileSpreadsheet as FileSpreadsheetIcon,
   FileText as FileTextIcon,
-  BookOpen
+  BookOpen,
+  Search,
+  CreditCard,
+  Briefcase,
+  Trophy,
+  Calendar
 } from 'lucide-react';
 import { 
   PieChart, 
@@ -36,6 +41,7 @@ import {
 } from 'recharts';
 import { supabase } from '../lib/supabase.ts';
 import AnimatedNumber from './AnimatedNumber.tsx';
+import HalfGauge from './HalfGauge.tsx';
 import { 
   exportStatsToExcel, 
   exportStatsToPdf, 
@@ -1215,8 +1221,8 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       periodFilter === 'quarter'
         ? quarterlyRevenue
         : periodFilter === 'month'
-          ? monthlyRevenue.slice(-3)
-          : monthlyRevenue;
+          ? monthlyRevenue
+          : yearSummary;
 
     const periodRows: StatsExportPeriodRow[] = periodDataSource.map((item) => {
       if ('quarter' in item) {
@@ -1307,9 +1313,25 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
     }
   };
 
-  const chartData = periodFilter === 'year' ? monthlyRevenue : 
-                   periodFilter === 'quarter' ? quarterlyRevenue : 
-                   monthlyRevenue.slice(-3);
+  // Ligne unique de synthèse pour le filtre "Année" : distincte de "Mois" (12 lignes) et "Trimestre" (4 lignes)
+  const yearSummary = useMemo<MonthlyRevenue[]>(() => {
+    const totals = monthlyRevenue.reduce(
+      (acc, m) => ({
+        revenueBrut: acc.revenueBrut + (m.revenueBrut || 0),
+        revenueNet: acc.revenueNet + (m.revenueNet || 0),
+        contributions: acc.contributions + (m.contributions || 0),
+        invoices: acc.invoices + (m.invoices || 0)
+      }),
+      { revenueBrut: 0, revenueNet: 0, contributions: 0, invoices: 0 }
+    );
+    return [{
+      month: `Année ${selectedYear}`,
+      ...totals,
+      contributionRate: totals.revenueBrut > 0 ? (totals.contributions / totals.revenueBrut) * 100 : 0
+    }];
+  }, [monthlyRevenue, selectedYear]);
+
+  const chartData = periodFilter === 'quarter' ? quarterlyRevenue : periodFilter === 'month' ? monthlyRevenue : yearSummary;
 
   const periodTotals = useMemo(() => {
     if (!chartData.length) {
@@ -1720,378 +1742,14 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         </div>
       </div>
 
-      {/* Actions d'export */}
-      <div className="flex flex-col xl:flex-row gap-3">
-        <div className="flex-1 min-w-[240px] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800/80 shadow-sm p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200">
-                <BarChart3 className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">Rapport statistiques</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Téléchargez le tableau de bord complet</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => handleExport('excel')}
-                disabled={exportingFormat !== null}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-                aria-label="Exporter les statistiques en Excel"
-              >
-                {exportingFormat === 'excel' ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
-                ) : (
-                  <FileSpreadsheetIcon className="h-4 w-4" />
-                )}
-                <span>{exportingFormat === 'excel' ? 'Export…' : 'Excel (.xlsx)'}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExport('pdf')}
-                disabled={exportingFormat !== null}
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-                aria-label="Exporter les statistiques en PDF"
-              >
-                {exportingFormat === 'pdf' ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
-                ) : (
-                  <FileTextIcon className="h-4 w-4" />
-                )}
-                <span>{exportingFormat === 'pdf' ? 'Export…' : 'PDF (.pdf)'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 min-w-[240px] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800/80 shadow-sm p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-200">
-                <BookOpen className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">Livret de recettes</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Générez le registre conforme à l'administration</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => handleReceiptsExport('excel')}
-                disabled={receiptsExportingFormat !== null}
-                className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-                aria-label="Exporter le livret de recettes en Excel"
-              >
-                {receiptsExportingFormat === 'excel' ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
-                ) : (
-                  <FileSpreadsheetIcon className="h-4 w-4" />
-                )}
-                <span>{receiptsExportingFormat === 'excel' ? 'Export…' : 'Excel (.xlsx)'}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleReceiptsExport('pdf')}
-                disabled={receiptsExportingFormat !== null}
-                className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-                aria-label="Exporter le livret de recettes en PDF"
-              >
-                {receiptsExportingFormat === 'pdf' ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
-                ) : (
-                  <FileTextIcon className="h-4 w-4" />
-                )}
-                <span>{receiptsExportingFormat === 'pdf' ? 'Export…' : 'PDF (.pdf)'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tableau détaillé par période */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6 min-w-0">
-        <div className="flex flex-col gap-4 mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Statistiques détaillées par période</h3>
-            <div className="flex items-center justify-center sm:justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedYear(selectedYear - 1)}
-                disabled={isUpdatingYear}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <div className="px-5 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm relative">
-                {isUpdatingYear && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
-                  </div>
-                )}
-                <span className={`text-base font-bold text-gray-900 dark:text-white min-w-[80px] text-center block ${isUpdatingYear ? 'opacity-50' : ''}`}>
-                  {selectedYear}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedYear(selectedYear + 1)}
-                disabled={selectedYear >= new Date().getFullYear() || isUpdatingYear}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-blue-700 dark:disabled:hover:from-blue-500 dark:disabled:hover:to-blue-600 disabled:transform-none"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <div className="flex justify-start">
-            <div className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full">
-              {indicatorStyle.width > 0 && (
-                <div
-                  className="absolute h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 shadow-md z-0"
-                  style={{
-                    width: `${indicatorStyle.width}px`,
-                    left: `${indicatorStyle.left}px`,
-                    top: '4px',
-                    transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                  }}
-                />
-              )}
-              <button
-                ref={yearButtonRef}
-                type="button"
-                onClick={() => setPeriodFilter('year')}
-                className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-150 ${
-                  periodFilter === 'year'
-                    ? 'text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
-                }`}
-              >
-                Année
-              </button>
-              <button
-                ref={quarterButtonRef}
-                type="button"
-                onClick={() => setPeriodFilter('quarter')}
-                className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-150 ${
-                  periodFilter === 'quarter'
-                    ? 'text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
-                }`}
-              >
-                Trimestre
-              </button>
-              <button
-                ref={monthButtonRef}
-                type="button"
-                onClick={() => setPeriodFilter('month')}
-                className={`relative z-10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-150 ${
-                  periodFilter === 'month'
-                    ? 'text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
-                }`}
-              >
-                Mois
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-200 dark:bg-gray-600 border-b-4 border-gray-400 dark:border-gray-500">
-                <th className="text-left py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider rounded-tl-lg">
-                  {periodFilter === 'quarter' ? 'Trimestre' : periodFilter === 'year' ? 'Mois' : 'Mois'}
-                </th>
-                <th className="text-right py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider">
-                  <div className="flex items-center justify-end gap-2">
-                    <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span>CA Brut</span>
-                  </div>
-                </th>
-                <th className="text-right py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider">
-                  <div className="flex items-center justify-end gap-2">
-                    <Calculator className="w-4 h-4 text-red-600 dark:text-red-400" />
-                    <span>Cotisations</span>
-                  </div>
-                </th>
-                <th className="text-right py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider">
-                  <div className="flex items-center justify-end gap-2">
-                    <Euro className="w-4 h-4 text-green-600 dark:text-green-400" />
-                    <span>CA Net</span>
-                  </div>
-                </th>
-                <th className="text-right py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider">
-                  <div className="flex items-center justify-end gap-2">
-                    <Receipt className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    <span>Factures</span>
-                  </div>
-                </th>
-                <th className="text-right py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider rounded-tr-lg">
-                  <div className="flex items-center justify-end gap-2">
-                    <Percent className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    <span>Taux</span>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {chartData.map((item, index) => (
-                <tr 
-                  key={index} 
-                  className={`${
-                    index % 2 === 0 
-                      ? 'bg-gray-100 dark:bg-gray-700/60' 
-                      : 'bg-white dark:bg-gray-800'
-                  } hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-600/70 dark:hover:to-gray-600/50 transition-all duration-200 ease-out group cursor-pointer hover:shadow-md hover:-translate-y-0.5`}
-                >
-                  <td className="py-2.5 px-3">
-                    <div className="flex flex-wrap items-center justify-start gap-2">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 opacity-0 group-hover:opacity-100 transition-transform duration-300 transition-shadow duration-300 group-hover:scale-150"></div>
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 capitalize">
-                        {periodFilter === 'quarter' ? (item as QuarterlyRevenue).quarter : (item as MonthlyRevenue).month}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-2.5 px-3 text-right">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:font-bold transition-transform duration-300 transition-shadow duration-300 group-hover:scale-105 inline-block">
-                      {formatCurrency(item.revenueBrut)}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-right">
-                    <span className="text-sm font-medium text-red-600 dark:text-red-400 group-hover:font-bold transition-transform duration-300 transition-shadow duration-300 group-hover:scale-105 inline-block">
-                      {formatCurrency(item.contributions)}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-right">
-                    <span className="text-sm font-semibold text-green-600 dark:text-green-400 group-hover:font-bold transition-transform duration-300 transition-shadow duration-300 group-hover:scale-105 inline-block">
-                      {formatCurrency(item.revenueNet)}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-right">
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
-                      {item.invoices}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-right">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:font-bold transition-transform duration-300 transition-shadow duration-300 group-hover:scale-105 inline-block">
-                      {formatPercent('contributionRate' in item ? item.contributionRate : (item.contributions / item.revenueBrut) * 100)}
-                    </span>
-                  </td>
-              </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="bg-gray-200 dark:bg-gray-600 border-t-4 border-gray-400 dark:border-gray-500">
-                <td className="py-4 px-4 rounded-bl-lg">
-                  <span className="text-base font-bold text-gray-800 dark:text-white">Total</span>
-                </td>
-                <td className="py-4 px-4 text-right">
-                  <span className="text-base font-bold text-gray-800 dark:text-white">
-                    {formatCurrency(chartData.reduce((sum, item) => sum + item.revenueBrut, 0))}
-                  </span>
-                </td>
-                <td className="py-4 px-4 text-right">
-                  <span className="text-base font-bold text-red-700 dark:text-red-400">
-                    {formatCurrency(chartData.reduce((sum, item) => sum + item.contributions, 0))}
-                  </span>
-                </td>
-                <td className="py-4 px-4 text-right">
-                  <span className="text-base font-bold text-green-700 dark:text-green-400">
-                    {formatCurrency(chartData.reduce((sum, item) => sum + item.revenueNet, 0))}
-                  </span>
-                </td>
-                <td className="py-4 px-4 text-right">
-                  <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold bg-blue-200 dark:bg-blue-800/50 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700">
-                    {chartData.reduce((sum, item) => sum + item.invoices, 0)}
-                  </span>
-                </td>
-                <td className="py-4 px-4 text-right rounded-br-lg">
-                  <span className="text-base font-bold text-gray-800 dark:text-white">
-                    {formatPercent(
-                      chartData.reduce((sum, item) => sum + item.revenueBrut, 0) > 0
-                        ? (chartData.reduce((sum, item) => sum + item.contributions, 0) / chartData.reduce((sum, item) => sum + item.revenueBrut, 0)) * 100
-                        : 0
-                    )}
-                  </span>
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        {/* Vue mobile des statistiques détaillées */}
-        <div className="md:hidden space-y-3">
-          {chartData.map((item, index) => (
-            <div
-              key={`${'contributionRate' in item ? 'quarter' : 'month'}-${index}`}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400" />
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
-                    {periodFilter === 'quarter' ? (item as QuarterlyRevenue).quarter : (item as MonthlyRevenue).month}
-                  </span>
-                </div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                  {item.invoices} facture{item.invoices > 1 ? 's' : ''}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">CA Brut</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(item.revenueBrut)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">CA Net</p>
-                  <p className="text-sm font-semibold text-green-600 dark:text-green-400">{formatCurrency(item.revenueNet)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Cotisations</p>
-                  <p className="text-sm font-semibold text-red-600 dark:text-red-400">{formatCurrency(item.contributions)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Taux</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatPercent('contributionRate' in item ? item.contributionRate : (item.contributions / item.revenueBrut) * 100)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-          {periodTotals && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-4">
-              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide mb-2">Total période</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">CA Brut</p>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(periodTotals.revenueBrut)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">CA Net</p>
-                  <p className="text-sm font-bold text-green-600 dark:text-green-400">{formatCurrency(periodTotals.revenueNet)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Cotisations</p>
-                  <p className="text-sm font-bold text-red-600 dark:text-red-400">{formatCurrency(periodTotals.contributions)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Factures</p>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">
-                    {periodTotals.invoices} facture{periodTotals.invoices > 1 ? 's' : ''}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Section 2: Graphiques d'évolution */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white px-2">📈 Graphiques d'évolution</h2>
+        <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white px-2">
+          <span className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          </span>
+          Graphiques d'évolution
+        </h2>
 
       {/* Graphique Principal - Évolution Complète CA Brut, Net et Cotisations */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 lg:p-6 min-w-0">
@@ -2587,13 +2245,274 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         </div>
       </div>
 
+      {/* Tableau détaillé par période */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6 min-w-0">
+        <div className="flex flex-col gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Statistiques détaillées par période</h3>
+            <div className="flex items-center justify-center sm:justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedYear(selectedYear - 1)}
+                disabled={isUpdatingYear}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex-shrink-0"
+              >
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+              <div className="px-2.5 sm:px-5 py-1.5 sm:py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm relative flex-shrink-0">
+                {isUpdatingYear && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                  </div>
+                )}
+                <span className={`text-xs sm:text-base font-bold text-gray-900 dark:text-white min-w-[40px] sm:min-w-[80px] text-center block ${isUpdatingYear ? 'opacity-50' : ''}`}>
+                  {selectedYear}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedYear(selectedYear + 1)}
+                disabled={selectedYear >= new Date().getFullYear() || isUpdatingYear}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-blue-700 dark:disabled:hover:from-blue-500 dark:disabled:hover:to-blue-600 disabled:transform-none flex-shrink-0"
+              >
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-start">
+            <div className="relative inline-flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-full">
+              {indicatorStyle.width > 0 && (
+                <div
+                  className="absolute h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 shadow-md z-0"
+                  style={{
+                    width: `${indicatorStyle.width}px`,
+                    left: `${indicatorStyle.left}px`,
+                    top: '4px',
+                    transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                />
+              )}
+              <button
+                ref={yearButtonRef}
+                type="button"
+                onClick={() => setPeriodFilter('year')}
+                className={`relative z-10 min-w-[92px] px-4 py-1.5 rounded-full text-sm font-medium text-center transition-colors duration-150 ${
+                  periodFilter === 'year'
+                    ? 'text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+              >
+                Année
+              </button>
+              <button
+                ref={quarterButtonRef}
+                type="button"
+                onClick={() => setPeriodFilter('quarter')}
+                className={`relative z-10 min-w-[92px] px-4 py-1.5 rounded-full text-sm font-medium text-center transition-colors duration-150 ${
+                  periodFilter === 'quarter'
+                    ? 'text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+              >
+                Trimestre
+              </button>
+              <button
+                ref={monthButtonRef}
+                type="button"
+                onClick={() => setPeriodFilter('month')}
+                className={`relative z-10 min-w-[92px] px-4 py-1.5 rounded-full text-sm font-medium text-center transition-colors duration-150 ${
+                  periodFilter === 'month'
+                    ? 'text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+              >
+                Mois
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-200 dark:bg-gray-600 border-b-4 border-gray-400 dark:border-gray-500">
+                <th className="text-left py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider rounded-tl-lg">
+                  {periodFilter === 'quarter' ? 'Trimestre' : periodFilter === 'year' ? 'Mois' : 'Mois'}
+                </th>
+                <th className="text-right py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider">
+                  <div className="flex items-center justify-end gap-2">
+                    <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span>CA Brut</span>
+                  </div>
+                </th>
+                <th className="text-right py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider">
+                  <div className="flex items-center justify-end gap-2">
+                    <Calculator className="w-4 h-4 text-red-600 dark:text-red-400" />
+                    <span>Cotisations</span>
+                  </div>
+                </th>
+                <th className="text-right py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider">
+                  <div className="flex items-center justify-end gap-2">
+                    <Euro className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <span>CA Net</span>
+                  </div>
+                </th>
+                <th className="text-right py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider">
+                  <div className="flex items-center justify-end gap-2">
+                    <Receipt className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <span>Factures</span>
+                  </div>
+                </th>
+                <th className="text-right py-3 px-4 font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider rounded-tr-lg">
+                  <div className="flex items-center justify-end gap-2">
+                    <Percent className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <span>Taux</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {chartData.map((item, index) => (
+                <tr 
+                  key={index} 
+                  className={`${
+                    index % 2 === 0 
+                      ? 'bg-gray-100 dark:bg-gray-700/60' 
+                      : 'bg-white dark:bg-gray-800'
+                  } hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-gray-600/70 dark:hover:to-gray-600/50 transition-all duration-200 ease-out group cursor-pointer hover:shadow-md hover:-translate-y-0.5`}
+                >
+                  <td className="py-2.5 px-3">
+                    <div className="flex flex-wrap items-center justify-start gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 opacity-0 group-hover:opacity-100 transition-transform duration-300 transition-shadow duration-300 group-hover:scale-150"></div>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 capitalize">
+                        {periodFilter === 'quarter' ? (item as QuarterlyRevenue).quarter : (item as MonthlyRevenue).month}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-3 text-right">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:font-bold transition-transform duration-300 transition-shadow duration-300 group-hover:scale-105 inline-block">
+                      {formatCurrency(item.revenueBrut)}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 text-right">
+                    <span className="text-sm font-medium text-red-600 dark:text-red-400 group-hover:font-bold transition-transform duration-300 transition-shadow duration-300 group-hover:scale-105 inline-block">
+                      {formatCurrency(item.contributions)}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 text-right">
+                    <span className="text-sm font-semibold text-green-600 dark:text-green-400 group-hover:font-bold transition-transform duration-300 transition-shadow duration-300 group-hover:scale-105 inline-block">
+                      {formatCurrency(item.revenueNet)}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 text-right">
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+                      {item.invoices}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 text-right">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:font-bold transition-transform duration-300 transition-shadow duration-300 group-hover:scale-105 inline-block">
+                      {formatPercent('contributionRate' in item ? item.contributionRate : (item.contributions / item.revenueBrut) * 100)}
+                    </span>
+                  </td>
+              </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-200 dark:bg-gray-600 border-t-4 border-gray-400 dark:border-gray-500">
+                <td className="py-4 px-4 rounded-bl-lg">
+                  <span className="text-base font-bold text-gray-800 dark:text-white">Total</span>
+                </td>
+                <td className="py-4 px-4 text-right">
+                  <span className="text-base font-bold text-gray-800 dark:text-white">
+                    {formatCurrency(chartData.reduce((sum, item) => sum + item.revenueBrut, 0))}
+                  </span>
+                </td>
+                <td className="py-4 px-4 text-right">
+                  <span className="text-base font-bold text-red-700 dark:text-red-400">
+                    {formatCurrency(chartData.reduce((sum, item) => sum + item.contributions, 0))}
+                  </span>
+                </td>
+                <td className="py-4 px-4 text-right">
+                  <span className="text-base font-bold text-green-700 dark:text-green-400">
+                    {formatCurrency(chartData.reduce((sum, item) => sum + item.revenueNet, 0))}
+                  </span>
+                </td>
+                <td className="py-4 px-4 text-right">
+                  <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold bg-blue-200 dark:bg-blue-800/50 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700">
+                    {chartData.reduce((sum, item) => sum + item.invoices, 0)}
+                  </span>
+                </td>
+                <td className="py-4 px-4 text-right rounded-br-lg">
+                  <span className="text-base font-bold text-gray-800 dark:text-white">
+                    {formatPercent(
+                      chartData.reduce((sum, item) => sum + item.revenueBrut, 0) > 0
+                        ? (chartData.reduce((sum, item) => sum + item.contributions, 0) / chartData.reduce((sum, item) => sum + item.revenueBrut, 0)) * 100
+                        : 0
+                    )}
+                  </span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {/* Vue mobile des statistiques détaillées */}
+        <div className="md:hidden space-y-1.5">
+          {chartData.map((item, index) => {
+            const rate = formatPercent('contributionRate' in item ? item.contributionRate : (item.contributions / item.revenueBrut) * 100);
+            return (
+              <div
+                key={`${'contributionRate' in item ? 'quarter' : 'month'}-${index}`}
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 shadow-sm"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 flex-shrink-0" />
+                    <span className="text-xs font-semibold text-gray-900 dark:text-white capitalize truncate">
+                      {periodFilter === 'quarter' ? (item as QuarterlyRevenue).quarter : (item as MonthlyRevenue).month}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-300 flex-shrink-0">{rate}</span>
+                </div>
+                <div className="flex items-center gap-2.5 mt-1 text-[11px] text-gray-500 dark:text-gray-400 overflow-x-auto whitespace-nowrap">
+                  <span>Brut <b className="font-semibold text-gray-900 dark:text-white">{formatCurrency(item.revenueBrut)}</b></span>
+                  <span>Net <b className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(item.revenueNet)}</b></span>
+                  <span>Cotis. <b className="font-semibold text-red-600 dark:text-red-400">{formatCurrency(item.contributions)}</b></span>
+                  <span className="ml-auto flex-shrink-0">{item.invoices} fact.</span>
+                </div>
+              </div>
+            );
+          })}
+          {periodTotals && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg px-3 py-2.5">
+              <p className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide mb-1">Total période</p>
+              <div className="flex items-center gap-2.5 text-[11px] text-gray-500 dark:text-gray-400 overflow-x-auto whitespace-nowrap">
+                <span>Brut <b className="font-bold text-gray-900 dark:text-white">{formatCurrency(periodTotals.revenueBrut)}</b></span>
+                <span>Net <b className="font-bold text-green-600 dark:text-green-400">{formatCurrency(periodTotals.revenueNet)}</b></span>
+                <span>Cotis. <b className="font-bold text-red-600 dark:text-red-400">{formatCurrency(periodTotals.contributions)}</b></span>
+                <span className="ml-auto flex-shrink-0">{periodTotals.invoices} fact.</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Section 3: Analyses détaillées */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white px-2">🔍 Analyses détaillées</h2>
+        <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white px-2">
+          <span className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+            <Search className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          </span>
+          Analyses détaillées
+        </h2>
 
       {/* 💳 Détails Paiements */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">💳 Détails Paiements</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <span className="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+            <CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          </span>
+          Détails Paiements
+        </h3>
         
         {/* Répartition par méthode de paiement */}
         {paymentMethods.length > 0 && (
@@ -2635,7 +2554,12 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
 
       {/* 👥 Statistiques Clients */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">👥 Statistiques Clients</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <span className="flex-shrink-0 w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+            <Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+          </span>
+          Statistiques Clients
+        </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Nombre total de clients actifs</p>
@@ -2658,7 +2582,12 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
 
       {/* 🧾 Statistiques Factures */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">🧾 Statistiques Factures</h3>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <span className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+            <Receipt className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+          </span>
+          Statistiques Factures
+        </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Factures émises ce mois</p>
@@ -2682,9 +2611,9 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         {monthlyInvoices.length > 0 && monthlyInvoices.some(m => m.count > 0) ? (
           <div>
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Nombre de factures par mois - Année {selectedYear}</h4>
-            <div className="h-[240px] sm:h-[300px] lg:h-80">
+            <div className="h-[300px] sm:h-[340px] lg:h-80 w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyInvoices} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <BarChart data={monthlyInvoices} margin={{ top: 20, right: 0, left: -12, bottom: 20 }}>
                   <defs>
                     <linearGradient id="paidGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={chartPalette.invoicesPaid.base} stopOpacity={0.85} />
@@ -2706,13 +2635,14 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                     tickLine={false}
                     tick={{ fontSize: 12, fill: getThemeColors().textSecondary, fontWeight: 500 }}
                   />
-                  <YAxis 
+                  <YAxis
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12, fill: getThemeColors().textSecondary, fontWeight: 500 }}
                     allowDecimals={false}
+                    width={26}
                   />
-                  <Tooltip 
+                  <Tooltip
                     content={({ active, payload, label }) => {
                       if (!active || !payload || !payload.length) return null;
                       const themeColors = getThemeColors();
@@ -2799,15 +2729,20 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
 
       {/* 🧰 Statistiques Prestations / Services */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">🧰 Statistiques Prestations / Services</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Nombre de prestations réalisées</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalServices}</p>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <span className="flex-shrink-0 w-7 h-7 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+            <Briefcase className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+          </span>
+          Statistiques Prestations / Services
+        </h3>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
+          <div className="bg-gray-50 dark:bg-gray-700/50 p-3 sm:p-4 rounded-lg">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Prestations réalisées</p>
+            <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalServices}</p>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Prestations ce mois</p>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{kpiData.servicesThisMonth}</p>
+          <div className="bg-gray-50 dark:bg-gray-700/50 p-3 sm:p-4 rounded-lg">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Prestations ce mois</p>
+            <p className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{kpiData.servicesThisMonth}</p>
           </div>
         </div>
 
@@ -2815,22 +2750,31 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         {serviceStats.length > 0 && (
           <div>
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Top prestations par revenus</h4>
-            <div className="space-y-3">
-              {serviceStats.slice(0, 5).map((service, index) => (
-                <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                    <span className="text-sm text-gray-900 dark:text-white truncate">{service.name}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">({service.count}x)</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{service.hours.toFixed(1)}h</span>
-                    <span className="text-sm font-semibold text-gray-900 dark:text-white w-24 text-right">
-                      {formatCurrency(service.revenue)}
-                    </span>
-                  </div>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-4">
+              {(() => {
+                const topServices = serviceStats.slice(0, 5);
+                const maxRevenue = Math.max(...topServices.map(s => s.revenue));
+                return topServices.map((service, index) => {
+                  const color = COLORS[index % COLORS.length];
+                  const percentage = maxRevenue > 0 ? (service.revenue / maxRevenue) * 100 : 0;
+                  return (
+                    <div
+                      key={index}
+                      className="flex flex-col items-center text-center gap-1 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 p-3 sm:p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                    >
+                      <p className="w-full text-[11px] sm:text-xs font-medium text-gray-600 dark:text-gray-400 truncate" title={service.name}>
+                        {service.name}
+                      </p>
+                      <HalfGauge percentage={percentage} color={color} size={68} strokeWidth={7} className="sm:hidden mt-1 mb-1" />
+                      <HalfGauge percentage={percentage} color={color} size={100} strokeWidth={9} className="hidden sm:block lg:hidden mt-1 mb-1" />
+                      <HalfGauge percentage={percentage} color={color} size={120} strokeWidth={10} className="hidden lg:block mt-1 mb-1" />
+                      <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                        {formatCurrency(service.revenue)}
+                      </p>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
         )}
@@ -2839,30 +2783,45 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
 
       {/* Section 4: Comparaisons et classements */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white px-2">🏆 Comparaisons et classements</h2>
+        <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white px-2">
+          <span className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+            <Trophy className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          </span>
+          Comparaisons et classements
+        </h2>
 
       {/* 📅 Statistiques Temporelles - Comparaison */}
       {comparisonData && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">📅 Comparaison Annuelle</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Année {selectedYear}</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(comparisonData.current)}</p>
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-6">
+            <span className="flex-shrink-0 w-7 h-7 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+              <Calendar className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+            </span>
+            Comparaison Annuelle
+          </h3>
+          <div className="grid grid-cols-2 gap-3 sm:gap-6">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-3 sm:p-6 rounded-lg">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">Année {selectedYear}</p>
+              <p className="text-lg sm:text-3xl font-bold text-blue-600 dark:text-blue-400 truncate">{formatCurrency(comparisonData.current)}</p>
             </div>
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700/20 dark:to-gray-800/20 p-6 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Année {selectedYear - 1}</p>
-              <p className="text-3xl font-bold text-gray-600 dark:text-gray-400">{formatCurrency(comparisonData.previous)}</p>
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700/20 dark:to-gray-800/20 p-3 sm:p-6 rounded-lg">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">Année {selectedYear - 1}</p>
+              <p className="text-lg sm:text-3xl font-bold text-gray-600 dark:text-gray-400 truncate">{formatCurrency(comparisonData.previous)}</p>
             </div>
           </div>
-          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Évolution</span>
+          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Évolution</span>
               <div className="flex flex-wrap items-center gap-2">
-                <span className={`text-lg font-bold ${comparisonData.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {comparisonData.change >= 0 ? (
+                  <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                ) : (
+                  <TrendingUp className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 rotate-180" />
+                )}
+                <span className={`text-sm sm:text-lg font-bold ${comparisonData.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {comparisonData.change >= 0 ? '+' : ''}{formatCurrency(comparisonData.change)}
                 </span>
-                <span className={`text-sm font-semibold ${comparisonData.changePercent >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                <span className={`text-xs sm:text-sm font-semibold ${comparisonData.changePercent >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   ({comparisonData.changePercent >= 0 ? '+' : ''}{formatPercent(comparisonData.changePercent)})
                 </span>
               </div>
@@ -2875,59 +2834,128 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
       {clientRevenue.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 lg:p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Top clients par CA Brut</h3>
-          <div className="space-y-4">
-            {clientRevenue.slice().reverse().map((client, index) => {
-              const maxRevenue = Math.max(...clientRevenue.map(c => c.revenueBrut));
-              const percentage = (client.revenueBrut / maxRevenue) * 100;
-              const colorIndex = index % COLORS.length;
-              const color = COLORS[colorIndex];
-              
-              return (
-                <div key={index} className="group">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
-                    <div className="flex flex-wrap items-center gap-2 min-w-0">
-                      <div 
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: color }}
-                      />
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{client.name}</span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-4 text-sm">
-                      <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                        {formatPercent(client.percentage)}
-                      </span>
-                      <span className="font-bold text-gray-900 dark:text-white min-w-[100px] text-right">
-                        {formatCurrency(client.revenueBrut)}
-                      </span>
-                    </div>
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-4">
+            {(() => {
+              const topClients = clientRevenue.slice().reverse();
+              const maxRevenue = Math.max(...topClients.map(c => c.revenueBrut));
+              return topClients.map((client, index) => {
+                const color = COLORS[index % COLORS.length];
+                const percentage = maxRevenue > 0 ? (client.revenueBrut / maxRevenue) * 100 : 0;
+                return (
+                  <div
+                    key={index}
+                    className="flex flex-col items-center text-center gap-1 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 p-3 sm:p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                  >
+                    <p className="w-full text-[11px] sm:text-xs font-medium text-gray-600 dark:text-gray-400 truncate" title={client.name}>
+                      {client.name}
+                    </p>
+                    <HalfGauge percentage={percentage} color={color} size={68} strokeWidth={7} className="sm:hidden mt-1 mb-1" />
+                    <HalfGauge percentage={percentage} color={color} size={100} strokeWidth={9} className="hidden sm:block lg:hidden mt-1 mb-1" />
+                    <HalfGauge percentage={percentage} color={color} size={120} strokeWidth={10} className="hidden lg:block mt-1 mb-1" />
+                    <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                      {formatCurrency(client.revenueBrut)}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {client.invoices} facture{client.invoices > 1 ? 's' : ''}
+                    </p>
                   </div>
-                  <div className="relative h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500 ease-out"
-                      style={{
-                        width: `${percentage}%`,
-                        background: `linear-gradient(90deg, ${COLORS[colorIndex]}20, ${color})`,
-                        boxShadow: `0 0 10px ${color}40`
-                      }}
-                    />
-                  </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span className="whitespace-nowrap">{client.invoices} facture{client.invoices > 1 ? 's' : ''}</span>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-green-600 dark:text-green-400 whitespace-nowrap">
-                        Net: {formatCurrency(client.revenueNet)}
-                      </span>
-                      <span className="text-red-600 dark:text-red-400 whitespace-nowrap">
-                        Cotisations: {formatCurrency(client.contributions)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         </div>
       )}
+
+      {/* Actions d'export */}
+      <div className="flex flex-col xl:flex-row gap-3">
+        <div className="flex-1 min-w-[240px] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800/80 shadow-sm p-4">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start justify-center sm:justify-between gap-3 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200">
+                <BarChart3 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">Rapport statistiques</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Téléchargez le tableau de bord complet</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleExport('excel')}
+                disabled={exportingFormat !== null}
+                className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-emerald-600 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                aria-label="Exporter les statistiques en Excel"
+              >
+                {exportingFormat === 'excel' ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                ) : (
+                  <FileSpreadsheetIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                )}
+                <span>{exportingFormat === 'excel' ? 'Export…' : 'Excel (.xlsx)'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport('pdf')}
+                disabled={exportingFormat !== null}
+                className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-indigo-600 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                aria-label="Exporter les statistiques en PDF"
+              >
+                {exportingFormat === 'pdf' ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                ) : (
+                  <FileTextIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                )}
+                <span>{exportingFormat === 'pdf' ? 'Export…' : 'PDF (.pdf)'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 min-w-[240px] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800/80 shadow-sm p-4">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start justify-center sm:justify-between gap-3 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-200">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">Livret de recettes</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Générez le registre conforme à l'administration</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleReceiptsExport('excel')}
+                disabled={receiptsExportingFormat !== null}
+                className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-teal-600 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                aria-label="Exporter le livret de recettes en Excel"
+              >
+                {receiptsExportingFormat === 'excel' ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                ) : (
+                  <FileSpreadsheetIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                )}
+                <span>{receiptsExportingFormat === 'excel' ? 'Export…' : 'Excel (.xlsx)'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleReceiptsExport('pdf')}
+                disabled={receiptsExportingFormat !== null}
+                className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-sky-600 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                aria-label="Exporter le livret de recettes en PDF"
+              >
+                {receiptsExportingFormat === 'pdf' ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                ) : (
+                  <FileTextIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                )}
+                <span>{receiptsExportingFormat === 'pdf' ? 'Export…' : 'PDF (.pdf)'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
                   </div>
 
 
