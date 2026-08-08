@@ -40,6 +40,7 @@ import {
   ComposedChart
 } from 'recharts';
 import { supabase } from '../lib/supabase.ts';
+import { Expense } from '../types/index.ts';
 import AnimatedNumber from './AnimatedNumber.tsx';
 import HalfGauge from './HalfGauge.tsx';
 import { 
@@ -95,6 +96,8 @@ interface MonthlyRevenue {
   contributions: number;
   invoices: number;
   contributionRate: number;
+  expenses: number;
+  netProfit: number;
 }
 
 interface QuarterlyRevenue {
@@ -103,6 +106,8 @@ interface QuarterlyRevenue {
   revenueNet: number;
   contributions: number;
   invoices: number;
+  expenses: number;
+  netProfit: number;
 }
 
 interface ClientRevenue {
@@ -311,7 +316,9 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
     contributions: { base: '#E76F51', dark: '#C2410C' },
     invoicesPaid: { base: '#0EA5E9', dark: '#0369A1' },
     invoicesPending: { base: '#F4A261', dark: '#B45309' },
-    invoicesOverdue: { base: '#F97316', dark: '#C2410C' }
+    invoicesOverdue: { base: '#F97316', dark: '#C2410C' },
+    expenses: { base: '#F43F5E', dark: '#BE123C' },
+    netProfit: { base: '#8B5CF6', dark: '#6D28D9' }
   } as const;
 
   const COLORS = [
@@ -498,6 +505,16 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
 
       const clients = clientsData || [];
       setAllClients(clients);
+
+      const { data: expensesData, error: expensesError } = await supabase
+        .from('expenses')
+        .select('*');
+
+      if (expensesError) {
+        console.error('Erreur lors de la récupération des dépenses:', expensesError);
+      }
+
+      const expenses = (expensesData || []) as Expense[];
 
       const now = new Date();
       const currentDate = now.toISOString().split('T')[0];
@@ -798,14 +815,22 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         const contributions = calculateContributions(revenueBrut);
         const revenueNet = revenueBrut - contributions;
         const contributionRate = revenueBrut > 0 ? (contributions / revenueBrut) * 100 : 0;
-        
+
+        const monthExpenses = expenses.filter(expense => {
+          return expense.date >= monthStartStr && expense.date <= monthEndStr;
+        });
+        const expensesTotal = monthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const netProfit = revenueBrut - expensesTotal;
+
         monthlyData.push({
           month: monthStart.toLocaleDateString('fr-FR', { month: 'long' }),
           revenueBrut,
           revenueNet,
           contributions,
           invoices: monthInvoices.length,
-          contributionRate
+          contributionRate,
+          expenses: expensesTotal,
+          netProfit
         });
       }
 
@@ -831,13 +856,21 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         const revenueBrut = quarterInvoices.reduce((sum, inv) => sum + (inv.subtotal || 0), 0);
         const contributions = calculateContributions(revenueBrut);
         const revenueNet = revenueBrut - contributions;
-        
+
+        const quarterExpenses = expenses.filter(expense => {
+          return expense.date >= quarterStartStr && expense.date <= quarterEndStr;
+        });
+        const expensesTotal = quarterExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const netProfit = revenueBrut - expensesTotal;
+
         quarterlyData.push({
           quarter: `T${q}`,
           revenueBrut,
           revenueNet,
           contributions,
-          invoices: quarterInvoices.length
+          invoices: quarterInvoices.length,
+          expenses: expensesTotal,
+          netProfit
         });
       }
 
@@ -1320,14 +1353,16 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         revenueBrut: acc.revenueBrut + (m.revenueBrut || 0),
         revenueNet: acc.revenueNet + (m.revenueNet || 0),
         contributions: acc.contributions + (m.contributions || 0),
-        invoices: acc.invoices + (m.invoices || 0)
+        invoices: acc.invoices + (m.invoices || 0),
+        expenses: acc.expenses + (m.expenses || 0)
       }),
-      { revenueBrut: 0, revenueNet: 0, contributions: 0, invoices: 0 }
+      { revenueBrut: 0, revenueNet: 0, contributions: 0, invoices: 0, expenses: 0 }
     );
     return [{
       month: `Année ${selectedYear}`,
       ...totals,
-      contributionRate: totals.revenueBrut > 0 ? (totals.contributions / totals.revenueBrut) * 100 : 0
+      contributionRate: totals.revenueBrut > 0 ? (totals.contributions / totals.revenueBrut) * 100 : 0,
+      netProfit: totals.revenueBrut - totals.expenses
     }];
   }, [monthlyRevenue, selectedYear]);
 
@@ -1342,9 +1377,11 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
         revenueBrut: acc.revenueBrut + (item.revenueBrut || 0),
         contributions: acc.contributions + (item.contributions || 0),
         revenueNet: acc.revenueNet + (item.revenueNet || 0),
-        invoices: acc.invoices + (item.invoices || 0)
+        invoices: acc.invoices + (item.invoices || 0),
+        expenses: acc.expenses + (item.expenses || 0),
+        netProfit: acc.netProfit + (item.netProfit || 0)
       }),
-      { revenueBrut: 0, contributions: 0, revenueNet: 0, invoices: 0 }
+      { revenueBrut: 0, contributions: 0, revenueNet: 0, invoices: 0, expenses: 0, netProfit: 0 }
     );
   }, [chartData]);
 
@@ -1740,6 +1777,36 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
             <span>{formatCurrency(kpiData.pendingAmount)}</span>
           </div>
         </div>
+
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-rose-100 dark:bg-rose-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+            <Receipt className="w-4 h-4 sm:w-6 sm:h-6 text-rose-600 dark:text-rose-400" />
+          </div>
+          <div className="pr-9 sm:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Dépenses</p>
+            <p className="text-base sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              <AnimatedNumber value={periodTotals ? periodTotals.expenses : 0} format={formatCurrency} />
+            </p>
+          </div>
+          <div className="mt-2 sm:mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <span>Sur la période sélectionnée</span>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 transition-shadow duration-300 group">
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-violet-100 dark:bg-violet-900/30 rounded-full group-hover:scale-110 transition-transform duration-300 transition-shadow duration-300">
+            <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-violet-600 dark:text-violet-400" />
+          </div>
+          <div className="pr-9 sm:pr-16">
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Bénéfice net</p>
+            <p className="text-base sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              <AnimatedNumber value={periodTotals ? periodTotals.netProfit : 0} format={formatCurrency} />
+            </p>
+          </div>
+          <div className="mt-2 sm:mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <span>CA brut − dépenses</span>
+          </div>
+        </div>
       </div>
 
       {/* Section 2: Graphiques d'évolution */}
@@ -1832,6 +1899,28 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                     <stop offset="0%" stopColor={chartPalette.contributions.base} />
                     <stop offset="100%" stopColor={chartPalette.contributions.dark} />
                   </linearGradient>
+
+                  {/* Dépenses - dégradé rose */}
+                  <linearGradient id="monthlyExpensesGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={chartPalette.expenses.base} stopOpacity={0.7} />
+                    <stop offset="55%" stopColor={chartPalette.expenses.base} stopOpacity={0.3} />
+                    <stop offset="100%" stopColor={chartPalette.expenses.base} stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="monthlyExpensesStroke" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor={chartPalette.expenses.base} />
+                    <stop offset="100%" stopColor={chartPalette.expenses.dark} />
+                  </linearGradient>
+
+                  {/* Bénéfice net - dégradé violet */}
+                  <linearGradient id="monthlyNetProfitGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={chartPalette.netProfit.base} stopOpacity={0.7} />
+                    <stop offset="55%" stopColor={chartPalette.netProfit.base} stopOpacity={0.3} />
+                    <stop offset="100%" stopColor={chartPalette.netProfit.base} stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="monthlyNetProfitStroke" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor={chartPalette.netProfit.base} />
+                    <stop offset="100%" stopColor={chartPalette.netProfit.dark} />
+                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={getThemeColors().grid} strokeOpacity={0.3} vertical={false} />
                 <XAxis 
@@ -1878,13 +1967,35 @@ export default function StatsPage({ onPageChange }: StatsPageProps) {
                   animationDuration={900}
                   animationEasing="ease-out"
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="contributions" 
-                  fill="url(#monthlyContributionsGradient)" 
-                  stroke="url(#monthlyContributionsStroke)" 
+                <Area
+                  type="monotone"
+                  dataKey="contributions"
+                  fill="url(#monthlyContributionsGradient)"
+                  stroke="url(#monthlyContributionsStroke)"
                   strokeWidth={2}
                   name="Cotisations"
+                  isAnimationActive={monthlyRevenue.length > 0}
+                  animationDuration={900}
+                  animationEasing="ease-out"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expenses"
+                  fill="url(#monthlyExpensesGradient)"
+                  stroke="url(#monthlyExpensesStroke)"
+                  strokeWidth={2}
+                  name="Dépenses"
+                  isAnimationActive={monthlyRevenue.length > 0}
+                  animationDuration={900}
+                  animationEasing="ease-out"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="netProfit"
+                  fill="url(#monthlyNetProfitGradient)"
+                  stroke="url(#monthlyNetProfitStroke)"
+                  strokeWidth={2}
+                  name="Bénéfice net"
                   isAnimationActive={monthlyRevenue.length > 0}
                   animationDuration={900}
                   animationEasing="ease-out"

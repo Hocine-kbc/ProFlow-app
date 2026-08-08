@@ -1,5 +1,5 @@
 import { supabase } from './supabase.ts';
-import { Service, Invoice, BusinessNotification, NotificationType, Message, Conversation, ServicePricingType } from '../types/index.ts';
+import { Service, Invoice, BusinessNotification, NotificationType, Message, Conversation, ServicePricingType, Expense } from '../types/index.ts';
 
 // Define interfaces locally since they're not exported from types
 interface Client {
@@ -371,6 +371,67 @@ export async function deleteClient(id: string): Promise<void> {
   
   // Puis supprimer le client
   const { error } = await supabase.from('clients').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Expenses
+export async function fetchExpenses(): Promise<Expense[]> {
+  try {
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) {
+      if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
+        return [];
+      }
+      throw error;
+    }
+
+    return (data || []) as Expense[];
+  } catch (_error) {
+    return [];
+  }
+}
+
+export async function createExpense(payload: Omit<Expense, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Expense> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('expenses')
+    .insert({ ...payload, user_id: user.id, created_at: now, updated_at: now })
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('Error creating expense:', error);
+    throw error;
+  }
+
+  return data as Expense;
+}
+
+export async function updateExpense(id: string, payload: Partial<Expense>): Promise<Expense> {
+  const { data, error } = await supabase
+    .from('expenses')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('Error updating expense:', error);
+    throw error;
+  }
+
+  return data as Expense;
+}
+
+export async function deleteExpense(id: string): Promise<void> {
+  const { error } = await supabase.from('expenses').delete().eq('id', id);
   if (error) throw error;
 }
 

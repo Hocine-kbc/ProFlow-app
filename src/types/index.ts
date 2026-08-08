@@ -38,6 +38,28 @@ export interface Service {
   };
 }
 
+// Expense type
+export type ExpenseCategory =
+  | 'fuel'
+  | 'equipment'
+  | 'subscription'
+  | 'meals'
+  | 'transport'
+  | 'office'
+  | 'insurance'
+  | 'other';
+
+export interface Expense {
+  id: string;
+  user_id: string;
+  date: string;
+  category: ExpenseCategory;
+  amount: number;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Invoice type
 export interface Invoice {
   id: string;

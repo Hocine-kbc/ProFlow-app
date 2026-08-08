@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Users, Clock, Euro, FileText, TrendingUp, BarChart3, PieChart, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
+import { Users, Clock, Euro, FileText, TrendingUp, BarChart3, PieChart, ChevronLeft, ChevronRight, X, Check, Receipt, Wallet } from 'lucide-react';
 import { useApp } from '../contexts/AppContext.tsx';
 import AnimatedNumber from './AnimatedNumber.tsx';
 import CircularGauge from './CircularGauge.tsx';
+import DashboardMountainHeader, { DashboardScenePeriod } from './DashboardMountainHeader.tsx';
 
 // Composant pour afficher un chiffre avec segments LED
 const SegmentDigit = ({ digit, showColons }: { digit: string; showColons?: boolean }) => {
@@ -146,7 +147,7 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
     };
   }, []);
   const { state } = useApp();
-  const { services, clients, invoices, settings } = state;
+  const { services, clients, invoices, expenses, settings } = state;
   console.log('🔄 Dashboard: Composant rendu avec settings:', settings);
   
   // État local pour forcer le re-rendu
@@ -186,9 +187,20 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   
   // Total des heures
   const totalHours = services.reduce((sum, service) => sum + service.hours, 0);
-  
+
   // Factures en attente
   const pendingInvoices = invoices.filter(inv => inv.status === 'sent');
+
+  // Dépenses du mois et bénéfice net (n'affecte pas les cotisations URSSAF, calculées sur le CA brut)
+  const monthlyExpenses = expenses
+    .filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate.getMonth() === currentMonth &&
+             expenseDate.getFullYear() === currentYear;
+    })
+    .reduce((sum, expense) => sum + expense.amount, 0);
+
+  const netProfit = monthlyRevenue - monthlyExpenses;
   
   // État pour le filtre d'année
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -278,40 +290,45 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
     const ownerFirstName = getOwnerFirstName();
     
     const messages = [
-      { 
-        time: [5, 6, 7, 8, 9, 10, 11], 
-        message: `Bonjour ${ownerFirstName}`, 
-        emoji: "🌅", 
+      {
+        time: [5, 6, 7, 8, 9, 10, 11],
+        message: `Bonjour ${ownerFirstName}`,
+        emoji: "🌅",
         subtitle: "Une belle journée commence !",
-        gradient: "from-amber-500 via-orange-500 to-yellow-500"
+        gradient: "from-amber-500 via-orange-500 to-yellow-500",
+        period: "morning" as DashboardScenePeriod
       },
-      { 
-        time: [12, 13, 14], 
-        message: `Bon après-midi ${ownerFirstName}`, 
-        emoji: "☀️", 
+      {
+        time: [12, 13, 14],
+        message: `Bon après-midi ${ownerFirstName}`,
+        emoji: "☀️",
         subtitle: "Une pause déj pour recharger, et retour à l'attaque 💪",
-        gradient: "from-yellow-500 via-amber-500 to-orange-500"
+        gradient: "from-yellow-500 via-amber-500 to-orange-500",
+        period: "afternoon" as DashboardScenePeriod
       },
-      { 
-        time: [15, 16, 17, 18], 
-        message: `Bon après-midi ${ownerFirstName}`, 
-        emoji: "🌤️", 
+      {
+        time: [15, 16, 17, 18],
+        message: `Bon après-midi ${ownerFirstName}`,
+        emoji: "🌤️",
         subtitle: "L'après-midi se déroule bien !",
-        gradient: "from-blue-500 via-indigo-500 to-purple-500"
+        gradient: "from-blue-500 via-indigo-500 to-purple-500",
+        period: "afternoon" as DashboardScenePeriod
       },
-      { 
-        time: [19, 20, 21, 22], 
-        message: `Bonsoir ${ownerFirstName}`, 
-        emoji: "🌆", 
+      {
+        time: [19, 20, 21, 22],
+        message: `Bonsoir ${ownerFirstName}`,
+        emoji: "🌆",
         subtitle: "Une belle soirée qui s'annonce !",
-        gradient: "from-purple-500 via-indigo-500 to-blue-600"
+        gradient: "from-purple-500 via-indigo-500 to-blue-600",
+        period: "evening" as DashboardScenePeriod
       },
-      { 
-        time: [23, 0, 1, 2, 3, 4], 
-        message: `Bonsoir ${ownerFirstName}`, 
-        emoji: "🌙", 
+      {
+        time: [23, 0, 1, 2, 3, 4],
+        message: `Bonsoir ${ownerFirstName}`,
+        emoji: "🌙",
         subtitle: "Travail de nuit ou nuit blanche ? 😴",
-        gradient: "from-indigo-600 via-purple-600 to-blue-700"
+        gradient: "from-indigo-600 via-purple-600 to-blue-700",
+        period: "night" as DashboardScenePeriod
       }
     ];
     
@@ -339,42 +356,18 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
 
   return (
     <div className="space-y-6">
-      <div className="relative rounded-2xl p-4 sm:p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-700 dark:via-indigo-700 dark:to-purple-700 text-white shadow-lg overflow-hidden">
-        {/* Traits qui traversent tout le header */}
-        <div className="absolute inset-0 opacity-20">
-          {/* Traits horizontaux qui traversent */}
-          <div className="absolute top-8 left-0 right-0 w-full h-0.5 bg-white/30 transform rotate-12"></div>
-          <div className="absolute top-16 left-0 right-0 w-full h-0.5 bg-white/25 transform -rotate-6"></div>
-          <div className="absolute top-24 left-0 right-0 w-full h-0.5 bg-white/20 transform rotate-45"></div>
-          <div className="absolute bottom-20 left-0 right-0 w-full h-0.5 bg-white/30 transform -rotate-12"></div>
-          <div className="absolute bottom-12 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-24"></div>
-          
-          {/* Traits verticaux qui traversent */}
-          <div className="absolute top-0 bottom-0 left-12 w-0.5 h-full bg-white/20 transform rotate-12"></div>
-          <div className="absolute top-0 bottom-0 left-1/2 w-0.5 h-full bg-white/25 transform -rotate-6"></div>
-          <div className="absolute top-0 bottom-0 right-16 w-0.5 h-full bg-white/30 transform rotate-18"></div>
-          <div className="absolute top-0 bottom-0 right-8 w-0.5 h-full bg-white/20 transform -rotate-24"></div>
-          
-          {/* Traits diagonaux qui traversent */}
-          <div className="absolute top-0 bottom-0 left-0 right-0 w-full h-0.5 bg-white/15 transform rotate-45 origin-center"></div>
-          <div className="absolute top-0 bottom-0 left-0 right-0 w-full h-0.5 bg-white/20 transform -rotate-30 origin-center"></div>
-          <div className="absolute top-0 bottom-0 left-0 right-0 w-full h-0.5 bg-white/25 transform rotate-60 origin-center"></div>
-          <div className="absolute top-0 bottom-0 left-0 right-0 w-full h-0.5 bg-white/15 transform -rotate-45 origin-center"></div>
-        </div>
-        
+      <div className="relative rounded-2xl p-4 sm:p-6 text-white shadow-lg overflow-hidden">
+        <DashboardMountainHeader period={greeting.period} />
 
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="text-center sm:text-left flex-1">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3">
-              <div className="text-3xl sm:text-4xl animate-pulse">{greeting.emoji}</div>
-              <div className="flex flex-col">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white drop-shadow-lg">
-                  {greeting.message}
-                </h1>
-                <p className="text-white/90 mt-2 text-sm sm:text-base font-medium">
-                  {greeting.subtitle}
-                </p>
-              </div>
+            <div className="flex flex-col">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white drop-shadow-lg">
+                {greeting.message}
+              </h1>
+              <p className="text-white/90 mt-2 text-sm sm:text-base font-medium">
+                {greeting.subtitle}
+              </p>
             </div>
           </div>
           
@@ -402,11 +395,11 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
             </div>
           </div>
           
-          <div className="hidden md:block flex-shrink-0 flex items-center">
-            <img 
-              src="/hero_image.svg" 
-              alt="Hero illustration" 
-              className="h-16 sm:h-20 lg:h-24 w-auto opacity-90"
+          <div className="hidden md:flex lg:hidden flex-shrink-0 items-center">
+            <img
+              src="/hero_image.svg"
+              alt="Hero illustration"
+              className="h-16 sm:h-20 w-auto opacity-90"
             />
           </div>
         </div>
@@ -526,6 +519,43 @@ export default function Dashboard({ onNavigate }: DashboardProps = {}) {
             <span className="text-gray-500 dark:text-gray-300">
               {pendingInvoices.reduce((acc, inv) => acc + (inv.subtotal || 0), 0).toFixed(2)}€ en attente
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Dépenses & Bénéfice net */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-6">
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Dépenses (mois)</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
+                <AnimatedNumber value={monthlyExpenses} format={(v) => `${v.toFixed(2)}€`} />
+              </p>
+            </div>
+            <div className="p-1.5 sm:p-3 bg-rose-100 dark:bg-rose-900/30 rounded-full">
+              <Receipt className="w-4 h-4 sm:w-6 sm:h-6 text-rose-600 dark:text-rose-400" />
+            </div>
+          </div>
+          <div className="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm">
+            <span className="text-gray-500 dark:text-gray-300">ce mois</span>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Bénéfice net</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
+                <AnimatedNumber value={netProfit} format={(v) => `${v.toFixed(2)}€`} />
+              </p>
+            </div>
+            <div className="p-1.5 sm:p-3 bg-violet-100 dark:bg-violet-900/30 rounded-full">
+              <Wallet className="w-4 h-4 sm:w-6 sm:h-6 text-violet-600 dark:text-violet-400" />
+            </div>
+          </div>
+          <div className="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm">
+            <span className="text-gray-500 dark:text-gray-300">CA mensuel − dépenses</span>
           </div>
         </div>
       </div>

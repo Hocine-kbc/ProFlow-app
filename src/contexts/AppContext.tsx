@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
-import { Service, Invoice } from '../types/index.ts';
+import { Service, Invoice, Expense } from '../types/index.ts';
 import { NotificationData, NotificationType } from '../components/Notification.tsx';
 import { fetchSettings } from '../lib/api.ts';
 
@@ -29,6 +29,7 @@ interface AppState {
   clients: Client[];
   services: Service[];
   invoices: Invoice[];
+  expenses: Expense[];
   stats: BusinessStats;
   loading: boolean;
   error: string | null;
@@ -51,6 +52,10 @@ type AppAction =
   | { type: 'ADD_INVOICE'; payload: Invoice }
   | { type: 'UPDATE_INVOICE'; payload: Invoice }
   | { type: 'DELETE_INVOICE'; payload: string }
+  | { type: 'SET_EXPENSES'; payload: Expense[] }
+  | { type: 'ADD_EXPENSE'; payload: Expense }
+  | { type: 'UPDATE_EXPENSE'; payload: Expense }
+  | { type: 'DELETE_EXPENSE'; payload: string }
   | { type: 'SET_STATS'; payload: BusinessStats }
   | { type: 'SET_SETTINGS'; payload: any | null }
   | { type: 'ADD_NOTIFICATION'; payload: NotificationData }
@@ -60,6 +65,7 @@ const initialState: AppState = {
   clients: [],
   services: [],
   invoices: [],
+  expenses: [],
   stats: {
     monthly_revenue: 0,
     quarterly_revenue: 0,
@@ -127,6 +133,22 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         invoices: state.invoices.filter(invoice => invoice.id !== action.payload),
+      };
+    case 'SET_EXPENSES':
+      return { ...state, expenses: action.payload };
+    case 'ADD_EXPENSE':
+      return { ...state, expenses: [...state.expenses, action.payload] };
+    case 'UPDATE_EXPENSE':
+      return {
+        ...state,
+        expenses: state.expenses.map(expense =>
+          expense.id === action.payload.id ? action.payload : expense
+        ),
+      };
+    case 'DELETE_EXPENSE':
+      return {
+        ...state,
+        expenses: state.expenses.filter(expense => expense.id !== action.payload),
       };
     case 'SET_STATS':
       return { ...state, stats: action.payload };

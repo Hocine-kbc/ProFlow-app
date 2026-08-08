@@ -11,9 +11,10 @@ import URSSAFPage from './components/URSSAFPage.tsx';
 import MessagesPage from './components/MessagesPage.tsx';
 import PricingPage from './components/PricingPage.tsx';
 import EmailInboxPage from './components/EmailInboxPage.tsx';
+import ExpensesPage from './components/ExpensesPage.tsx';
 import { AppProvider, useApp } from './contexts/AppContext.tsx';
 import { ThemeProvider } from './contexts/ThemeContext.tsx';
-import { fetchClients, fetchServices, fetchInvoices, fetchSettings } from './lib/api.ts';
+import { fetchClients, fetchServices, fetchInvoices, fetchExpenses, fetchSettings } from './lib/api.ts';
 import AuthPage from './components/AuthPage.tsx';
 import ResetPasswordPage from './components/ResetPasswordPage.tsx';
 import { supabase } from './lib/supabase.ts';
@@ -127,6 +128,7 @@ function AppContent() {
         dispatch({ type: 'SET_CLIENTS', payload: [] });
         dispatch({ type: 'SET_SERVICES', payload: [] });
         dispatch({ type: 'SET_INVOICES', payload: [] });
+        dispatch({ type: 'SET_EXPENSES', payload: [] });
         dispatch({ type: 'SET_SETTINGS', payload: null });
       }
     });
@@ -161,7 +163,13 @@ function AppContent() {
         // Initialiser avec un tableau vide si la requête échoue
         dispatch({ type: 'SET_INVOICES', payload: [] });
       }
-      
+      try {
+        const expenses = await fetchExpenses();
+        dispatch({ type: 'SET_EXPENSES', payload: expenses });
+      } catch (_e) {
+        dispatch({ type: 'SET_EXPENSES', payload: [] });
+      }
+
       // Charger les paramètres du profil
       try {
         const settings = await fetchSettings();
@@ -224,6 +232,8 @@ function AppContent() {
         return <ServicesPage />;
       case 'invoices':
         return <InvoicesPage />;
+      case 'expenses':
+        return <ExpensesPage />;
       case 'stats':
         return <StatsPage onPageChange={handlePageChange} />;
       case 'profile':

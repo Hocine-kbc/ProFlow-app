@@ -501,6 +501,32 @@ body:has(.email-inbox-container) {
   animation: overlayFadeOut 300ms ease-in;
 }
 
+/* Scène montagne nocturne du header Dashboard */
+@keyframes cloud-sway-big {
+  from { transform: translateX(0px); }
+  to { transform: translateX(-18px); }
+}
+
+@keyframes cloud-sway-small {
+  from { transform: translateX(0px); }
+  to { transform: translateX(-10px); }
+}
+
+.animate-cloud-sway-big {
+  animation: cloud-sway-big 10s ease-in-out infinite alternate;
+}
+
+.animate-cloud-sway-small {
+  animation: cloud-sway-small 10s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-cloud-sway-big,
+  .animate-cloud-sway-small {
+    animation: none;
+  }
+}
+
 /* Bouton menu hamburger animé (mobile) - morphe en croix à l'ouverture */
 .hamburger-toggle {
   cursor: pointer;
