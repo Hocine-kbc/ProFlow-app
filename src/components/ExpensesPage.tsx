@@ -574,10 +574,10 @@ export default function ExpensesPage() {
                     }}
                     placeholder="Trier par..."
                     options={[
-                      { value: 'date-desc', label: '📅 Date (plus récente)' },
-                      { value: 'date-asc', label: '📅 Date (plus ancienne)' },
-                      { value: 'amount-desc', label: '💰 Montant (plus élevé)' },
-                      { value: 'amount-asc', label: '💰 Montant (plus faible)' },
+                      { value: 'date-desc', label: 'Date (plus récente)' },
+                      { value: 'date-asc', label: 'Date (plus ancienne)' },
+                      { value: 'amount-desc', label: 'Montant (plus élevé)' },
+                      { value: 'amount-asc', label: 'Montant (plus faible)' },
                     ]}
                     className="w-full [&>div>button]:py-2 sm:[&>div>button]:py-3 [&>div>button]:text-sm [&>div>button]:rounded-full"
                   />
